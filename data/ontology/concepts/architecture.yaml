@@ -1,0 +1,53 @@
+- id: autosar
+  facet: software-architecture
+  label: AUTOSAR
+  aliases: [automotive open system architecture]
+  description: AUTomotive Open System ARchitecture standard family.
+- id: autosar-classic
+  facet: software-architecture
+  label: AUTOSAR Classic
+  aliases: [AUTOSAR Classic Platform, AUTOSAR CP, classic autosar]
+  description: AUTOSAR Classic Platform for deeply embedded ECUs.
+  is_a: [autosar]
+- id: autosar-adaptive
+  facet: software-architecture
+  label: AUTOSAR Adaptive
+  aliases: [AUTOSAR Adaptive Platform, AUTOSAR AP, adaptive autosar]
+  description: AUTOSAR Adaptive Platform for high-performance computers.
+  is_a: [autosar]
+  uses: [some-ip, diagnostics, uds]
+  related_to: [service-oriented-architecture]
+- id: ara-com
+  facet: middleware
+  label: ara::com
+  aliases: [ara com, aracom]
+  description: AUTOSAR Adaptive communication management API.
+  part_of: [autosar-adaptive]
+  uses: [some-ip]
+- id: service-oriented-architecture
+  facet: software-architecture
+  label: Service-oriented architecture
+  aliases: [SOA, service oriented architecture]
+  description: Service-oriented vehicle software architecture.
+- id: ros-2
+  facet: middleware
+  label: ROS 2
+  aliases: [ROS2, robot operating system 2]
+  description: Robot Operating System 2 middleware.
+  uses: [dds]
+- id: middleware
+  facet: middleware
+  label: Middleware
+  aliases: [communication middleware, automotive middleware]
+  description: Umbrella concept for communication/runtime middleware.
+- id: dds
+  facet: middleware
+  label: DDS
+  aliases: [data distribution service]
+  description: OMG Data Distribution Service.
+  is_a: [middleware]
+- id: hypervisor
+  facet: operating-system
+  label: Hypervisor
+  aliases: [virtualization, virtualisation]
+  description: Embedded virtualization layer.

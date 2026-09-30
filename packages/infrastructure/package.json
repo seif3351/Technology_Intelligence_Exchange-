@@ -1,0 +1,19 @@
+{
+  "name": "@atx/infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atx/application": "workspace:*",
+    "@atx/domain": "workspace:*",
+    "@atx/observability": "workspace:*",
+    "pg": "^8.16.3",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+dist
+.next
+coverage
+docs/api/openapi.yaml
+docs/api/json-schema

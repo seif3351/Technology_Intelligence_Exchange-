@@ -1,0 +1,88 @@
+- id: functional-safety
+  facet: functional-safety
+  label: Functional safety
+  aliases: [FuSa, functional safety engineering]
+  description: Absence of unreasonable risk due to hazards caused by malfunctioning E/E systems.
+- id: iso-26262
+  facet: functional-safety
+  label: ISO 26262
+  aliases: [ISO26262, ISO-26262]
+  description: Road vehicles — Functional safety.
+  is_a: [functional-safety]
+- id: asil
+  facet: functional-safety
+  label: ASIL
+  aliases: [automotive safety integrity level, ASIL-A, ASIL-B, ASIL-C, ASIL-D, ASIL A, ASIL B, ASIL C, ASIL D]
+  description: Automotive Safety Integrity Level (use the `asil` qualifier for the level).
+  part_of: [iso-26262]
+- id: sotif
+  facet: functional-safety
+  label: SOTIF (ISO 21448)
+  aliases: [SOTIF, ISO 21448, ISO21448, safety of the intended functionality]
+  description: Safety of the intended functionality.
+  related_to: [functional-safety, adas]
+- id: iso-pas-8800
+  facet: functional-safety
+  label: ISO/PAS 8800
+  aliases: [ISO 8800, PAS 8800, AI safety]
+  description: Safety and artificial intelligence in road vehicles.
+  related_to: [machine-learning, functional-safety]
+- id: automotive-cybersecurity
+  facet: cybersecurity
+  label: Automotive cybersecurity
+  aliases: [cybersecurity, cyber security, vehicle cybersecurity]
+  description: Umbrella concept for automotive cybersecurity.
+- id: iso-21434
+  facet: cybersecurity
+  label: ISO/SAE 21434
+  aliases: [ISO 21434, ISO21434, ISO/SAE 21434]
+  description: Road vehicles — Cybersecurity engineering.
+  is_a: [automotive-cybersecurity]
+- id: unece-r155
+  facet: cybersecurity
+  label: UNECE R155
+  aliases: [R155, UN R155, CSMS]
+  description: UN Regulation No. 155 on cybersecurity management systems.
+  is_a: [automotive-cybersecurity]
+- id: unece-r156
+  facet: cybersecurity
+  label: UNECE R156
+  aliases: [R156, UN R156, SUMS]
+  description: UN Regulation No. 156 on software update management systems.
+  related_to: [ota-updates]
+- id: tara
+  facet: cybersecurity
+  label: TARA
+  aliases: [threat analysis and risk assessment]
+  description: Threat Analysis and Risk Assessment.
+  part_of: [iso-21434]
+- id: security-mechanism
+  facet: cybersecurity
+  label: Security mechanism
+  aliases: []
+  description: Umbrella concept for technical security mechanisms.
+  is_a: [automotive-cybersecurity]
+- id: secure-boot
+  facet: cybersecurity
+  label: Secure boot
+  aliases: [verified boot, trusted boot]
+  description: Cryptographically verified boot chain.
+  is_a: [security-mechanism]
+- id: secoc
+  facet: cybersecurity
+  label: SecOC
+  aliases: [secure onboard communication]
+  description: AUTOSAR Secure Onboard Communication.
+  is_a: [security-mechanism]
+  part_of: [autosar]
+- id: hsm
+  facet: cybersecurity
+  label: HSM
+  aliases: [hardware security module]
+  description: Hardware security module.
+  is_a: [security-mechanism]
+- id: aspice
+  facet: process-standard
+  label: Automotive SPICE
+  aliases: [ASPICE, A-SPICE]
+  description: Automotive SPICE process assessment model.

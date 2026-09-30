@@ -1,0 +1,57 @@
+# default_level: level used when a buyer mentions a concept of this facet without a qualifier.
+- id: application-domain
+  label: Application domain
+  description: Vehicle function area a technology targets (e.g. ADAS).
+  default_level: supports
+- id: capability
+  label: Capability
+  description: Engineering capability or activity (e.g. integration testing, simulation).
+  default_level: supports
+- id: ai-ml
+  label: AI / ML technique
+  description: Artificial intelligence and machine learning techniques.
+  default_level: supports
+- id: software-architecture
+  label: Software architecture
+  description: Architecture standards and frameworks (e.g. AUTOSAR).
+  default_level: supports
+- id: middleware
+  label: Middleware
+  description: Communication and runtime middleware.
+  default_level: supports
+- id: communication-protocol
+  label: Communication protocol
+  description: In-vehicle and diagnostic communication protocols.
+  default_level: supports
+- id: networking
+  label: Networking
+  description: In-vehicle network technologies and time synchronization.
+  default_level: supports
+- id: operating-system
+  label: Operating system
+  description: Operating systems, RTOS and hypervisors.
+  default_level: supports
+- id: hardware-platform
+  label: Hardware platform
+  description: Compute platforms, SoCs and microcontrollers.
+  default_level: supports
+- id: functional-safety
+  label: Functional safety
+  description: Safety standards, integrity levels and safety concepts.
+  default_level: experience
+- id: cybersecurity
+  label: Cybersecurity
+  description: Automotive cybersecurity standards, regulations and mechanisms.
+  default_level: experience
+- id: process-standard
+  label: Process standard
+  description: Development process and quality standards.
+  default_level: experience
+- id: data-format
+  label: Data / interface standard
+  description: Measurement, scenario and tool-interface standards.
+  default_level: supports
+- id: tooling
+  label: Engineering tooling
+  description: Developer tooling and engineering infrastructure.
+  default_level: supports

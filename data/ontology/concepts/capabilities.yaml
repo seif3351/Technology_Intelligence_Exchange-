@@ -1,0 +1,114 @@
+- id: testing
+  facet: capability
+  label: Testing
+  aliases: [test, software testing]
+  description: Umbrella concept for testing activities.
+- id: integration-testing
+  facet: capability
+  label: Integration testing
+  aliases: [integration test, integration tests, system integration testing, SIT]
+  description: Testing the interaction of integrated software/hardware components.
+  is_a: [testing]
+- id: test-automation
+  facet: capability
+  label: Test automation
+  aliases: [automated testing, automated test execution, test automation platform]
+  description: Automated execution and management of tests.
+  is_a: [testing]
+- id: test-generation
+  facet: capability
+  label: Automated test generation
+  aliases: [test generation, test case generation, automated test case generation]
+  description: Automatic generation of test cases from requirements, models or code.
+  is_a: [test-automation]
+- id: hil-testing
+  facet: capability
+  label: HIL testing
+  aliases: [hardware-in-the-loop, hardware in the loop, HIL]
+  description: Hardware-in-the-loop testing.
+  is_a: [testing]
+- id: sil-testing
+  facet: capability
+  label: SIL testing
+  aliases: [software-in-the-loop, software in the loop]
+  description: Software-in-the-loop testing.
+  is_a: [testing]
+- id: scenario-based-testing
+  facet: capability
+  label: Scenario-based testing
+  aliases: [scenario based testing, scenario testing]
+  description: Testing driving functions against defined traffic scenarios.
+  is_a: [testing]
+  uses: [simulation]
+- id: simulation
+  facet: capability
+  label: Simulation
+  aliases: [virtual testing, virtual validation]
+  description: Simulation of vehicles, sensors, environments or software.
+- id: sensor-simulation
+  facet: capability
+  label: Sensor simulation
+  aliases: [sensor model, sensor models]
+  description: Physically based simulation of camera, radar and lidar sensors.
+  is_a: [simulation]
+- id: validation
+  facet: capability
+  label: Validation
+  aliases: [system validation]
+  description: Demonstrating that a system fulfils its intended use.
+- id: verification
+  facet: capability
+  label: Verification
+  aliases: [software verification]
+  description: Demonstrating that an implementation fulfils its specification.
+- id: log-analysis
+  facet: capability
+  label: Log analysis
+  aliases: [log analytics, trace analysis, integration log analysis, log file analysis]
+  description: Automated analysis of logs and traces from test benches and vehicles.
+- id: ci-cd
+  facet: capability
+  label: CI/CD
+  aliases: [continuous integration, continuous delivery, CI pipeline, DevOps]
+  description: Continuous integration and delivery pipelines for automotive software.
+- id: software-integration
+  facet: capability
+  label: Software integration
+  aliases: [system integration, platform integration, integration services]
+  description: Integrating software stacks onto target platforms.
+- id: vehicle-data-platform
+  facet: capability
+  label: Vehicle data & telemetry
+  aliases: [telemetry, vehicle data, fleet data, data logging, vehicle telemetry]
+  description: Collection, transport and analysis of vehicle data.
+- id: ota-updates
+  facet: capability
+  label: Over-the-air updates
+  aliases: [OTA, over the air, software updates over the air]
+  description: Remote software update capability.
+- id: diagnostics
+  facet: capability
+  label: Diagnostics
+  aliases: [vehicle diagnostics, ECU diagnostics]
+  description: On-board and off-board diagnostics.
+- id: security-monitoring
+  facet: capability
+  label: Security monitoring
+  aliases: [VSOC, vehicle security operations center, intrusion detection, IDS, IDPS, cybersecurity monitoring]
+  description: Detection and response to cybersecurity events in vehicles and fleets.
+- id: penetration-testing
+  facet: capability
+  label: Penetration testing
+  aliases: [pentest, pentesting, security testing]
+  description: Offensive security testing of vehicles and components.
+  is_a: [testing]
+- id: requirements-engineering
+  facet: capability
+  label: Requirements engineering
+  aliases: [requirements management]
+  description: Eliciting, specifying and tracing requirements.
+- id: engineering-services
+  facet: capability
+  label: Engineering services
+  aliases: [engineering service, development services, staffing]
+  description: Contract engineering and development services.

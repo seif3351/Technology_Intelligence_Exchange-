@@ -1,0 +1,50 @@
+- id: asam-mdf
+  facet: data-format
+  label: ASAM MDF
+  aliases: [MDF, MDF4, MF4]
+  description: ASAM Measurement Data Format.
+- id: autosar-dlt
+  facet: data-format
+  label: DLT
+  aliases: [diagnostic log and trace, AUTOSAR DLT]
+  description: AUTOSAR Diagnostic Log and Trace format.
+  related_to: [log-analysis]
+- id: pcap
+  facet: data-format
+  label: PCAP
+  aliases: [pcapng, packet capture]
+  description: Packet capture format for network traces.
+- id: openscenario
+  facet: data-format
+  label: ASAM OpenSCENARIO
+  aliases: [OpenSCENARIO]
+  description: Scenario description standard.
+  related_to: [scenario-based-testing]
+- id: opendrive
+  facet: data-format
+  label: ASAM OpenDRIVE
+  aliases: [OpenDRIVE]
+  description: Road network description standard.
+  related_to: [simulation]
+- id: asam-xil
+  facet: data-format
+  label: ASAM XIL
+  aliases: [XIL API]
+  description: Test automation interface standard for XiL test benches.
+  related_to: [hil-testing, test-automation]
+- id: fmi
+  facet: data-format
+  label: FMI
+  aliases: [functional mock-up interface, FMU]
+  description: Functional Mock-up Interface for model exchange and co-simulation.
+  related_to: [simulation]
+- id: developer-tooling
+  facet: tooling
+  label: Developer tooling
+  aliases: [developer tools, dev tooling, toolchain]
+  description: Tools supporting software engineering workflows.
+- id: containerization
+  facet: tooling
+  label: Containerization
+  aliases: [containers, docker, kubernetes]
+  description: Container-based packaging and orchestration of software.

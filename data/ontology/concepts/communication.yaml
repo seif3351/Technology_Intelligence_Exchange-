@@ -1,0 +1,68 @@
+- id: some-ip
+  facet: communication-protocol
+  label: SOME/IP
+  aliases: [SOMEIP, some ip, scalable service-oriented middleware over ip]
+  description: Scalable service-Oriented MiddlewarE over IP.
+  related_to: [service-oriented-architecture]
+- id: can
+  facet: communication-protocol
+  label: CAN
+  aliases: [controller area network, CAN bus]
+  description: Controller Area Network.
+- id: can-fd
+  facet: communication-protocol
+  label: CAN FD
+  aliases: [CAN-FD]
+  description: CAN with flexible data rate.
+  is_a: [can]
+- id: lin
+  facet: communication-protocol
+  label: LIN
+  aliases: [local interconnect network]
+  description: Local Interconnect Network.
+- id: flexray
+  facet: communication-protocol
+  label: FlexRay
+  aliases: []
+  description: FlexRay deterministic bus.
+- id: uds
+  facet: communication-protocol
+  label: UDS
+  aliases: [unified diagnostic services, ISO 14229]
+  description: Unified Diagnostic Services (ISO 14229).
+  related_to: [diagnostics]
+- id: doip
+  facet: communication-protocol
+  label: DoIP
+  aliases: [diagnostics over IP, ISO 13400]
+  description: Diagnostics over Internet Protocol (ISO 13400).
+  uses: [automotive-ethernet]
+  related_to: [diagnostics]
+- id: mqtt
+  facet: communication-protocol
+  label: MQTT
+  aliases: []
+  description: Lightweight publish/subscribe messaging protocol, common for vehicle-to-cloud.
+- id: automotive-ethernet
+  facet: networking
+  label: Automotive Ethernet
+  aliases: [Ethernet, 100BASE-T1, 1000BASE-T1, in-vehicle ethernet]
+  description: Ethernet physical layers and networking for in-vehicle use.
+- id: ethernet-tsn
+  facet: networking
+  label: Ethernet TSN
+  aliases: [TSN, time-sensitive networking, time sensitive networking]
+  description: IEEE 802.1 Time-Sensitive Networking.
+  is_a: [automotive-ethernet]
+  uses: [ptp]
+- id: time-synchronization
+  facet: networking
+  label: Time synchronization
+  aliases: [time sync, clock synchronization]
+  description: Distributed clock synchronization.
+- id: ptp
+  facet: networking
+  label: PTP
+  aliases: [precision time protocol, IEEE 1588, gPTP, IEEE 802.1AS]
+  description: Precision Time Protocol (including gPTP profile).
+  is_a: [time-synchronization]

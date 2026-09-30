@@ -1,0 +1,73 @@
+- id: qnx
+  facet: operating-system
+  label: QNX
+  aliases: [QNX Neutrino, QNX OS, QNX RTOS]
+  description: QNX real-time operating system.
+- id: linux
+  facet: operating-system
+  label: Linux
+  aliases: [embedded linux, yocto]
+  description: Linux-based operating systems.
+- id: automotive-grade-linux
+  facet: operating-system
+  label: Automotive Grade Linux
+  aliases: [AGL]
+  description: Automotive Grade Linux distribution.
+  is_a: [linux]
+- id: android-automotive
+  facet: operating-system
+  label: Android Automotive OS
+  aliases: [Android Automotive, AAOS]
+  description: Android Automotive OS.
+- id: zephyr
+  facet: operating-system
+  label: Zephyr RTOS
+  aliases: [Zephyr]
+  description: Zephyr real-time operating system.
+- id: compute-platform
+  facet: hardware-platform
+  label: Compute platform
+  aliases: [high-performance computer, HPC, central compute, vehicle computer]
+  description: Umbrella concept for automotive compute hardware.
+- id: nvidia-drive-orin
+  facet: hardware-platform
+  label: NVIDIA DRIVE Orin
+  aliases: [NVIDIA Orin, Orin, DRIVE Orin, Jetson Orin]
+  description: NVIDIA DRIVE Orin system-on-chip.
+  is_a: [compute-platform]
+- id: nvidia-drive-thor
+  facet: hardware-platform
+  label: NVIDIA DRIVE Thor
+  aliases: [NVIDIA Thor, DRIVE Thor]
+  description: NVIDIA DRIVE Thor system-on-chip.
+  is_a: [compute-platform]
+- id: qualcomm-snapdragon-ride
+  facet: hardware-platform
+  label: Qualcomm Snapdragon Ride
+  aliases: [Snapdragon Ride]
+  description: Qualcomm Snapdragon Ride platform.
+  is_a: [compute-platform]
+- id: renesas-r-car
+  facet: hardware-platform
+  label: Renesas R-Car
+  aliases: [R-Car, RCar]
+  description: Renesas R-Car SoC family.
+  is_a: [compute-platform]
+- id: ti-tda4
+  facet: hardware-platform
+  label: TI TDA4
+  aliases: [TDA4, TDA4VM, Jacinto 7]
+  description: Texas Instruments TDA4 (Jacinto 7) processors.
+  is_a: [compute-platform]
+- id: nxp-s32g
+  facet: hardware-platform
+  label: NXP S32G
+  aliases: [S32G]
+  description: NXP S32G vehicle network processors.
+  is_a: [compute-platform]
+- id: infineon-aurix
+  facet: hardware-platform
+  label: Infineon AURIX
+  aliases: [AURIX, TC3xx, TC4xx]
+  description: Infineon AURIX microcontroller family.
+  is_a: [compute-platform]

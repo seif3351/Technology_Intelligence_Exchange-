@@ -1,0 +1,49 @@
+- id: software-defined-vehicle
+  facet: application-domain
+  label: Software-defined vehicle
+  aliases: [SDV, software defined vehicle]
+  description: Vehicle architectures in which functions are primarily defined and updated in software.
+- id: adas
+  facet: application-domain
+  label: ADAS
+  aliases: [advanced driver assistance systems, advanced driver assistance, driver assistance]
+  description: Advanced driver assistance systems.
+- id: automated-driving
+  facet: application-domain
+  label: Automated driving
+  aliases: [autonomous driving, self-driving]
+  description: SAE level 3+ automated driving functions.
+  related_to: [adas]
+- id: infotainment
+  facet: application-domain
+  label: Infotainment
+  aliases: [IVI, in-vehicle infotainment]
+  description: In-vehicle infotainment and cockpit systems.
+- id: body-electronics
+  facet: application-domain
+  label: Body electronics
+  aliases: [body control]
+  description: Body and comfort electronics.
+- id: powertrain
+  facet: application-domain
+  label: Powertrain
+  aliases: [e-powertrain, electric powertrain]
+  description: Powertrain and propulsion control, including electrified powertrains.
+- id: perception
+  facet: capability
+  label: Perception
+  aliases: [environment perception, object detection]
+  description: Sensing and interpreting the vehicle environment.
+  part_of: [adas]
+- id: sensor-fusion
+  facet: capability
+  label: Sensor fusion
+  aliases: [multi-sensor fusion]
+  description: Combining data from multiple sensors into a consistent environment model.
+  part_of: [adas]
+- id: motion-planning
+  facet: capability
+  label: Planning
+  aliases: [motion planning, path planning, trajectory planning]
+  description: Behaviour and trajectory planning.
+  part_of: [adas]

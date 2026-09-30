@@ -1,0 +1,23 @@
+- id: machine-learning
+  facet: ai-ml
+  label: Machine learning
+  aliases: [ML, AI/ML, AI, artificial intelligence, AI-based, AI based, ai-powered]
+  description: Machine learning and AI techniques in general.
+- id: deep-learning
+  facet: ai-ml
+  label: Deep learning
+  aliases: [neural networks, DNN]
+  description: Deep neural network techniques.
+  is_a: [machine-learning]
+- id: large-language-models
+  facet: ai-ml
+  label: Large language models
+  aliases: [LLM, LLMs, generative AI, GenAI]
+  description: Large language models and generative AI.
+  is_a: [machine-learning]
+- id: anomaly-detection
+  facet: ai-ml
+  label: Anomaly detection
+  aliases: [anomaly detection models]
+  description: Statistical or ML-based detection of anomalous behaviour.
+  is_a: [machine-learning]
