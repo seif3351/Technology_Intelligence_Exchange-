@@ -12,6 +12,9 @@ export interface User {
   readonly email: string;
   readonly displayName: string;
   readonly platformRole: PlatformRole;
+  /** Version of the terms of use the user accepted (null for operator-created accounts). */
+  readonly termsVersion: string | null;
+  readonly termsAcceptedAt: Date | null;
   readonly createdAt: Date;
 }
 

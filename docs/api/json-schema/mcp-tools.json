@@ -1183,6 +1183,10 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "listed": {
+            "type": "boolean",
+            "description": "False until the platform verifies your organization; until then nothing is visible to buyers."
+          },
           "offering": {
             "anyOf": [
               {
@@ -1241,6 +1245,7 @@
         "required": [
           "publishedClaimIds",
           "alreadyPublished",
+          "listed",
           "offering",
           "notice"
         ],

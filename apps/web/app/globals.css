@@ -101,6 +101,23 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+/* Phone widths: let the header wrap instead of overflowing the viewport. */
+@media (max-width: 700px) {
+  header.top {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 10px 16px;
+  }
+  header.top nav {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  header.top .user {
+    margin-left: auto;
+  }
+}
 .card {
   border: 1px solid var(--line);
   border-radius: var(--radius);

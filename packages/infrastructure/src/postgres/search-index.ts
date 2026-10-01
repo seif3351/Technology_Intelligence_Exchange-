@@ -1,6 +1,7 @@
 import type { RetrievalQuery, SearchIndex } from '@atx/application';
 import type { RankedList } from '@atx/search';
 import type { Queryable } from './db';
+import { listedOrganization } from './listing';
 
 const vectorLiteral = (vector: readonly number[]): string =>
   `[${vector.map((v) => (Number.isFinite(v) ? v : 0)).join(',')}]`;
@@ -93,7 +94,7 @@ const structuredList = async (
        JOIN technical_claims c ON c.status = 'published' AND c.concept_id = ANY($1::text[])
         AND ((c.subject_type = 'offering' AND c.subject_id = o.id)
           OR (c.subject_type IN ('organization','capability') AND c.organization_id = o.organization_id))
-      WHERE o.status = 'published'
+      WHERE o.status = 'published' AND ${listedOrganization('o.organization_id')}
       GROUP BY o.id
       ORDER BY matched DESC, o.id
       LIMIT $2`,

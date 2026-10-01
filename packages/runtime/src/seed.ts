@@ -117,6 +117,8 @@ export const seedDemoData = async (
           email: user.email,
           displayName: user.display_name,
           platformRole: user.platform_role ?? 'none',
+          termsVersion: null,
+          termsAcceptedAt: null,
           createdAt: now,
         },
         passwordHash,

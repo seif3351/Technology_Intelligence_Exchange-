@@ -9,6 +9,7 @@ import type {
 import { type ConceptId, type OfferingId, type TechnicalClaim, asId, conflict, invariant } from '@atx/domain';
 import type { Queryable } from '../db';
 import { claimParams, toAsset, toCapability, toClaim, toEvidence, toOffering } from '../mappers';
+import { listedOrganization } from '../listing';
 
 const assertScope = (scope: TenantScope, organizationId: string): void => {
   if (scope.organizationId !== organizationId)
@@ -23,14 +24,15 @@ export const createOfferingRepository = (db: Queryable): OfferingRepository => (
   async findPublishedByIds(ids) {
     if (ids.length === 0) return [];
     const { rows } = await db.query(
-      "SELECT * FROM offerings WHERE id = ANY($1::uuid[]) AND status = 'published'",
+      `SELECT * FROM offerings WHERE id = ANY($1::uuid[]) AND status = 'published' AND ${listedOrganization('organization_id')}`,
       [ids],
     );
     return rows.map(toOffering);
   },
   async listPublishedByOrganization(organizationId) {
     const { rows } = await db.query(
-      "SELECT * FROM offerings WHERE organization_id = $1 AND status = 'published' ORDER BY name, id",
+      `SELECT * FROM offerings WHERE organization_id = $1 AND status = 'published' AND ${listedOrganization('organization_id')}
+        ORDER BY name, id`,
       [organizationId],
     );
     return rows.map(toOffering);
@@ -165,7 +167,7 @@ export const createClaimRepository = (db: Queryable): ClaimRepository => ({
          FROM technical_claims c
          JOIN offerings o ON o.status = 'published'
           AND ((c.subject_type = 'offering' AND c.subject_id = o.id) OR (c.subject_type <> 'offering' AND c.organization_id = o.organization_id))
-        WHERE c.status = 'published' AND c.concept_id = ANY($1::text[])
+        WHERE c.status = 'published' AND c.concept_id = ANY($1::text[]) AND ${listedOrganization('o.organization_id')}
         GROUP BY c.concept_id`,
       [conceptIds],
     );
@@ -361,7 +363,7 @@ export const createAssetRepository = (db: Queryable): AssetRepository => {
     async listPublicVideos({ offeringIds, text, limit }) {
       const { rows } = await db.query(
         `SELECT a.* FROM assets a JOIN offerings o ON o.id = a.offering_id AND o.status = 'published'
-          WHERE a.kind = 'video' AND a.visibility = 'public' AND a.processing_state = 'ready'
+          WHERE ${listedOrganization('o.organization_id')} AND a.kind = 'video' AND a.visibility = 'public' AND a.processing_state = 'ready'
             AND ($1::uuid[] IS NULL OR a.offering_id = ANY($1::uuid[]))
             AND ($2::text IS NULL OR to_tsvector('english', a.title || ' ' || a.description) @@ websearch_to_tsquery('english', $2))
           ORDER BY a.title, a.id LIMIT $3`,

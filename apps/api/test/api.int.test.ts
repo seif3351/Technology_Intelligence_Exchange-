@@ -97,7 +97,50 @@ describe('supplier onboarding to buyer discovery (end to end)', () => {
   let orgId: string;
   let offering: { id: string; version: number };
 
-  it('registers a supplier, creates an offering and refuses to publish it without claims', async () => {
+  it('refuses registration without an invitation or without accepting the terms (invite-only pilot)', async () => {
+    const policy = await api(null).get('/v1/auth/registration');
+    expect(policy.json()).toMatchObject({ mode: 'invite' });
+    const uninvited = await server.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        email: 'stranger@example.com',
+        password: 'a-long-test-password',
+        displayName: 'Stranger',
+        acceptTerms: true,
+      },
+    });
+    expect(uninvited.statusCode).toBe(403);
+    const noTerms = await server.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: { email: 'stranger@example.com', password: 'a-long-test-password', displayName: 'Stranger' },
+    });
+    expect(noTerms.statusCode).toBe(400);
+  });
+
+  it('registers an invited supplier, creates an offering and refuses to publish it without claims', async () => {
+    const admin = api(await login('admin@atx.example'));
+    const issued = await admin.post('/v1/admin/invitations', { email: 'Founder@Helix-Test.example' });
+    expect(issued.statusCode).toBe(201);
+    const inviteToken = new URL(issued.json().url as string).searchParams.get('invite') ?? '';
+    const preview = await api(null).post('/v1/invitations/lookup', { token: inviteToken });
+    expect(preview.json()).toMatchObject({ email: 'founder@helix-test.example', organizationName: null });
+
+    // An invitation only works for the email it was sent to.
+    const wrongEmail = await server.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        email: 'someone-else@helix-test.example',
+        password: 'a-long-test-password',
+        displayName: 'Other',
+        acceptTerms: true,
+        invitationToken: inviteToken,
+      },
+    });
+    expect(wrongEmail.statusCode).toBe(403);
+
     const registered = await server.inject({
       method: 'POST',
       url: '/v1/auth/register',
@@ -105,9 +148,16 @@ describe('supplier onboarding to buyer discovery (end to end)', () => {
         email: 'founder@helix-test.example',
         password: 'a-long-test-password',
         displayName: 'Founder',
+        acceptTerms: true,
+        invitationToken: inviteToken,
       },
     });
     expect(registered.statusCode).toBe(201);
+    // Invitations are single-use.
+    const reuse = await api(null).post('/v1/invitations/lookup', { token: inviteToken });
+    expect(reuse.statusCode).toBe(404);
+    const listed = await admin.get('/v1/admin/invitations');
+    expect(listed.json().items[0]).toMatchObject({ email: 'founder@helix-test.example', status: 'accepted' });
     token = `Bearer ${registered.json().accessToken as string}`;
     const org = await api(token).post('/v1/organizations', {
       name: 'Helix Test Systems',
@@ -186,13 +236,34 @@ describe('supplier onboarding to buyer discovery (end to end)', () => {
     expect(publish.statusCode).toBe(200);
     await drainJobs(runtime); // reindex
 
-    const search = await api(null).post('/v1/offerings/search', {
-      query: 'HIL automation',
-      conceptIds: ['qnx'],
-    });
-    expect(search.json().items.map((i: { offering: { name: string } }) => i.offering.name)).toContain(
-      'Helix HIL Automation',
+    // Listing rule (ADR 0011): nothing is public until the platform verifies the organization.
+    const searchNames = async () =>
+      (await api(null).post('/v1/offerings/search', { query: 'HIL automation', conceptIds: ['qnx'] }))
+        .json()
+        .items.map((i: { offering: { name: string } }) => i.offering.name) as string[];
+    expect(await searchNames()).not.toContain('Helix HIL Automation');
+    expect((await api(null).get(`/v1/offerings/${offering.id}`)).statusCode).toBe(404);
+    expect((await api(token).get(`/v1/offerings/${offering.id}`)).statusCode).toBe(200); // members preview
+
+    expect((await api(token).post(`/v1/organizations/${orgId}/verification-request`, {})).statusCode).toBe(
+      200,
     );
+    const admin = api(await login('admin@atx.example'));
+    const verified = await admin.post(`/v1/admin/organizations/${orgId}/verification`, {
+      state: 'verified',
+      reason: null,
+    });
+    expect(verified.statusCode).toBe(200);
+    await drainJobs(runtime); // listing change -> reindex
+    expect(await searchNames()).toContain('Helix HIL Automation');
+
+    // Suspension removes the content from public discovery again.
+    await admin.post(`/v1/admin/organizations/${orgId}/verification`, { state: 'suspended', reason: null });
+    await drainJobs(runtime);
+    expect(await searchNames()).not.toContain('Helix HIL Automation');
+    expect((await api(null).get(`/v1/offerings/${offering.id}`)).statusCode).toBe(404);
+    await admin.post(`/v1/admin/organizations/${orgId}/verification`, { state: 'verified', reason: null });
+    await drainJobs(runtime);
   });
 
   it('rejects stale writes (optimistic concurrency)', async () => {

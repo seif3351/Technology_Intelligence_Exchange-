@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { OfferingId } from '@atx/domain';
+import { type OfferingId, isPubliclyListed } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 
 /**
@@ -11,13 +11,15 @@ export class IndexingService {
 
   async reindexOffering(offeringId: OfferingId): Promise<'indexed' | 'unchanged' | 'removed'> {
     const offering = await this.deps.repos.offerings.findById(offeringId);
-    if (!offering || offering.status !== 'published') {
+    const organization = offering
+      ? await this.deps.repos.organizations.findById(offering.organizationId)
+      : null;
+    if (!offering || offering.status !== 'published' || !organization || !isPubliclyListed(organization)) {
       await this.deps.searchIndex.remove(offeringId);
       return 'removed';
     }
     const ontology = await this.deps.ontology.current();
-    const [organization, claims, capabilities] = await Promise.all([
-      this.deps.repos.organizations.findById(offering.organizationId),
+    const [claims, capabilities] = await Promise.all([
       this.deps.repos.claims.listPublishedForOfferings([offering.id]),
       this.deps.repos.capabilities.listPublishedByOrganization(offering.organizationId),
     ]);
@@ -31,7 +33,7 @@ export class IndexingService {
       offering.name,
       offering.summary,
       offering.description,
-      organization?.name ?? '',
+      organization.name,
       capabilities.map((capability) => `${capability.name} ${capability.description}`).join('. '),
       conceptText,
     ]

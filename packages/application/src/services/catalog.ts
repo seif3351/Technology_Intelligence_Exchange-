@@ -12,7 +12,7 @@ import {
   validationError,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
-import { canViewOffering } from '../policies';
+import { canViewOffering, canViewSupplier } from '../policies';
 import type { RequestContext } from '../principal';
 import {
   type ClaimView,
@@ -113,9 +113,9 @@ export class CatalogService {
   ): Promise<OfferingDetailView> {
     const ontology = await this.deps.ontology.current();
     const offering = await this.resolveOffering(idOrSlug);
-    if (!offering || !canViewOffering(ctx.principal, offering)) throw notFound('Offering');
+    if (!offering) throw notFound('Offering');
     const organization = await this.deps.repos.organizations.findById(offering.organizationId);
-    if (!organization) throw notFound('Offering');
+    if (!organization || !canViewOffering(ctx.principal, offering, organization)) throw notFound('Offering');
 
     const [claims, evidence, assets] = await Promise.all([
       this.deps.repos.claims.listPublishedForOfferings([offering.id]),
@@ -146,9 +146,7 @@ export class CatalogService {
     const organization = isUuid(idOrSlug)
       ? await this.deps.repos.organizations.findById(asId(idOrSlug))
       : await this.deps.repos.organizations.findBySlug(idOrSlug);
-    if (!organization || organization.kind === 'buyer' || organization.verificationState === 'suspended') {
-      throw notFound('Supplier');
-    }
+    if (!organization || !canViewSupplier(ctx.principal, organization)) throw notFound('Supplier');
     const [offerings, orgClaims, capabilities, evidence] = await Promise.all([
       this.deps.repos.offerings.listPublishedByOrganization(organization.id),
       this.deps.repos.claims.listPublishedForOrganization(organization.id),

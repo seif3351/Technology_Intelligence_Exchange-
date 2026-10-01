@@ -1,16 +1,18 @@
-import { AuditEventRecord, ClaimView, OrganizationRef } from '@atx/contracts';
+import { AuditEventRecord, ClaimView, InvitationRecord, OrganizationRef } from '@atx/contracts';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { TrustBadge } from '@/components/badges';
-import { decideVerification, reviewClaim } from '@/lib/actions/admin';
+import { decideVerification, reviewClaim, revokeInvitation } from '@/lib/actions/admin';
 import { api, currentUser } from '@/lib/api';
+import { InviteForm } from './invite-form';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const me = await currentUser();
   if (!me || me.user.platformRole !== 'platform_admin') redirect('/login?next=/admin');
-  const [queue, claims, moderation, audit, demand] = await Promise.all([
+  const [invitations, queue, claims, moderation, audit, demand] = await Promise.all([
+    api('/v1/admin/invitations', { schema: z.object({ items: z.array(InvitationRecord) }) }),
     api('/v1/admin/verification-queue', {
       schema: z.object({
         items: z.array(
@@ -38,6 +40,31 @@ export default async function AdminPage() {
   return (
     <div className="stack">
       <h1>Platform administration</h1>
+      <h2>Pilot invitations</h2>
+      <InviteForm />
+      <table>
+        <tbody>
+          {invitations.items.slice(0, 50).map((invitation) => (
+            <tr key={invitation.id}>
+              <td>{invitation.email}</td>
+              <td className="small">{invitation.status}</td>
+              <td className="small">expires {invitation.expiresAt.slice(0, 10)}</td>
+              <td>
+                {invitation.status === 'pending' ? (
+                  <form action={revokeInvitation}>
+                    <input type="hidden" name="invitationId" value={invitation.id} />
+                    <button type="submit">Revoke</button>
+                  </form>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="small muted">
+        Supplier content becomes public only when the organization is verified below (and disappears again if
+        it is suspended).
+      </p>
       <h2>Organization verification ({queue.items.length})</h2>
       <table>
         <tbody>

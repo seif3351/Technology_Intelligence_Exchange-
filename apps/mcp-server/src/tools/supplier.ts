@@ -368,6 +368,7 @@ export const supplierTools = [
         structured: {
           publishedClaimIds: result.claims.map((claim) => claim.id),
           alreadyPublished: result.alreadyPublished,
+          listed: result.listed,
           offering,
           notice:
             'Published content is shown as "stated by supplier". Platform verification is a separate review of linked evidence by the platform team.',
@@ -376,7 +377,9 @@ export const supplierTools = [
           `Published ${result.claims.length} claim(s)` +
           (result.alreadyPublished > 0 ? ` (${result.alreadyPublished} already published earlier)` : '') +
           (offering ? `; offering "${offering.name}" is ${offering.status}: ${offering.url}` : '') +
-          '. Search results update within moments.',
+          (result.listed
+            ? '. Search results update within moments.'
+            : '. Not visible to buyers yet: your organization must first be verified by the platform (request verification in the web workspace).'),
       };
     },
   } satisfies ToolDefinition<'confirm_publication'>,

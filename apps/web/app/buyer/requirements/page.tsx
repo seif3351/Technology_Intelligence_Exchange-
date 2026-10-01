@@ -15,7 +15,12 @@ export default async function RequirementsPage() {
     (m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid',
   );
   if (!buyerOrg)
-    return <p className="notice">Requirements are available to members of buyer organizations.</p>;
+    return (
+      <p className="notice">
+        Requirements are available to members of buyer organizations.{' '}
+        <Link href="/onboarding">Set up your organization</Link>.
+      </p>
+    );
   const { items } = await api(`/v1/organizations/${buyerOrg.organizationId}/requirements`, {
     schema: z.object({ items: z.array(RequirementView) }),
   });

@@ -247,8 +247,43 @@ export const RegisterRequest = z
     email: z.email().max(254),
     password: z.string().min(12).max(200),
     displayName: z.string().min(1).max(120),
+    acceptTerms: z.literal(true).describe('The user explicitly accepted the current terms of use.'),
+    invitationToken: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{20,200}$/)
+      .optional()
+      .describe('Secret token from an invitation link (required when registration is invite-only).'),
   })
   .meta({ id: 'RegisterRequest' });
+export const InvitationLookup = z
+  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/) })
+  .meta({ id: 'InvitationLookup' });
+export const InvitationPreview = z
+  .object({ email: z.string(), organizationName: z.string().nullable(), role: z.string().nullable() })
+  .meta({ id: 'InvitationPreview' });
+export const RegistrationPolicy = z
+  .object({ mode: z.enum(['open', 'invite']), termsVersion: z.string() })
+  .meta({ id: 'RegistrationPolicy' });
+export const InvitationRecord = z
+  .object({
+    id: z.string(),
+    email: z.string(),
+    organizationId: z.string().nullable(),
+    role: z.string().nullable(),
+    status: z.enum(['pending', 'accepted', 'revoked', 'expired']),
+    expiresAt: z.string(),
+    createdAt: z.string(),
+  })
+  .meta({ id: 'InvitationRecord' });
+export const PlatformInvitationCreate = z
+  .object({ email: z.email().max(254) })
+  .meta({ id: 'PlatformInvitationCreate' });
+export const IssuedInvitation = z
+  .object({
+    invitation: InvitationRecord,
+    url: z.string().describe('Secret sign-up link. Shown once; share it only with the invitee.'),
+  })
+  .meta({ id: 'IssuedInvitation' });
 export const AgentTokenRequest = z
   .object({
     scopes: z

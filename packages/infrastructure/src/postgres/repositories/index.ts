@@ -9,11 +9,13 @@ import {
   createEvidenceRepository,
   createOfferingRepository,
 } from './catalog';
+import { createInvitationRepository } from './invitations';
 import { createOrganizationRepository, createUserRepository } from './organizations';
 
 export const createRepositories = (db: Queryable): Repositories => ({
   organizations: createOrganizationRepository(db),
   users: createUserRepository(db),
+  invitations: createInvitationRepository(db),
   offerings: createOfferingRepository(db),
   claims: createClaimRepository(db),
   capabilities: createCapabilityRepository(db),

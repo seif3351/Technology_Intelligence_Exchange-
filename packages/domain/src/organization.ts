@@ -46,6 +46,14 @@ export interface Organization {
 export const isSupplierOrganization = (org: Organization): boolean =>
   org.kind === 'supplier' || org.kind === 'hybrid';
 
+/**
+ * Public listing rule (ADR 0011): a supplier's published content is visible to
+ * other organizations only while the organization is platform-verified.
+ * Unverified, pending, rejected and suspended organizations work on drafts only.
+ */
+export const isPubliclyListed = (org: Pick<Organization, 'verificationState'>): boolean =>
+  org.verificationState === 'verified';
+
 export const isBuyerOrganization = (org: Organization): boolean =>
   org.kind === 'buyer' || org.kind === 'hybrid';
 

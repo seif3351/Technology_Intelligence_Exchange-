@@ -23,7 +23,12 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
   if (!me) redirect('/login?next=/workspace');
   const supplierOrgs = me.memberships.filter((m) => m.organizationKind !== 'buyer');
   if (supplierOrgs.length === 0)
-    return <p className="notice">You are not a member of a supplier organization.</p>;
+    return (
+      <p className="notice">
+        You are not a member of a supplier organization yet. <Link href="/onboarding">Set one up</Link>, or
+        ask a colleague to invite you to theirs.
+      </p>
+    );
   const { org } = await searchParams;
   const membership = supplierOrgs.find((m) => m.organizationId === org) ?? supplierOrgs[0]!;
   const orgId = membership.organizationId;

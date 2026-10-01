@@ -32,12 +32,13 @@
     "Supplier MCP tools (get_supplier_workspace, create_offering, add_claim, add_evidence, register_demo_video, upload_document, prepare_publication, confirm_publication) over SupplierService; publication requires a confirmation token bound to user + exact claim/offering versions and user_confirmed=true",
     "supplier:write added to MCP scopes_supported, AgentTokenRequest and the web agent-token form",
     "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check",
-    "S1: operator command `pnpm admin:create` (audited IdentityService.bootstrapPlatformAdmin, system principal only; password never via argv); root tsconfig typechecks scripts/ and test/"
+    "S1: operator command `pnpm admin:create` (audited IdentityService.bootstrapPlatformAdmin, system principal only; password never via argv); root tsconfig typechecks scripts/ and test/",
+    "S2: invite-only registration (REGISTRATION_MODE, hashed single-use email-bound invitations, terms acceptance stored), web /signup, /onboarding (organization creation), /terms and /privacy drafts, admin invitation panel; listing rule ADR-0011 (public only while verified; fixes suspension not hiding content) enforced in policies, indexing and SQL; mobile header fix; Playwright onboarding journey"
   ],
   "verification": {
-    "unit": "pnpm test — 75 passed",
-    "integration": "pnpm test:integration — 47 passed (incl. 13 skill role tests: supplier + OEM)",
-    "e2e": "pnpm test:e2e — 9 passed (dev and production builds)",
+    "unit": "pnpm test — 81 passed",
+    "integration": "pnpm test:integration — 53 passed",
+    "e2e": "pnpm test:e2e — 10 passed (incl. pilot onboarding journey)",
     "typecheck": "pnpm typecheck — clean",
     "lint": "pnpm lint — clean",
     "contracts": "pnpm contracts:check — clean"
@@ -54,9 +55,11 @@
     "Docker images run TypeScript via tsx; no bundling/slim runtime image yet; GitHub Actions workflow not yet executed on GitHub",
     "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only",
     "Ontology: the cybersecurity facet default level is 'experience', which also applies to mechanisms (SecOC, HSM, secure boot); a bare 'SecOC stack' requirement rates an IMPLEMENTS SecOC claim as partial. Consider per-concept default levels (data) for mechanisms",
-    "MCP supplier tools have no revise/retract/delete for drafts or update_offering; unwanted drafts simply stay private (edit in the web workspace or API)"
+    "MCP supplier tools have no revise/retract/delete for drafts or update_offering; unwanted drafts simply stay private (edit in the web workspace or API)",
+    "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
+    "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "S2: sign-up and organization onboarding UI, invite-only registration, listing approval",
+  "nextRecommendedStep": "R1 architecture review, then S3: email delivery (mailer port + outbox), email verification and password reset",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

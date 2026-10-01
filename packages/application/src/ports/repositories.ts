@@ -9,6 +9,8 @@ import type {
   EngagementRequest,
   Evidence,
   EvidenceId,
+  Invitation,
+  InvitationId,
   Membership,
   Offering,
   OfferingId,
@@ -163,9 +165,23 @@ export interface AuditLog {
   list(query: AuditQuery): Promise<AuditEvent[]>;
 }
 
+export interface InvitationRepository {
+  insert(invitation: Invitation): Promise<void>;
+  findById(id: InvitationId): Promise<Invitation | null>;
+  findByTokenHash(tokenHash: string): Promise<Invitation | null>;
+  /** Accepts only a still-pending invitation; false when it was already used, revoked or expired. */
+  markAccepted(id: InvitationId, userId: UserId, now: Date): Promise<boolean>;
+  /** Revokes only a still-pending invitation; false otherwise. */
+  revoke(id: InvitationId, now: Date): Promise<boolean>;
+  /** Platform (sign-up) invitations, newest first. Platform administrators only. */
+  listPlatform(limit: number): Promise<Invitation[]>;
+  listForOrganization(scope: TenantScope): Promise<Invitation[]>;
+}
+
 export interface Repositories {
   readonly organizations: OrganizationRepository;
   readonly users: UserRepository;
+  readonly invitations: InvitationRepository;
   readonly offerings: OfferingRepository;
   readonly claims: ClaimRepository;
   readonly capabilities: CapabilityRepository;

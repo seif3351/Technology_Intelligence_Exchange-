@@ -1,10 +1,12 @@
 import {
   AppError,
   type Offering,
+  type Organization,
   type OrganizationId,
   type OrganizationRole,
   type UserId,
   forbidden,
+  isPubliclyListed,
   roleAtLeast,
   unauthenticated,
 } from '@atx/domain';
@@ -68,11 +70,23 @@ export const adminScopeFor = (ctx: RequestContext, organizationId: OrganizationI
   return { organizationId, role: 'platform_admin' } as TenantScope;
 };
 
-export const canViewOffering = (principal: Principal, offering: Offering): boolean =>
-  offering.status === 'published' ||
+/** Insiders (members, platform admins, system) may see drafts and unlisted organizations. */
+export const isInsider = (principal: Principal, organizationId: OrganizationId): boolean =>
   principal.kind === 'system' ||
   isPlatformAdmin(principal) ||
-  membershipRole(principal, offering.organizationId) !== null;
+  membershipRole(principal, organizationId) !== null;
+
+/** Published offerings are public only while their organization is listed (ADR 0011). */
+export const canViewOffering = (
+  principal: Principal,
+  offering: Offering,
+  organization: Pick<Organization, 'verificationState'>,
+): boolean =>
+  (offering.status === 'published' && isPubliclyListed(organization)) ||
+  isInsider(principal, offering.organizationId);
+
+export const canViewSupplier = (principal: Principal, organization: Organization): boolean =>
+  organization.kind !== 'buyer' && (isPubliclyListed(organization) || isInsider(principal, organization.id));
 
 export const actorUserId = (principal: Principal): UserId | null =>
   principal.kind === 'user' ? principal.userId : null;

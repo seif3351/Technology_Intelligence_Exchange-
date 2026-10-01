@@ -148,6 +148,11 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
       clock: systemClock,
       telemetry: openTelemetry,
       features: { engagementActions: env.FEATURE_ENGAGEMENT_ACTIONS },
+      settings: {
+        registrationMode: env.REGISTRATION_MODE,
+        termsVersion: env.TERMS_VERSION,
+        publicWebUrl: env.PUBLIC_WEB_URL,
+      },
     },
     scryptPasswordHasher,
   );

@@ -5,6 +5,7 @@ import { EngagementService } from './services/engagements';
 import { IdentityService, type PasswordHasher } from './services/identity';
 import { IndexingService } from './services/indexing';
 import { IngestionService } from './services/ingestion';
+import { InvitationService } from './services/invitations';
 import { MatchingService } from './services/matching';
 import { RequirementService } from './services/requirements';
 import { SupplierService } from './services/supplier';
@@ -23,6 +24,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     ingestion: new IngestionService(deps),
     indexing: new IndexingService(deps),
     identity: new IdentityService(deps, passwords),
+    invitations: new InvitationService(deps),
   };
 };
 

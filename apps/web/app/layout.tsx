@@ -45,7 +45,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main>{children}</main>
         <footer>
           Discovery before procurement. Supplier statements are shown with their provenance; they are not
-          endorsements. Records marked “Demo data” are synthetic.
+          endorsements. Records marked “Demo data” are synthetic. <Link href="/terms">Terms</Link> ·{' '}
+          <Link href="/privacy">Privacy</Link>
         </footer>
       </body>
     </html>

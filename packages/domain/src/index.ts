@@ -6,6 +6,7 @@ export * from './engagement';
 export * from './errors';
 export * from './evidence';
 export * from './ids';
+export * from './invitation';
 export * from './matching';
 export * from './membership';
 export * from './offering';

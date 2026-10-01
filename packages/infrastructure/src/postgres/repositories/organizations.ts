@@ -24,7 +24,7 @@ export const createOrganizationRepository = (db: Queryable): OrganizationReposit
               CASE WHEN q.query IS NULL THEN 0 ELSE ts_rank_cd(o.search_tsv, q.query) END AS rank
          FROM organizations o, q
         WHERE o.kind IN ('supplier','hybrid')
-          AND o.verification_state <> 'suspended'
+          AND o.verification_state = 'verified' -- listing rule, ADR 0011
           AND (q.query IS NULL OR o.search_tsv @@ q.query)
           AND (cardinality($2::text[]) = 0 OR EXISTS (
                 SELECT 1 FROM technical_claims c
@@ -107,8 +107,18 @@ export const createUserRepository = (db: Queryable): UserRepository => ({
   },
   async insert(user: User, passwordHash: string) {
     await db.query(
-      'INSERT INTO users (id, email, display_name, platform_role, password_hash, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
-      [user.id, user.email, user.displayName, user.platformRole, passwordHash, user.createdAt],
+      `INSERT INTO users (id, email, display_name, platform_role, password_hash, terms_version, terms_accepted_at, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [
+        user.id,
+        user.email,
+        user.displayName,
+        user.platformRole,
+        passwordHash,
+        user.termsVersion,
+        user.termsAcceptedAt,
+        user.createdAt,
+      ],
     );
   },
   async setPlatformRole(userId, role) {

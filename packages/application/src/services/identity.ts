@@ -3,14 +3,16 @@ import {
   type User,
   type UserId,
   forbidden,
+  invitationStatus,
   newId,
+  normalizeEmail,
   sanitizeUntrustedText,
   unauthenticated,
   validationError,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
-import { recordAudit } from './support';
+import { hashSecretToken, recordAudit } from './support';
 import { type RequestContext, SCOPES, type Scope, type UserPrincipal } from '../principal';
 
 export interface PasswordHasher {
@@ -32,26 +34,78 @@ export class IdentityService {
     private readonly passwords: PasswordHasher,
   ) {}
 
-  async register(input: {
-    readonly email: string;
-    readonly password: string;
-    readonly displayName: string;
-  }): Promise<User> {
-    const email = input.email.trim().toLowerCase();
+  /**
+   * Self-service registration. Requires acceptance of the current terms and,
+   * in `invite` mode, a valid invitation addressed to the same email. An
+   * organization invitation also grants its membership.
+   */
+  async register(
+    ctx: RequestContext,
+    input: {
+      readonly email: string;
+      readonly password: string;
+      readonly displayName: string;
+      readonly acceptTerms: boolean;
+      readonly invitationToken?: string | null;
+    },
+  ): Promise<User> {
+    if (!input.acceptTerms) throw validationError('You must accept the terms of use to register');
+    const email = normalizeEmail(input.email);
+    const invitation = input.invitationToken
+      ? await this.deps.repos.invitations.findByTokenHash(hashSecretToken(input.invitationToken))
+      : null;
+    const now = this.deps.clock.now();
+    if (input.invitationToken) {
+      // One message for unknown, used, revoked, expired and mismatched invitations.
+      if (!invitation || invitation.email !== email || invitationStatus(invitation, now) !== 'pending')
+        throw forbidden('This invitation is invalid, expired or addressed to a different email');
+    } else if (this.deps.settings.registrationMode === 'invite') {
+      throw forbidden('Registration is by invitation only during the pilot');
+    }
+    const user = this.newUser(email, input, { version: this.deps.settings.termsVersion, acceptedAt: now });
+    const passwordHash = await this.passwords.hash(input.password);
+    await this.deps.transaction(async (repos) => {
+      if (await repos.users.findCredentialByEmail(email)) throw validationError('Registration failed');
+      await repos.users.insert(user, passwordHash);
+      if (invitation) {
+        if (!(await repos.invitations.markAccepted(invitation.id, user.id, now)))
+          throw forbidden('This invitation is invalid, expired or addressed to a different email');
+        if (invitation.organizationId && invitation.role)
+          await repos.users.addMembership({
+            organizationId: invitation.organizationId,
+            userId: user.id,
+            role: invitation.role,
+            createdAt: now,
+          });
+      }
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'user.register',
+        resourceType: 'user',
+        resourceId: user.id,
+        organizationId: invitation?.organizationId ?? null,
+        metadata: { invited: invitation !== null, termsVersion: this.deps.settings.termsVersion },
+      });
+    });
+    return user;
+  }
+
+  private newUser(
+    email: string,
+    input: { readonly password: string; readonly displayName: string },
+    terms: { readonly version: string; readonly acceptedAt: Date } | null,
+  ): User {
     if (!EMAIL.test(email)) throw validationError('Invalid email address');
     if (input.password.length < 12 || input.password.length > 200)
       throw validationError('Password must be 12-200 characters');
-    if (await this.deps.repos.users.findCredentialByEmail(email))
-      throw validationError('Registration failed');
-    const user: User = {
+    return {
       id: newId(),
       email,
       displayName: sanitizeUntrustedText(input.displayName, 120) || email,
       platformRole: 'none',
+      termsVersion: terms?.version ?? null,
+      termsAcceptedAt: terms?.acceptedAt ?? null,
       createdAt: this.deps.clock.now(),
     };
-    await this.deps.repos.users.insert(user, await this.passwords.hash(input.password));
-    return user;
   }
 
   /**
@@ -63,7 +117,7 @@ export class IdentityService {
     input: { readonly email: string; readonly displayName: string; readonly password: string | null },
   ): Promise<{ readonly user: User; readonly created: boolean }> {
     if (ctx.principal.kind !== 'system') throw forbidden('Only operators can bootstrap administrators');
-    const email = input.email.trim().toLowerCase();
+    const email = normalizeEmail(input.email);
     const existing = await this.deps.repos.users.findCredentialByEmail(email);
     let user: User;
     let created = false;
@@ -72,11 +126,12 @@ export class IdentityService {
       await this.deps.repos.users.setPlatformRole(user.id, 'platform_admin');
     } else {
       if (!input.password) throw validationError('A password is required to create a new administrator');
+      // Operator-created accounts record no terms acceptance (operators act under their own agreement).
       user = {
-        ...(await this.register({ email, password: input.password, displayName: input.displayName })),
+        ...this.newUser(email, { password: input.password, displayName: input.displayName }, null),
+        platformRole: 'platform_admin',
       };
-      await this.deps.repos.users.setPlatformRole(user.id, 'platform_admin');
-      user = { ...user, platformRole: 'platform_admin' };
+      await this.deps.repos.users.insert(user, await this.passwords.hash(input.password));
       created = true;
     }
     await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {

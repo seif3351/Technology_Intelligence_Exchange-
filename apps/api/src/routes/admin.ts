@@ -5,9 +5,12 @@ import {
   AdminVerificationDecision,
   AuditEventRecord,
   ClaimView,
+  InvitationRecord,
+  IssuedInvitation,
   OfferingRecord,
   OrganizationRecord,
   OrganizationRef,
+  PlatformInvitationCreate,
   Uuid,
 } from '@atx/contracts';
 import { z } from 'zod';
@@ -15,6 +18,42 @@ import { type AnyRouteSpec, defineRoute } from '../http/route';
 
 /** Platform administration. Every use case re-checks the platform_admin role. */
 export const adminRoutes = (app: Application): AnyRouteSpec[] => [
+  defineRoute({
+    method: 'POST',
+    url: '/v1/admin/invitations',
+    operationId: 'adminCreateInvitation',
+    summary: 'Invite a person to register (pilot sign-up invitation); returns the secret link once',
+    tags: ['admin'],
+    auth: 'required',
+    body: PlatformInvitationCreate,
+    response: IssuedInvitation,
+    status: 201,
+    handler: async ({ body, ctx }) => app.invitations.createPlatformInvitation(ctx, body.email),
+  }),
+  defineRoute({
+    method: 'GET',
+    url: '/v1/admin/invitations',
+    operationId: 'adminListInvitations',
+    summary: 'Platform sign-up invitations and their status',
+    tags: ['admin'],
+    auth: 'required',
+    response: z.object({ items: z.array(InvitationRecord) }),
+    handler: async ({ ctx }) => ({ items: await app.invitations.listPlatformInvitations(ctx) }),
+  }),
+  defineRoute({
+    method: 'POST',
+    url: '/v1/admin/invitations/:invitationId/revoke',
+    operationId: 'adminRevokeInvitation',
+    summary: 'Revoke a pending sign-up invitation',
+    tags: ['admin'],
+    auth: 'required',
+    params: z.object({ invitationId: Uuid }),
+    response: z.object({ revoked: z.literal(true) }),
+    handler: async ({ params, ctx }) => {
+      await app.invitations.revokePlatformInvitation(ctx, params.invitationId);
+      return { revoked: true as const };
+    },
+  }),
   defineRoute({
     method: 'GET',
     url: '/v1/admin/verification-queue',

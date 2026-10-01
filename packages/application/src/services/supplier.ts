@@ -24,6 +24,7 @@ import {
   conflict,
   createClaim,
   invariant,
+  isPubliclyListed,
   newId,
   normalizeOfferingInput,
   notFound,
@@ -672,10 +673,13 @@ export class SupplierService {
         { offeringId: asId<'OfferingId'>(offeringId) },
         { dedupeKey: `reindex:${offeringId}` },
       );
+    const organization = await this.deps.repos.organizations.findById(scope.organizationId);
     return {
       claims: result.published.map((claim) => presentClaim(claim, ontology)),
       alreadyPublished: result.alreadyPublished,
       offering: result.offering,
+      /** False until the platform verifies the organization (ADR 0011): published content is not yet public. */
+      listed: organization ? isPubliclyListed(organization) : false,
     };
   }
 

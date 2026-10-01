@@ -56,6 +56,10 @@ export const EnvSchema = z.object({
   EMBEDDINGS_MODEL: z.string().default('text-embedding-3-small'),
 
   FEATURE_ENGAGEMENT_ACTIONS: bool.default(false),
+  /** `invite` (default): only invited people can register. `open`: anyone can register. */
+  REGISTRATION_MODE: z.enum(['open', 'invite']).default('invite'),
+  /** Identifier of the current terms of use; bump it when the terms change. */
+  TERMS_VERSION: z.string().min(1).max(40).default('pilot-2026-10'),
 
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_SERVICE_NAMESPACE: z.string().default('atx'),

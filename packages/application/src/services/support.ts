@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { type AuditActor, type AuditOutcome, type OrganizationId, newId, validationError } from '@atx/domain';
 import type { RequestContext } from '../principal';
 import type { AuditLog } from '../ports/repositories';
@@ -27,6 +28,10 @@ export interface AuditInput {
   readonly outcome?: AuditOutcome;
   readonly metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
+
+/** A random, URL-safe secret (256 bits) for single-use links; only its hash is persisted. */
+export const generateSecretToken = (): string => randomBytes(32).toString('base64url');
+export const hashSecretToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
 export const recordAudit = (
   log: AuditLog,

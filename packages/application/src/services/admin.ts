@@ -42,7 +42,7 @@ export class AdminService {
   ) {
     const admin = requirePlatformAdmin(ctx.principal);
     const now = this.deps.clock.now();
-    return this.deps.transaction(async (repos) => {
+    const next = await this.deps.transaction(async (repos) => {
       const current = await repos.organizations.findById(asId(organizationId));
       if (!current) throw notFound('Organization');
       const next = transitionOrganizationVerification(current, state, admin.userId, now);
@@ -56,6 +56,17 @@ export class AdminService {
       });
       return next;
     });
+    // Listing follows verification (ADR 0011): refresh the search index for all published offerings.
+    const offerings = await this.deps.repos.offerings.listForTenant(adminScopeFor(ctx, next.id), [
+      'published',
+    ]);
+    for (const offering of offerings)
+      await this.deps.jobs.enqueue(
+        'offering.reindex',
+        { offeringId: offering.id },
+        { dedupeKey: `reindex:${offering.id}` },
+      );
+    return next;
   }
 
   async claimReviewQueue(ctx: RequestContext) {

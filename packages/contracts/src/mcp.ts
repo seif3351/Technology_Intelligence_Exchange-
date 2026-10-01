@@ -667,6 +667,11 @@ export const McpTools = {
     output: z.object({
       publishedClaimIds: z.array(z.string()),
       alreadyPublished: z.number().int(),
+      listed: z
+        .boolean()
+        .describe(
+          'False until the platform verifies your organization; until then nothing is visible to buyers.',
+        ),
       offering: McpWorkspaceOffering.nullable(),
       notice,
     }),

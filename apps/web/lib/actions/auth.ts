@@ -1,6 +1,6 @@
 'use server';
 
-import { LoginRequest, TokenResponse } from '@atx/contracts';
+import { LoginRequest, RegisterRequest, TokenResponse } from '@atx/contracts';
 import { redirect } from 'next/navigation';
 import { api, describeError } from '../api';
 import { clearSession, setSessionToken } from '../session';
@@ -36,4 +36,33 @@ export async function login(_state: FormState, form: FormData): Promise<FormStat
 export async function logout(): Promise<void> {
   await clearSession();
   redirect('/');
+}
+
+export async function signup(_state: FormState, form: FormData): Promise<FormState> {
+  const invitationToken = String(form.get('invite') ?? '').trim();
+  const parsed = RegisterRequest.safeParse({
+    email: String(form.get('email') ?? '').trim(),
+    password: form.get('password'),
+    displayName: String(form.get('displayName') ?? '').trim(),
+    acceptTerms: form.get('acceptTerms') === 'on' ? true : undefined,
+    ...(invitationToken ? { invitationToken } : {}),
+  });
+  if (!parsed.success) {
+    const fields = new Set(parsed.error.issues.map((issue) => String(issue.path[0])));
+    if (fields.has('acceptTerms')) return { error: 'Please accept the terms of use and privacy notice.' };
+    if (fields.has('password')) return { error: 'Choose a password of at least 12 characters.' };
+    return { error: 'Enter your name and a valid email address.' };
+  }
+  try {
+    const token = await api('/v1/auth/register', {
+      method: 'POST',
+      body: parsed.data,
+      schema: TokenResponse,
+      anonymous: true,
+    });
+    await setSessionToken(token.accessToken, token.expiresIn);
+  } catch (error) {
+    return { error: describeError(error) };
+  }
+  redirect('/onboarding');
 }

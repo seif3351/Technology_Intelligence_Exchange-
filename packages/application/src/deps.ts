@@ -20,6 +20,16 @@ export interface FeatureFlags {
   readonly engagementActions: boolean;
 }
 
+/** Platform-wide operating settings (from configuration). */
+export interface PlatformSettings {
+  /** `invite`: accounts can only be created with a valid invitation (pilot default). */
+  readonly registrationMode: 'open' | 'invite';
+  /** Version identifier of the terms of use users must accept at registration. */
+  readonly termsVersion: string;
+  /** Base URL of the web application, used to build links in invitations and emails. */
+  readonly publicWebUrl: string;
+}
+
 /** Everything the use cases need, passed explicitly (no service locator). */
 export interface ApplicationDeps {
   readonly repos: Repositories;
@@ -39,4 +49,5 @@ export interface ApplicationDeps {
   readonly clock: Clock;
   readonly telemetry: Telemetry;
   readonly features: FeatureFlags;
+  readonly settings: PlatformSettings;
 }

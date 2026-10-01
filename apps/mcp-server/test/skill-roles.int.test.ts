@@ -142,12 +142,22 @@ describe('skill section 3: a supplier agent publishes the supplier’s technolog
   let supplier: Client;
 
   beforeAll(async () => {
-    // Website onboarding (section 1.4): the supplier signs up and creates the organization.
-    const user = await runtime.app.identity.register({
-      email: 'owner@gatekeeper-embedded.example',
-      password: 'a-long-test-password-2026',
-      displayName: 'Gatekeeper Owner',
-    });
+    // Website onboarding (section 1.4): the platform invites the supplier, who signs up
+    // with the invitation link and creates the organization.
+    const invited = await runtime.app.invitations.createPlatformInvitation(
+      await contextFor(runtime, DEMO.users.admin),
+      'owner@gatekeeper-embedded.example',
+    );
+    const user = await runtime.app.identity.register(
+      { principal: { kind: 'anonymous', channel: 'api' }, requestId: 'signup' },
+      {
+        email: 'owner@gatekeeper-embedded.example',
+        password: 'a-long-test-password-2026',
+        displayName: 'Gatekeeper Owner',
+        acceptTerms: true,
+        invitationToken: new URL(invited.url).searchParams.get('invite'),
+      },
+    );
     supplierUserId = user.id;
     const organization = await runtime.app.supplier.createOrganization(await contextFor(runtime, user.id), {
       name: 'Gatekeeper Embedded',
@@ -377,6 +387,21 @@ describe('skill section 3: a supplier agent publishes the supplier’s technolog
     const unreviewed = after.claims.filter((claim) => claim.aiDrafted);
     expect(unreviewed.every((claim) => claim.status === 'draft')).toBe(true);
     await drainJobs(runtime); // search reindex
+  });
+
+  it('stays unlisted until the platform verifies the organization', async () => {
+    const buyer = await connect(await agentToken(DEMO.users.buyer, OEM_SCOPES));
+    const before = await buyer.callTool({ name: 'get_offering', arguments: { offering_id: offeringId } });
+    expect(before.isError).toBe(true);
+    const owner = await contextFor(runtime, supplierUserId);
+    await runtime.app.supplier.requestVerification(owner, organizationId);
+    await runtime.app.admin.setOrganizationVerification(
+      await contextFor(runtime, DEMO.users.admin),
+      organizationId,
+      'verified',
+      null,
+    );
+    await drainJobs(runtime);
   });
 
   it('8. the published profile is discoverable by OEMs, with the exact claim strength and basis', async () => {

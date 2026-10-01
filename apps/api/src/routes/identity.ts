@@ -1,5 +1,14 @@
 import { SCOPES, type Scope, requireUser } from '@atx/application';
-import { AgentTokenRequest, LoginRequest, Me, RegisterRequest, TokenResponse } from '@atx/contracts';
+import {
+  AgentTokenRequest,
+  InvitationLookup,
+  InvitationPreview,
+  LoginRequest,
+  Me,
+  RegisterRequest,
+  RegistrationPolicy,
+  TokenResponse,
+} from '@atx/contracts';
 import type { Runtime } from '@atx/runtime';
 import { z } from 'zod';
 import { type AnyRouteSpec, defineRoute } from '../http/route';
@@ -47,7 +56,30 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       response: TokenResponse,
       status: 201,
       rateLimit: AUTH_RATE_LIMIT,
-      handler: async ({ body }) => issueSession((await app.identity.register(body)).id),
+      handler: async ({ body, ctx }) => issueSession((await app.identity.register(ctx, body)).id),
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/v1/auth/registration',
+      operationId: 'registrationPolicy',
+      summary: 'Whether registration is open or invite-only, and the current terms version',
+      tags: ['auth'],
+      auth: 'none',
+      response: RegistrationPolicy,
+      handler: async () => ({ mode: env.REGISTRATION_MODE, termsVersion: env.TERMS_VERSION }),
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/invitations/lookup',
+      operationId: 'lookupInvitation',
+      summary:
+        'Describe a pending invitation (token in the body, never in the URL, so it stays out of access logs)',
+      tags: ['auth'],
+      auth: 'none',
+      body: InvitationLookup,
+      response: InvitationPreview,
+      rateLimit: AUTH_RATE_LIMIT,
+      handler: async ({ body }) => app.invitations.describe(body.token),
     }),
     defineRoute({
       method: 'POST',
