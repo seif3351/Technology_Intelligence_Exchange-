@@ -19,6 +19,8 @@ import { sendEmailVerification } from './account-mail';
 import { hashSecretToken, recordAudit } from './support';
 import { type RequestContext, SCOPES, type Scope, type UserPrincipal } from '../principal';
 
+const SESSION_TTL_SECONDS = 8 * 3600;
+
 export interface PasswordHasher {
   hash(password: string): Promise<string>;
   verify(password: string, hash: string): Promise<boolean>;
@@ -159,6 +161,30 @@ export class IdentityService {
       metadata: { created },
     });
     return { user, created };
+  }
+
+  /**
+   * First-party web session: carries the full scope ceiling; effective
+   * permissions are derived per request from current memberships and roles
+   * (creating an organization needs no new login). Agent tokens are narrower.
+   */
+  async issueSession(user: Pick<User, 'id'>): Promise<{
+    readonly accessToken: string;
+    readonly expiresIn: number;
+    readonly audience: string;
+    readonly scopes: readonly string[];
+  }> {
+    const scopes = [...SCOPES];
+    const audience = this.deps.settings.apiResourceUrl;
+    const accessToken = await this.deps.tokenSigner.sign({
+      subject: user.id,
+      audience,
+      scopes,
+      clientId: null,
+      ttlSeconds: SESSION_TTL_SECONDS,
+      grantId: null,
+    });
+    return { accessToken, expiresIn: SESSION_TTL_SECONDS, audience, scopes };
   }
 
   profile(ctx: RequestContext) {

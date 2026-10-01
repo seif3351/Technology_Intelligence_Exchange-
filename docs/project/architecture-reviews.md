@@ -42,3 +42,17 @@ Each entry: scope, findings, actions taken, deferred items.
 **Data classification:** `user_tokens` and invitation tokens are SECRET (hash only); member emails are TENANT_PRIVATE (visible to fellow members only); audit metadata contains no tokens or links (tested).
 
 **Operational complexity:** one new external dependency (SMTP provider) behind the Mailer port; the platform still runs without it (`MAIL_DRIVER=none`).
+
+## R3 — after S5 (engagement notifications) and S6 (revocable agent tokens) — 2026-10-01
+
+| #   | Finding                                                                                                                                                                               | Action                                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | Web session issuance (scope ceiling, 8 h lifetime, audience) was still hard-coded in the HTTP route while agent tokens moved into the application. Token policy belongs in one place. | `IdentityService.issueSession` via the `AccessTokenSigner` port; the route only shapes the response. The only remaining direct issuer use is the operator dev CLI and JWKS publication. |
+| H2  | An untyped SQL parameter (`$2 - interval`) made every MCP request with a grant-backed token fail as an opaque 500; verification errors were not logged.                               | Explicit cast; unexpected verifier failures are logged (without tokens); regression covered by the agent-token MCP test. Lesson recorded: cast parameters used in arithmetic.           |
+| H3  | Supplier notifications send one email per responder inside one job; a partial failure retries the whole job (duplicates for earlier recipients).                                      | Accepted for the pilot (small organizations); per-recipient jobs if it becomes noisy.                                                                                                   |
+| H4  | Principal resolution per request: user + memberships, plus grant lookup for agent tokens (one indexed read; last-use write at most every 5 minutes).                                  | Accepted; no caching needed at pilot scale.                                                                                                                                             |
+| H5  | The MCP server previously resolved principals in the handler factory, after authentication succeeded, so account-level rejections could not produce OAuth challenges.                 | Principal now resolved inside the token verifier (S6); applies to all future token kinds (OAuth in S7).                                                                                 |
+
+**Boundaries:** application owns all token policy (sessions, agent tokens; OAuth next) behind `AccessTokenSigner`; adapters translate only. Architecture test green.
+
+**Security posture change:** agent tokens are long-lived (≤ 90 days) but individually revocable, scope-capped and not self-mintable by agents; sign-out-everywhere still cuts all of them.

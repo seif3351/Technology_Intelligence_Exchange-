@@ -40,7 +40,8 @@
     "S4: organization invitations with roles (role ceiling, owners only by owners, verified email), accept for existing users, member list, role change, removal and leaving with last-owner protection; web /members and invitation acceptance; ADR-0014; Playwright members journey",
     "R2 architecture review: SecretToken contract, URL-stripping of names in emails, contract-driven role order in web",
     "S5: engagement notifications (supplier responders on new requests, buyer contact on responses; queued, metadata-only, retried), contact handover on acknowledge (required contact, optional reply; guarded single response), buyer /buyer/requests page; ADR-0015",
-    "S6: revocable agent tokens backed by access grants (1-90 days, label, last use, individual revoke, first-party sessions only, scope ceiling); AccessTokenSigner port moves issuance into AgentTokenService; MCP principal resolved during token verification (proper 401 for revoked tokens); ADR-0016"
+    "S6: revocable agent tokens backed by access grants (1-90 days, label, last use, individual revoke, first-party sessions only, scope ceiling); AccessTokenSigner port moves issuance into AgentTokenService; MCP principal resolved during token verification (proper 401 for revoked tokens); ADR-0016",
+    "R3 architecture review: session issuance moved into IdentityService behind AccessTokenSigner; verifier error logging"
   ],
   "verification": {
     "unit": "pnpm test — 84 passed",
@@ -65,7 +66,7 @@
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "R3 architecture review, then S7: OAuth 2.1 authorization server for MCP hosts",
+  "nextRecommendedStep": "S7: OAuth 2.1 authorization server for MCP hosts (DCR, authorization code + PKCE, consent, refresh rotation)",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

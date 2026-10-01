@@ -32,6 +32,8 @@ export interface PlatformSettings {
   readonly publicWebUrl: string;
   /** The MCP server's resource identifier (token audience for agent tokens). */
   readonly mcpResourceUrl: string;
+  /** The HTTP API's resource identifier (token audience for web sessions). */
+  readonly apiResourceUrl: string;
 }
 
 /** Everything the use cases need, passed explicitly (no service locator). */

@@ -171,6 +171,7 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
         termsVersion: env.TERMS_VERSION,
         publicWebUrl: env.PUBLIC_WEB_URL,
         mcpResourceUrl: env.MCP_PUBLIC_URL,
+        apiResourceUrl: env.API_PUBLIC_URL,
       },
     },
     scryptPasswordHasher,

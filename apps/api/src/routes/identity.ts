@@ -1,4 +1,3 @@
-import { SCOPES } from '@atx/application';
 import {
   AgentTokenRecord,
   AgentTokenRequest,
@@ -18,8 +17,6 @@ import type { Runtime } from '@atx/runtime';
 import { z } from 'zod';
 import { type AnyRouteSpec, defineRoute } from '../http/route';
 
-const SESSION_TTL_SECONDS = 8 * 3600;
-
 /**
  * Built-in identity endpoints (development and small deployments). Larger
  * deployments federate to an external OIDC provider; see ADR-0004.
@@ -27,28 +24,10 @@ const SESSION_TTL_SECONDS = 8 * 3600;
 export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
   const { app, tokens, env } = runtime;
   const AUTH_RATE_LIMIT = { max: env.AUTH_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' } as const;
-  /**
-   * First-party sessions carry the full scope ceiling; effective permissions
-   * are derived per request from current memberships and roles (so creating
-   * an organization does not require a new login). Agent tokens, below, are
-   * narrowly scoped instead.
-   */
-  const issueSession = async (userId: string) => {
-    const scopes = [...SCOPES];
-    const accessToken = await tokens.issuer.issue({
-      subject: userId,
-      audience: env.API_PUBLIC_URL,
-      scopes,
-      ttlSeconds: SESSION_TTL_SECONDS,
-    });
-    return {
-      accessToken,
-      tokenType: 'Bearer' as const,
-      expiresIn: SESSION_TTL_SECONDS,
-      audience: env.API_PUBLIC_URL,
-      scopes,
-    };
-  };
+  const issueSession = async (user: Parameters<typeof app.identity.issueSession>[0]) => ({
+    ...(await app.identity.issueSession(user)),
+    tokenType: 'Bearer' as const,
+  });
   return [
     defineRoute({
       method: 'POST',
@@ -61,7 +40,7 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       response: TokenResponse,
       status: 201,
       rateLimit: AUTH_RATE_LIMIT,
-      handler: async ({ body, ctx }) => issueSession((await app.identity.register(ctx, body)).id),
+      handler: async ({ body, ctx }) => issueSession(await app.identity.register(ctx, body)),
     }),
     defineRoute({
       method: 'POST',
@@ -166,8 +145,7 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       body: LoginRequest,
       response: TokenResponse,
       rateLimit: AUTH_RATE_LIMIT,
-      handler: async ({ body }) =>
-        issueSession((await app.identity.authenticate(body.email, body.password)).id),
+      handler: async ({ body }) => issueSession(await app.identity.authenticate(body.email, body.password)),
     }),
     defineRoute({
       method: 'GET',
