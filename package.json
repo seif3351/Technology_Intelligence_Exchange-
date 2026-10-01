@@ -9,7 +9,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "typecheck": "pnpm -r --parallel --if-present typecheck",
+    "typecheck": "pnpm -r --parallel --if-present typecheck && tsc -p tsconfig.json",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -29,7 +29,8 @@
     "build": "pnpm -r --if-present build",
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm contracts:check",
     "auth:generate-key": "tsx scripts/generate-signing-key.ts",
-    "auth:token": "tsx scripts/issue-token.ts"
+    "auth:token": "tsx scripts/issue-token.ts",
+    "admin:create": "tsx scripts/admin.ts"
   },
   "devDependencies": {
     "@atx/api": "workspace:*",
@@ -50,6 +51,7 @@
     "typescript-eslint": "^8.46.0",
     "vitest": "^5.0.3",
     "yaml": "^2.8.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@atx/test-utils": "workspace:*"
   }
 }

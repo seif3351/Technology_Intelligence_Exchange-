@@ -61,6 +61,7 @@ export interface UserRepository {
   findById(id: UserId): Promise<User | null>;
   findCredentialByEmail(email: string): Promise<UserCredential | null>;
   insert(user: User, passwordHash: string): Promise<void>;
+  setPlatformRole(userId: UserId, role: User['platformRole']): Promise<void>;
   listMemberships(userId: UserId): Promise<PrincipalMembership[]>;
   addMembership(membership: Membership): Promise<void>;
 }

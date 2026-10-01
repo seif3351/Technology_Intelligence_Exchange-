@@ -111,6 +111,9 @@ export const createUserRepository = (db: Queryable): UserRepository => ({
       [user.id, user.email, user.displayName, user.platformRole, passwordHash, user.createdAt],
     );
   },
+  async setPlatformRole(userId, role) {
+    await db.query('UPDATE users SET platform_role = $2 WHERE id = $1', [userId, role]);
+  },
   async listMemberships(userId): Promise<PrincipalMembership[]> {
     const { rows } = await db.query(
       `SELECT m.organization_id, m.role, o.kind FROM memberships m JOIN organizations o ON o.id = m.organization_id

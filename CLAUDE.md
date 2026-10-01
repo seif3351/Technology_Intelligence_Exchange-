@@ -9,6 +9,8 @@ Evidence-backed technical discovery for automotive technologies. Modular monolit
 - Checks: `pnpm typecheck` · `pnpm lint` · `pnpm test` · `pnpm test:integration` · `pnpm test:e2e` · `pnpm contracts:check` · all fast ones: `pnpm verify`
 - After changing contracts (`packages/contracts`) or routes: `pnpm contracts:generate` and commit the generated files.
 - Dev tokens: `pnpm auth:token <email> "<scopes>"`; signing key: `pnpm auth:generate-key`.
+- Operators: `pnpm admin:create <email> "<name>"` (password via `ATX_ADMIN_PASSWORD` or stdin; works in production).
+- Root `scripts/` and `test/integration/` are typechecked by the root `tsconfig.json`.
 
 ## Architecture rules (enforced by `test/architecture.test.ts` + ESLint)
 

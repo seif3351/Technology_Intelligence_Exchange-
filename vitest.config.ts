@@ -20,7 +20,11 @@ export default defineConfig({
       {
         test: {
           name: 'integration',
-          include: ['packages/*/test/**/*.int.test.ts', 'apps/*/test/**/*.int.test.ts'],
+          include: [
+            'packages/*/test/**/*.int.test.ts',
+            'apps/*/test/**/*.int.test.ts',
+            'test/integration/**/*.int.test.ts',
+          ],
           exclude: ['**/node_modules/**', 'apps/web/**'],
           environment: 'node',
           fileParallelism: false,

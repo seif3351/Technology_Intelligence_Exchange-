@@ -1,7 +1,7 @@
 {
   "project": "Automotive Technology Exchange",
   "updatedAt": "2026-10-01",
-  "currentPhase": "MVP foundation complete (phases 0-14 at MVP depth); next: production hardening and real-data onboarding",
+  "currentPhase": "Pilot readiness (steps S1–S10, see docs/project/engineering-principles.md working method)",
   "phases": {
     "0-research": "done — MCP 2026-07-28 changelog, SDK v2.2 typings, MCP Apps 2.0.3, Skills SEP-2640, MCP authorization (RFC 9728/8707) verified from packages and spec sources",
     "1-architecture-contracts": "done — modular monolith, ADR-0001..0010, Zod contracts, generated OpenAPI 3.1 + MCP JSON Schemas",
@@ -31,7 +31,8 @@
     "Role-aware ATX skill (v2.0.0) for suppliers and OEMs: connection/sign-in, scopes per role, supplier publishing workflow and OEM discovery workflow",
     "Supplier MCP tools (get_supplier_workspace, create_offering, add_claim, add_evidence, register_demo_video, upload_document, prepare_publication, confirm_publication) over SupplierService; publication requires a confirmation token bound to user + exact claim/offering versions and user_confirmed=true",
     "supplier:write added to MCP scopes_supported, AgentTokenRequest and the web agent-token form",
-    "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check"
+    "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check",
+    "S1: operator command `pnpm admin:create` (audited IdentityService.bootstrapPlatformAdmin, system principal only; password never via argv); root tsconfig typechecks scripts/ and test/"
   ],
   "verification": {
     "unit": "pnpm test — 75 passed",
@@ -55,7 +56,7 @@
     "Ontology: the cybersecurity facet default level is 'experience', which also applies to mechanisms (SecOC, HSM, secure boot); a bare 'SecOC stack' requirement rates an IMPLEMENTS SecOC claim as partial. Consider per-concept default levels (data) for mechanisms",
     "MCP supplier tools have no revise/retract/delete for drafts or update_offering; unwanted drafts simply stay private (edit in the web workspace or API)"
   ],
-  "nextRecommendedStep": "Integrate a production OIDC provider (JIT user provisioning + MCP authorization-server metadata), then onboard real supplier data through the document pipeline with a configured LLM and learned embeddings; add PostgreSQL RLS and shared rate limiting before multi-instance deployment.",
+  "nextRecommendedStep": "S2: sign-up and organization onboarding UI, invite-only registration, listing approval",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

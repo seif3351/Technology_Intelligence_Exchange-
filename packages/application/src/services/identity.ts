@@ -2,6 +2,7 @@ import {
   type Channel,
   type User,
   type UserId,
+  forbidden,
   newId,
   sanitizeUntrustedText,
   unauthenticated,
@@ -9,6 +10,7 @@ import {
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
+import { recordAudit } from './support';
 import { type RequestContext, SCOPES, type Scope, type UserPrincipal } from '../principal';
 
 export interface PasswordHasher {
@@ -50,6 +52,41 @@ export class IdentityService {
     };
     await this.deps.repos.users.insert(user, await this.passwords.hash(input.password));
     return user;
+  }
+
+  /**
+   * Operator bootstrap (CLI only): creates a platform administrator or
+   * promotes an existing account. Never reachable from HTTP or MCP.
+   */
+  async bootstrapPlatformAdmin(
+    ctx: RequestContext,
+    input: { readonly email: string; readonly displayName: string; readonly password: string | null },
+  ): Promise<{ readonly user: User; readonly created: boolean }> {
+    if (ctx.principal.kind !== 'system') throw forbidden('Only operators can bootstrap administrators');
+    const email = input.email.trim().toLowerCase();
+    const existing = await this.deps.repos.users.findCredentialByEmail(email);
+    let user: User;
+    let created = false;
+    if (existing) {
+      user = { ...existing.user, platformRole: 'platform_admin' };
+      await this.deps.repos.users.setPlatformRole(user.id, 'platform_admin');
+    } else {
+      if (!input.password) throw validationError('A password is required to create a new administrator');
+      user = {
+        ...(await this.register({ email, password: input.password, displayName: input.displayName })),
+      };
+      await this.deps.repos.users.setPlatformRole(user.id, 'platform_admin');
+      user = { ...user, platformRole: 'platform_admin' };
+      created = true;
+    }
+    await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {
+      action: 'user.platform_admin.grant',
+      resourceType: 'user',
+      resourceId: user.id,
+      organizationId: null,
+      metadata: { created },
+    });
+    return { user, created };
   }
 
   profile(ctx: RequestContext) {
