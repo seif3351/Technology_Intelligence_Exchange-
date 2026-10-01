@@ -13,6 +13,7 @@ export * from './services/identity';
 export * from './services/indexing';
 export * from './services/ingestion';
 export * from './services/invitations';
+export * from './services/maintenance';
 export * from './services/matching';
 export * from './services/members';
 export * from './services/oauth';

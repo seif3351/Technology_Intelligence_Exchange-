@@ -219,6 +219,11 @@ export interface OAuthRepository {
   markRefreshTokenUsed(tokenHash: string, at: Date): Promise<boolean>;
 }
 
+/** Deletes security material and bookkeeping that is no longer needed (data minimisation). */
+export interface RetentionRepository {
+  purge(now: Date): Promise<Readonly<Record<string, number>>>;
+}
+
 export interface AccessGrantRepository {
   insert(grant: AccessGrant): Promise<void>;
   findById(id: AccessGrantId): Promise<AccessGrant | null>;
@@ -248,6 +253,7 @@ export interface Repositories {
   readonly userTokens: UserTokenRepository;
   readonly accessGrants: AccessGrantRepository;
   readonly oauth: OAuthRepository;
+  readonly retention: RetentionRepository;
   readonly offerings: OfferingRepository;
   readonly claims: ClaimRepository;
   readonly capabilities: CapabilityRepository;

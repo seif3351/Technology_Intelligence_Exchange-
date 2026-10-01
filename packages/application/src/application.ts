@@ -8,6 +8,7 @@ import { IdentityService, type PasswordHasher } from './services/identity';
 import { IndexingService } from './services/indexing';
 import { IngestionService } from './services/ingestion';
 import { InvitationService } from './services/invitations';
+import { MaintenanceService } from './services/maintenance';
 import { MatchingService } from './services/matching';
 import { MembershipService } from './services/members';
 import { OAuthService } from './services/oauth';
@@ -35,6 +36,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     invitations: new InvitationService(deps),
     members: new MembershipService(deps),
     oauth: new OAuthService(deps),
+    maintenance: new MaintenanceService(deps),
   };
 };
 

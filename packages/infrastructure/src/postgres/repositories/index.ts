@@ -12,6 +12,7 @@ import {
 } from './catalog';
 import { createInvitationRepository } from './invitations';
 import { createOAuthRepository } from './oauth';
+import { createRetentionRepository } from './retention';
 import { createOrganizationRepository, createUserRepository } from './organizations';
 import { createUserTokenRepository } from './user-tokens';
 
@@ -22,6 +23,7 @@ export const createRepositories = (db: Queryable): Repositories => ({
   userTokens: createUserTokenRepository(db),
   accessGrants: createAccessGrantRepository(db),
   oauth: createOAuthRepository(db),
+  retention: createRetentionRepository(db),
   offerings: createOfferingRepository(db),
   claims: createClaimRepository(db),
   capabilities: createCapabilityRepository(db),

@@ -96,7 +96,13 @@ const runOne = async (runtime: Runtime, job: ClaimedJob): Promise<void> => {
 export const runWorker = async (runtime: Runtime, options: WorkerOptions = {}): Promise<void> => {
   const pollIntervalMs = options.pollIntervalMs ?? 1000;
   let lastStaleCheck = 0;
+  let lastPurge = 0;
   while (!options.signal?.aborted) {
+    if (Date.now() - lastPurge > 3_600_000) {
+      const purged = await runtime.app.maintenance.purgeExpired({ ...SYSTEM, requestId: 'retention' });
+      runtime.logger.info({ purged }, 'retention purge');
+      lastPurge = Date.now();
+    }
     if (Date.now() - lastStaleCheck > 60_000) {
       const released = await runtime.jobStore.releaseStale(options.staleAfterSeconds ?? 600);
       if (released > 0) runtime.logger.warn({ released }, 'released stale jobs');
