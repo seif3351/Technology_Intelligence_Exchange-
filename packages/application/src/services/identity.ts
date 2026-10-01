@@ -13,6 +13,7 @@ import {
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
+import { sendEmailVerification } from './account-mail';
 import { hashSecretToken, recordAudit } from './support';
 import { type RequestContext, SCOPES, type Scope, type UserPrincipal } from '../principal';
 
@@ -61,7 +62,13 @@ export class IdentityService {
     } else if (this.deps.settings.registrationMode === 'invite') {
       throw forbidden('Registration is by invitation only during the pilot');
     }
-    const user = this.newUser(email, input, { version: this.deps.settings.termsVersion, acceptedAt: now });
+    // An email-bound invitation proves ownership of the address; otherwise a verification link is sent.
+    const user = this.newUser(
+      email,
+      input,
+      { version: this.deps.settings.termsVersion, acceptedAt: now },
+      invitation ? now : null,
+    );
     const passwordHash = await this.passwords.hash(input.password);
     await this.deps.transaction(async (repos) => {
       if (await repos.users.findCredentialByEmail(email)) throw validationError('Registration failed');
@@ -85,6 +92,7 @@ export class IdentityService {
         metadata: { invited: invitation !== null, termsVersion: this.deps.settings.termsVersion },
       });
     });
+    if (!user.emailVerifiedAt) await sendEmailVerification(this.deps, user);
     return user;
   }
 
@@ -92,6 +100,7 @@ export class IdentityService {
     email: string,
     input: { readonly password: string; readonly displayName: string },
     terms: { readonly version: string; readonly acceptedAt: Date } | null,
+    emailVerifiedAt: Date | null,
   ): User {
     if (!isPlausibleEmail(email)) throw validationError('Invalid email address');
     if (input.password.length < 12 || input.password.length > 200)
@@ -103,6 +112,8 @@ export class IdentityService {
       platformRole: 'none',
       termsVersion: terms?.version ?? null,
       termsAcceptedAt: terms?.acceptedAt ?? null,
+      emailVerifiedAt,
+      credentialsChangedAt: null,
       createdAt: this.deps.clock.now(),
     };
   }
@@ -127,7 +138,12 @@ export class IdentityService {
       if (!input.password) throw validationError('A password is required to create a new administrator');
       // Operator-created accounts record no terms acceptance (operators act under their own agreement).
       user = {
-        ...this.newUser(email, { password: input.password, displayName: input.displayName }, null),
+        ...this.newUser(
+          email,
+          { password: input.password, displayName: input.displayName },
+          null,
+          this.deps.clock.now(), // the operator vouches for the address
+        ),
         platformRole: 'platform_admin',
       };
       await this.deps.repos.users.insert(user, await this.passwords.hash(input.password));
@@ -165,10 +181,18 @@ export class IdentityService {
       readonly channel: Channel;
       readonly clientId: string | null;
       readonly grantedScopes: readonly string[] | 'all';
+      /** Issue time of the presented access token (ms); tokens older than a credential change are rejected. */
+      readonly issuedAtMs?: number;
     },
   ): Promise<UserPrincipal> {
     const user = await this.deps.repos.users.findById(userId);
     if (!user) throw unauthenticated();
+    if (
+      user.credentialsChangedAt &&
+      options.issuedAtMs !== undefined &&
+      options.issuedAtMs < user.credentialsChangedAt.getTime()
+    )
+      throw unauthenticated('Your session has ended; please sign in again');
     const memberships = await this.deps.repos.users.listMemberships(user.id);
     const allowed = new Set<Scope>(['catalog:read']);
     if (memberships.length > 0) {
@@ -185,6 +209,7 @@ export class IdentityService {
       userId: user.id,
       displayName: user.displayName,
       platformRole: user.platformRole,
+      emailVerified: user.emailVerifiedAt !== null,
       memberships,
       scopes,
       clientId: options.clientId,
@@ -200,7 +225,12 @@ export const describePrincipal = async (deps: ApplicationDeps, ctx: RequestConte
   );
   const byId = new Map(organizations.map((org) => [org.id, org]));
   return {
-    user: { id: principal.userId, displayName: principal.displayName, platformRole: principal.platformRole },
+    user: {
+      id: principal.userId,
+      displayName: principal.displayName,
+      platformRole: principal.platformRole,
+      emailVerified: principal.emailVerified,
+    },
     memberships: principal.memberships.flatMap((membership) => {
       const org = byId.get(membership.organizationId);
       return org

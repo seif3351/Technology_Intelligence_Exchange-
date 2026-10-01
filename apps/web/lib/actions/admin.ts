@@ -29,6 +29,7 @@ export async function reviewClaim(form: FormData): Promise<void> {
 export interface InvitationState extends FormState {
   readonly url?: string;
   readonly email?: string;
+  readonly emailed?: boolean;
 }
 
 export async function inviteToPlatform(_state: InvitationState, form: FormData): Promise<InvitationState> {
@@ -39,7 +40,7 @@ export async function inviteToPlatform(_state: InvitationState, form: FormData):
       schema: IssuedInvitation,
     });
     revalidatePath('/admin');
-    return { url: issued.url, email: issued.invitation.email };
+    return { url: issued.url, email: issued.invitation.email, emailed: issued.emailed };
   } catch (error) {
     return { error: describeError(error) };
   }

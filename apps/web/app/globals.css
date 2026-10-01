@@ -300,3 +300,10 @@ footer {
 input.inline-check {
   width: auto;
 }
+
+.banner {
+  padding: 8px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}

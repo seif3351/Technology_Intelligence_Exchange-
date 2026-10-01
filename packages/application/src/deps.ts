@@ -5,6 +5,7 @@ import type {
   ConfirmationTokens,
   EmbeddingProvider,
   JobQueue,
+  Mailer,
   MalwareScanner,
   ObjectStorage,
   OntologyProvider,
@@ -45,6 +46,8 @@ export interface ApplicationDeps {
   readonly textExtractor: TextExtractor;
   readonly assetUrls: AssetUrlSigner;
   readonly jobs: JobQueue;
+  /** Delivery of account emails; may be disabled (sending then throws and callers degrade). */
+  readonly mailer: Mailer;
   readonly confirmations: ConfirmationTokens;
   readonly clock: Clock;
   readonly telemetry: Telemetry;

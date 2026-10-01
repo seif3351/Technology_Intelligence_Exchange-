@@ -119,6 +119,8 @@ export const seedDemoData = async (
           platformRole: user.platform_role ?? 'none',
           termsVersion: null,
           termsAcceptedAt: null,
+          emailVerifiedAt: now,
+          credentialsChangedAt: null,
           createdAt: now,
         },
         passwordHash,

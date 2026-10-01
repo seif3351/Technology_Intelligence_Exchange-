@@ -15,6 +15,10 @@ export interface User {
   /** Version of the terms of use the user accepted (null for operator-created accounts). */
   readonly termsVersion: string | null;
   readonly termsAcceptedAt: Date | null;
+  /** Set when the user proved ownership of the address (verification link or email-bound invitation). */
+  readonly emailVerifiedAt: Date | null;
+  /** Access tokens issued before this instant are rejected (password reset, sign-out everywhere). */
+  readonly credentialsChangedAt: Date | null;
   readonly createdAt: Date;
 }
 

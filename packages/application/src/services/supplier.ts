@@ -38,7 +38,7 @@ import {
   validationError,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
-import { authorizeTenant, requireUser } from '../policies';
+import { authorizeTenant, requireUser, requireVerifiedEmail } from '../policies';
 import type { RequestContext, TenantScope } from '../principal';
 import { presentClaim, presentEvidence } from '../views';
 import { ownedClaim, ownedOffering, supplierWriteScope } from './supplier-access';
@@ -108,7 +108,7 @@ export class SupplierService {
       readonly headquartersCountry?: string | null;
     },
   ): Promise<Organization> {
-    const user = requireUser(ctx.principal);
+    const user = requireVerifiedEmail(ctx.principal);
     const now = this.deps.clock.now();
     const website = input.website ? this.safeUrl(input.website, 'website') : null;
     const organization: Organization = {

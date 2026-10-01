@@ -17,3 +17,4 @@ export * from './provenance';
 export * from './requirement';
 export * from './text';
 export * from './url-policy';
+export * from './user-token';

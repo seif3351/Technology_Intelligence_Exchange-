@@ -255,6 +255,15 @@ export const RegisterRequest = z
       .describe('Secret token from an invitation link (required when registration is invite-only).'),
   })
   .meta({ id: 'RegisterRequest' });
+export const SecretTokenBody = z
+  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/) })
+  .meta({ id: 'SecretTokenBody' });
+export const PasswordResetRequest = z
+  .object({ email: z.email().max(254) })
+  .meta({ id: 'PasswordResetRequest' });
+export const PasswordResetConfirm = z
+  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/), newPassword: z.string().min(12).max(200) })
+  .meta({ id: 'PasswordResetConfirm' });
 export const InvitationLookup = z
   .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/) })
   .meta({ id: 'InvitationLookup' });
@@ -282,6 +291,7 @@ export const IssuedInvitation = z
   .object({
     invitation: InvitationRecord,
     url: z.string().describe('Secret sign-up link. Shown once; share it only with the invitee.'),
+    emailed: z.boolean().describe('Whether the invitation email was delivered.'),
   })
   .meta({ id: 'IssuedInvitation' });
 export const AgentTokenRequest = z

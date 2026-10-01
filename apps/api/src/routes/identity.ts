@@ -5,8 +5,11 @@ import {
   InvitationPreview,
   LoginRequest,
   Me,
+  PasswordResetConfirm,
+  PasswordResetRequest,
   RegisterRequest,
   RegistrationPolicy,
+  SecretTokenBody,
   TokenResponse,
 } from '@atx/contracts';
 import type { Runtime } from '@atx/runtime';
@@ -57,6 +60,76 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       status: 201,
       rateLimit: AUTH_RATE_LIMIT,
       handler: async ({ body, ctx }) => issueSession((await app.identity.register(ctx, body)).id),
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/email-verification/resend',
+      operationId: 'resendEmailVerification',
+      summary: 'Send a new email-verification link to the signed-in user',
+      tags: ['auth'],
+      auth: 'required',
+      response: z.object({ sent: z.boolean() }),
+      rateLimit: AUTH_RATE_LIMIT,
+      handler: async ({ ctx }) => app.account.resendEmailVerification(ctx),
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/email-verification/confirm',
+      operationId: 'confirmEmail',
+      summary: 'Confirm email ownership with the token from the verification link',
+      tags: ['auth'],
+      auth: 'none',
+      body: SecretTokenBody,
+      response: z.object({ verified: z.literal(true) }),
+      rateLimit: AUTH_RATE_LIMIT,
+      handler: async ({ body, ctx }) => {
+        await app.account.confirmEmail(ctx, body.token);
+        return { verified: true as const };
+      },
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/password-reset/request',
+      operationId: 'requestPasswordReset',
+      summary: 'Email a password-reset link if the address is registered (the response never says)',
+      tags: ['auth'],
+      auth: 'none',
+      body: PasswordResetRequest,
+      response: z.object({ accepted: z.literal(true) }),
+      status: 202,
+      rateLimit: AUTH_RATE_LIMIT,
+      handler: async ({ body, ctx }) => {
+        await app.account.requestPasswordReset(ctx, body.email);
+        return { accepted: true as const };
+      },
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/password-reset/confirm',
+      operationId: 'resetPassword',
+      summary: 'Set a new password with the token from the reset link; ends all sessions and agent tokens',
+      tags: ['auth'],
+      auth: 'none',
+      body: PasswordResetConfirm,
+      response: z.object({ reset: z.literal(true) }),
+      rateLimit: AUTH_RATE_LIMIT,
+      handler: async ({ body, ctx }) => {
+        await app.account.resetPassword(ctx, body.token, body.newPassword);
+        return { reset: true as const };
+      },
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/sign-out-everywhere',
+      operationId: 'signOutEverywhere',
+      summary: 'Invalidate all sessions and agent tokens of the signed-in user',
+      tags: ['auth'],
+      auth: 'required',
+      response: z.object({ revoked: z.literal(true) }),
+      handler: async ({ ctx }) => {
+        await app.account.signOutEverywhere(ctx);
+        return { revoked: true as const };
+      },
     }),
     defineRoute({
       method: 'GET',

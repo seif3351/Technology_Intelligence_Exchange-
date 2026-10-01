@@ -26,8 +26,10 @@ export function InviteForm() {
       {state.url ? (
         <div className="stack">
           <p className="notice">
-            Send this link to {state.email} only. It is shown once, works for that email address only and
-            expires in 14 days.
+            {state.emailed
+              ? `The invitation was emailed to ${state.email}. You can also share this link with them directly.`
+              : `Email delivery is not available: send this link to ${state.email} yourself.`}{' '}
+            It is shown once, works for that email address only and expires in 14 days.
           </p>
           <textarea readOnly value={state.url} aria-label="Invitation link" />
         </div>

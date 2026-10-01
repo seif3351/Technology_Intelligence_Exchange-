@@ -4,6 +4,7 @@ export * from './principal';
 export * from './ports/repositories';
 export * from './ports/services';
 export * from './ports/telemetry';
+export * from './services/account';
 export * from './services/admin';
 export * from './services/catalog';
 export * from './services/engagements';

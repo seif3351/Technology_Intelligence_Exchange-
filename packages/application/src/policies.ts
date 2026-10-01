@@ -30,6 +30,14 @@ export const requireScope = (principal: Principal, scope: Scope): void => {
 export const isPlatformAdmin = (principal: Principal): boolean =>
   principal.kind === 'user' && principal.platformRole === 'platform_admin' && principal.scopes.has('admin');
 
+/** Actions that create organizations or contact third parties need a proven email address. */
+export const requireVerifiedEmail = (principal: Principal): UserPrincipal => {
+  const user = requireUser(principal);
+  if (!user.emailVerified)
+    throw forbidden('Please confirm your email address first (check your inbox or request a new link)');
+  return user;
+};
+
 export const requirePlatformAdmin = (principal: Principal): UserPrincipal => {
   const user = requireUser(principal);
   if (!isPlatformAdmin(user)) throw forbidden('Platform administrator role required');

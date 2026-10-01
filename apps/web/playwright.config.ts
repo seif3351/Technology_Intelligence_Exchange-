@@ -1,4 +1,8 @@
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+/** Development inbox of the API under test (MAIL_DRIVER=file); e2e tests read links from it. */
+export const E2E_MAIL_DIR = path.resolve(import.meta.dirname, '../../.var/e2e-mail');
 
 /**
  * Browser tests for the critical web journeys. They run against a seeded
@@ -28,13 +32,24 @@ export default defineConfig({
       url: 'http://localhost:4000/readyz',
       reuseExistingServer: true,
       timeout: 120_000,
-      env: { FEATURE_ENGAGEMENT_ACTIONS: 'true', LOG_LEVEL: 'warn', AUTH_RATE_LIMIT_PER_MINUTE: '500' },
+      env: {
+        FEATURE_ENGAGEMENT_ACTIONS: 'true',
+        LOG_LEVEL: 'warn',
+        AUTH_RATE_LIMIT_PER_MINUTE: '500',
+        MAIL_DRIVER: 'file',
+        MAIL_DIR: E2E_MAIL_DIR,
+      },
     },
     {
-      command: 'pnpm --filter @atx/web dev',
+      // Production build by default: realistic CSP and no on-demand compilation (which can reload pages
+      // mid-test). Set E2E_WEB_DEV=1 to run against `next dev` while iterating.
+      command:
+        process.env['E2E_WEB_DEV'] === '1'
+          ? 'pnpm --filter @atx/web dev'
+          : 'pnpm --filter @atx/web build && pnpm --filter @atx/web start',
       url: 'http://localhost:3000',
       reuseExistingServer: true,
-      timeout: 180_000,
+      timeout: 300_000,
     },
   ],
 });

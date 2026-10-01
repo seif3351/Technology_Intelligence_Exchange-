@@ -100,7 +100,7 @@ const createVerifier = (runtime: Runtime): OAuthTokenVerifier => ({
         scopes: [...claims.scopes],
         expiresAt: claims.expiresAt,
         resource: new URL(runtime.env.MCP_PUBLIC_URL),
-        extra: { subject: claims.subject },
+        extra: { subject: claims.subject, issuedAtMs: claims.issuedAtMs },
       };
     } catch (error) {
       if (error instanceof InvalidTokenError)
@@ -126,6 +126,7 @@ export const createMcpHttpApp = (runtime: Runtime, options: McpAppOptions) => {
       channel: 'mcp',
       clientId: authInfo.clientId,
       grantedScopes: authInfo.scopes,
+      issuedAtMs: Number(authInfo.extra?.['issuedAtMs'] ?? 0),
     });
   };
 

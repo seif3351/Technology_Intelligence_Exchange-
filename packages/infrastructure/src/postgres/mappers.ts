@@ -34,6 +34,8 @@ export const toUser = (row: Row): User => ({
   platformRole: row['platform_role'] as User['platformRole'],
   termsVersion: (row['terms_version'] as string | null) ?? null,
   termsAcceptedAt: dateOrNull(row, 'terms_accepted_at'),
+  emailVerifiedAt: dateOrNull(row, 'email_verified_at'),
+  credentialsChangedAt: dateOrNull(row, 'credentials_changed_at'),
   createdAt: date(row, 'created_at'),
 });
 

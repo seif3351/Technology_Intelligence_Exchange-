@@ -10,15 +10,21 @@ export interface FormState {
   readonly message?: string;
 }
 
+/** Login keeps the entered email: React resets uncontrolled fields after an action completes. */
+export interface LoginState extends FormState {
+  readonly email?: string;
+}
+
 const safeRedirectTarget = (value: FormDataEntryValue | null): string => {
   const target = typeof value === 'string' ? value : '/';
   // Only same-origin relative paths: prevents open redirects.
   return target.startsWith('/') && !target.startsWith('//') ? target : '/';
 };
 
-export async function login(_state: FormState, form: FormData): Promise<FormState> {
-  const parsed = LoginRequest.safeParse({ email: form.get('email'), password: form.get('password') });
-  if (!parsed.success) return { error: 'Enter a valid email and password.' };
+export async function login(_state: LoginState, form: FormData): Promise<LoginState> {
+  const email = String(form.get('email') ?? '').slice(0, 254);
+  const parsed = LoginRequest.safeParse({ email, password: form.get('password') });
+  if (!parsed.success) return { error: 'Enter a valid email and password.', email };
   try {
     const token = await api('/v1/auth/login', {
       method: 'POST',
@@ -28,7 +34,7 @@ export async function login(_state: FormState, form: FormData): Promise<FormStat
     });
     await setSessionToken(token.accessToken, token.expiresIn);
   } catch (error) {
-    return { error: describeError(error) };
+    return { error: describeError(error), email };
   }
   redirect(safeRedirectTarget(form.get('next')));
 }

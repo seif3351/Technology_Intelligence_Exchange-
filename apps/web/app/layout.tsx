@@ -32,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="user">
             {me ? (
               <>
-                <span>{me.user.displayName}</span>
+                <Link href="/account">{me.user.displayName}</Link>
                 <form action={logout}>
                   <button type="submit">Sign out</button>
                 </form>
@@ -42,6 +42,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             )}
           </div>
         </header>
+        {me && !me.user.emailVerified ? (
+          <div className="banner" role="status">
+            Please confirm your email address — check your inbox or{' '}
+            <Link href="/account">send a new link</Link>.
+          </div>
+        ) : null}
         <main>{children}</main>
         <footer>
           Discovery before procurement. Supplier statements are shown with their provenance; they are not

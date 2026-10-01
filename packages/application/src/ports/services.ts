@@ -157,3 +157,16 @@ export interface ConfirmationTokens {
   issue(claims: ConfirmationClaims, ttlSeconds: number): Promise<{ token: string; expiresAt: Date }>;
   verify(token: string): Promise<ConfirmationClaims>;
 }
+
+// ------------------------------------------------------------------- email
+
+/** Plain-text email only: no HTML rendering of user-supplied text, so no injection surface. */
+export interface OutgoingEmail {
+  readonly to: string;
+  readonly subject: string;
+  readonly text: string;
+}
+
+export interface Mailer {
+  send(message: OutgoingEmail): Promise<void>;
+}

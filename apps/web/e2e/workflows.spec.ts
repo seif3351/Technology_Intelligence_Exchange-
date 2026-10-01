@@ -69,7 +69,7 @@ test.describe('buyer and supplier workflows', () => {
 
   test('admin sees the audit log', async ({ page }) => {
     await signIn(page, 'admin@atx.example');
-    await page.getByRole('link', { name: 'Admin' }).click();
+    await page.getByRole('link', { name: 'Admin', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Audit log (latest 40)' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'requirement.read' }).first()).toBeVisible();
   });

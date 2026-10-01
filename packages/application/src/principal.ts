@@ -33,6 +33,8 @@ export interface UserPrincipal {
   readonly userId: UserId;
   readonly displayName: string;
   readonly platformRole: PlatformRole;
+  /** Whether the user proved ownership of their email address. */
+  readonly emailVerified: boolean;
   readonly memberships: readonly PrincipalMembership[];
   readonly scopes: ReadonlySet<Scope>;
   /** OAuth client that acts on behalf of the user (e.g. an AI agent host), if any. */

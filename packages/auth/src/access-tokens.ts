@@ -15,6 +15,8 @@ export interface AccessTokenClaims {
   readonly scopes: readonly string[];
   readonly clientId: string | null;
   readonly expiresAt: number;
+  /** Issue time in milliseconds (`iat_ms` when present, else `iat` × 1000); tokens older than a credential change are rejected. */
+  readonly issuedAtMs: number;
 }
 
 export class InvalidTokenError extends Error {
@@ -35,6 +37,8 @@ export const createAccessTokenIssuer = (key: SigningKey, issuer: string) => ({
   }): Promise<string> {
     return new SignJWT({
       scope: input.scopes.join(' '),
+      // Millisecond issue time: `iat` (seconds) is too coarse to order tokens against a password reset.
+      iat_ms: Date.now(),
       ...(input.clientId ? { client_id: input.clientId } : {}),
     })
       .setProtectedHeader({ alg: ACCESS_TOKEN_ALG, kid: key.kid, typ: 'at+jwt' })
@@ -75,13 +79,15 @@ export const createAccessTokenVerifier = (options: {
           typ: 'at+jwt',
           clockTolerance: 30,
         });
-        if (!payload.sub || typeof payload.exp !== 'number') throw new InvalidTokenError();
+        if (!payload.sub || typeof payload.exp !== 'number' || typeof payload.iat !== 'number')
+          throw new InvalidTokenError();
         return {
           subject: payload.sub,
           audience: options.audience,
           scopes: typeof payload['scope'] === 'string' ? payload['scope'].split(' ').filter(Boolean) : [],
           clientId: typeof payload['client_id'] === 'string' ? payload['client_id'] : null,
           expiresAt: payload.exp,
+          issuedAtMs: typeof payload['iat_ms'] === 'number' ? payload['iat_ms'] : payload.iat * 1000,
         };
       } catch (error) {
         if (error instanceof InvalidTokenError) throw error;

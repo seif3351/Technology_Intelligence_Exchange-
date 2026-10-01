@@ -24,6 +24,7 @@ export const createContextResolver =
           channel: claims.clientId ? 'api' : 'web',
           clientId: claims.clientId,
           grantedScopes: claims.scopes,
+          issuedAtMs: claims.issuedAtMs,
         });
       } catch (error) {
         if (error instanceof InvalidTokenError) throw unauthenticated(error.message);

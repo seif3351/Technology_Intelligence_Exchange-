@@ -107,8 +107,9 @@ export const createUserRepository = (db: Queryable): UserRepository => ({
   },
   async insert(user: User, passwordHash: string) {
     await db.query(
-      `INSERT INTO users (id, email, display_name, platform_role, password_hash, terms_version, terms_accepted_at, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      `INSERT INTO users (id, email, display_name, platform_role, password_hash, terms_version, terms_accepted_at,
+         email_verified_at, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [
         user.id,
         user.email,
@@ -117,9 +118,26 @@ export const createUserRepository = (db: Queryable): UserRepository => ({
         passwordHash,
         user.termsVersion,
         user.termsAcceptedAt,
+        user.emailVerifiedAt,
         user.createdAt,
       ],
     );
+  },
+  async markEmailVerified(userId, at) {
+    await db.query('UPDATE users SET email_verified_at = COALESCE(email_verified_at, $2) WHERE id = $1', [
+      userId,
+      at,
+    ]);
+  },
+  async updatePassword(userId, passwordHash, at) {
+    await db.query('UPDATE users SET password_hash = $2, credentials_changed_at = $3 WHERE id = $1', [
+      userId,
+      passwordHash,
+      at,
+    ]);
+  },
+  async revokeAllTokens(userId, at) {
+    await db.query('UPDATE users SET credentials_changed_at = $2 WHERE id = $1', [userId, at]);
   },
   async setPlatformRole(userId, role) {
     await db.query('UPDATE users SET platform_role = $2 WHERE id = $1', [userId, role]);

@@ -56,6 +56,13 @@ export const EnvSchema = z.object({
   EMBEDDINGS_MODEL: z.string().default('text-embedding-3-small'),
 
   FEATURE_ENGAGEMENT_ACTIONS: bool.default(false),
+
+  /** none | file (development inbox in MAIL_DIR) | memory (tests) | smtp (production). */
+  MAIL_DRIVER: z.enum(['none', 'file', 'memory', 'smtp']).default('file'),
+  MAIL_DIR: z.string().default('.var/mail'),
+  /** e.g. smtps://user:password@smtp.example.com:465 (a secret: inject from the secret store). */
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().default('Automotive Technology Exchange <no-reply@localhost>'),
   /** `invite` (default): only invited people can register. `open`: anyone can register. */
   REGISTRATION_MODE: z.enum(['open', 'invite']).default('invite'),
   /** Identifier of the current terms of use; bump it when the terms change. */
@@ -88,9 +95,13 @@ export const loadConfig = (source: NodeJS.ProcessEnv = process.env): Env => {
     if (env.ASSET_URL_SECRET === DEV_SECRET) problems.push('ASSET_URL_SECRET');
     if (!env.AUTH_SIGNING_JWK && !env.MCP_AUTH_JWKS_URL) problems.push('AUTH_SIGNING_JWK');
     if (env.STORAGE_DRIVER === 's3' && !env.S3_BUCKET) problems.push('S3_BUCKET');
+    if (env.MAIL_DRIVER === 'file' || env.MAIL_DRIVER === 'memory')
+      problems.push('MAIL_DRIVER (use smtp or none)');
     if (problems.length > 0)
       throw new ConfigError(`Production requires explicit secure values for: ${problems.join(', ')}`);
   }
+  if (env.MAIL_DRIVER === 'smtp' && !env.SMTP_URL)
+    throw new ConfigError('MAIL_DRIVER=smtp requires SMTP_URL');
   if (env.AI_PROVIDER === 'anthropic' && !env.ANTHROPIC_API_KEY)
     throw new ConfigError('AI_PROVIDER=anthropic requires ANTHROPIC_API_KEY');
   if (env.EMBEDDINGS_PROVIDER === 'http' && !env.EMBEDDINGS_URL)

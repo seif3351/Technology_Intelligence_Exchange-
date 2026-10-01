@@ -2,6 +2,7 @@ import path from 'node:path';
 import {
   type Application,
   type EmbeddingProvider,
+  type Mailer,
   type RequirementExtractor,
   type SupplierProfileDraftGenerator,
   createApplication,
@@ -29,16 +30,20 @@ import {
   basicContentScanner,
   chainScanners,
   createClamdScanner,
+  createFileMailer,
   createFilesystemStorage,
   createJobQueue,
   createJobRunnerStore,
+  createMemoryMailer,
   createPool,
   createPostgresOntologyProvider,
   createPostgresSearchIndex,
   createRepositories,
   createS3Storage,
+  createSmtpMailer,
   createTransactionRunner,
   defaultTextExtractor,
+  disabledMailer,
   systemClock,
 } from '@atx/infrastructure';
 import { type Logger, createLogger, openTelemetry, startTelemetry, stopTelemetry } from '@atx/observability';
@@ -60,6 +65,7 @@ export interface Runtime {
   readonly assetUrls: ReturnType<typeof createAssetUrlSigner>;
   readonly storage: ReturnType<typeof createFilesystemStorage>;
   readonly jobStore: ReturnType<typeof createJobRunnerStore>;
+  readonly mailbox: ReturnType<typeof createMemoryMailer> | null;
   close(): Promise<void>;
 }
 
@@ -109,6 +115,16 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
     ? chainScanners(basicContentScanner, createClamdScanner(env.CLAMAV_HOST, env.CLAMAV_PORT))
     : basicContentScanner;
   const assetUrls = createAssetUrlSigner(env.ASSET_URL_SECRET, env.API_PUBLIC_URL);
+  const mailbox = env.MAIL_DRIVER === 'memory' ? createMemoryMailer() : null;
+  const mailer: Mailer =
+    mailbox ??
+    (env.MAIL_DRIVER === 'smtp' && env.SMTP_URL
+      ? createSmtpMailer(env.SMTP_URL, env.MAIL_FROM)
+      : env.MAIL_DRIVER === 'file'
+        ? createFileMailer(path.resolve(env.MAIL_DIR))
+        : disabledMailer);
+  if (env.MAIL_DRIVER === 'none')
+    logger.warn('MAIL_DRIVER=none: invitations must be shared manually and password reset is unavailable');
 
   const aiFailure = (error: unknown) =>
     logger.warn({ err: error }, 'AI provider failed; using deterministic fallback');
@@ -144,6 +160,7 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
       textExtractor: defaultTextExtractor,
       assetUrls,
       jobs: createJobQueue(pool),
+      mailer,
       confirmations: createConfirmationTokens(env.CONFIRMATION_SECRET, authIssuer(env)),
       clock: systemClock,
       telemetry: openTelemetry,
@@ -166,6 +183,8 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
     assetUrls,
     storage,
     jobStore: createJobRunnerStore(pool),
+    /** Only with MAIL_DRIVER=memory (tests): the messages sent so far. */
+    mailbox,
     async close() {
       await pool.end();
       await stopTelemetry();

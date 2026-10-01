@@ -23,6 +23,9 @@ import type {
   TechnicalClaim,
   User,
   UserId,
+  UserToken,
+  UserTokenId,
+  UserTokenPurpose,
 } from '@atx/domain';
 import type { PrincipalMembership, TenantScope } from '../principal';
 
@@ -64,6 +67,11 @@ export interface UserRepository {
   findCredentialByEmail(email: string): Promise<UserCredential | null>;
   insert(user: User, passwordHash: string): Promise<void>;
   setPlatformRole(userId: UserId, role: User['platformRole']): Promise<void>;
+  markEmailVerified(userId: UserId, at: Date): Promise<void>;
+  /** Replaces the password hash and invalidates every access token issued before `at`. */
+  updatePassword(userId: UserId, passwordHash: string, at: Date): Promise<void>;
+  /** Invalidates every access token issued before `at` ("sign out everywhere"). */
+  revokeAllTokens(userId: UserId, at: Date): Promise<void>;
   listMemberships(userId: UserId): Promise<PrincipalMembership[]>;
   addMembership(membership: Membership): Promise<void>;
 }
@@ -178,10 +186,21 @@ export interface InvitationRepository {
   listForOrganization(scope: TenantScope): Promise<Invitation[]>;
 }
 
+export interface UserTokenRepository {
+  insert(token: UserToken): Promise<void>;
+  findByTokenHash(tokenHash: string): Promise<UserToken | null>;
+  /** Marks a still-unused token as used; false if it was already used. */
+  markUsed(id: UserTokenId, at: Date): Promise<boolean>;
+  countCreatedSince(userId: UserId, purpose: UserTokenPurpose, since: Date): Promise<number>;
+  /** Marks every unused token of this purpose as used (e.g. after a successful reset). */
+  invalidateAll(userId: UserId, purpose: UserTokenPurpose, at: Date): Promise<void>;
+}
+
 export interface Repositories {
   readonly organizations: OrganizationRepository;
   readonly users: UserRepository;
   readonly invitations: InvitationRepository;
+  readonly userTokens: UserTokenRepository;
   readonly offerings: OfferingRepository;
   readonly claims: ClaimRepository;
   readonly capabilities: CapabilityRepository;

@@ -34,12 +34,14 @@
     "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check",
     "S1: operator command `pnpm admin:create` (audited IdentityService.bootstrapPlatformAdmin, system principal only; password never via argv); root tsconfig typechecks scripts/ and test/",
     "S2: invite-only registration (REGISTRATION_MODE, hashed single-use email-bound invitations, terms acceptance stored), web /signup, /onboarding (organization creation), /terms and /privacy drafts, admin invitation panel; listing rule ADR-0011 (public only while verified; fixes suspension not hiding content) enforced in policies, indexing and SQL; mobile header fix; Playwright onboarding journey",
-    "R1 architecture review (docs/project/architecture-reviews.md): PublicationService extracted, email rules to domain, digest to support"
+    "R1 architecture review (docs/project/architecture-reviews.md): PublicationService extracted, email rules to domain, digest to support",
+    "S3: Mailer port (SMTP/file/memory/none), email verification (required to create organizations and confirm requests), password reset (single-use, no enumeration, rate-limited), sign out everywhere; credentials_changed_at revokes sessions and agent tokens (ms-precision iat_ms); invitation emails; web /account, /forgot-password, /reset-password, /verify-email, unverified banner; ADR-0013",
+    "Fixed: failed sign-in cleared the email field (React action form reset); e2e now runs against the production web build"
   ],
   "verification": {
     "unit": "pnpm test — 81 passed",
-    "integration": "pnpm test:integration — 53 passed",
-    "e2e": "pnpm test:e2e — 10 passed (incl. pilot onboarding journey)",
+    "integration": "pnpm test:integration — 60 passed",
+    "e2e": "pnpm test:e2e — 11 passed against the production web build",
     "typecheck": "pnpm typecheck — clean",
     "lint": "pnpm lint — clean",
     "contracts": "pnpm contracts:check — clean"
@@ -60,7 +62,7 @@
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "S3: email delivery (mailer port + outbox), email verification and password reset",
+  "nextRecommendedStep": "S4: organization invitations and member management",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

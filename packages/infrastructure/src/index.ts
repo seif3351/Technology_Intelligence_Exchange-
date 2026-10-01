@@ -1,5 +1,6 @@
 export * from './content/scanner';
 export * from './content/text-extractor';
+export * from './mail/mailers';
 export * from './ontology/yaml-source';
 export * from './postgres/db';
 export * from './postgres/jobs';

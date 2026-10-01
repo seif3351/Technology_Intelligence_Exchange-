@@ -12,6 +12,7 @@ const member = {
   userId: asId('00000000-0000-4000-8000-000000000002'),
   displayName: 'm',
   platformRole: 'none',
+  emailVerified: true,
   memberships: [{ organizationId: orgId, organizationKind: 'supplier', role: 'viewer' }],
   scopes: new Set(),
   clientId: null,

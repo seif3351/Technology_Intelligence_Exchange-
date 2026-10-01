@@ -15,7 +15,7 @@ import {
   isPlausibleEmail,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
-import { authorizeTenant, requireScope, requireUser } from '../policies';
+import { authorizeTenant, requireScope, requireUser, requireVerifiedEmail } from '../policies';
 import type { RequestContext } from '../principal';
 import { presentConstraint } from '../views';
 import { digest, recordAudit } from './support';
@@ -95,7 +95,7 @@ export class EngagementService {
     this.assertEnabled();
     if (!/^[A-Za-z0-9_-]{8,100}$/.test(idempotencyKey))
       throw validationError('idempotencyKey must be 8-100 URL-safe characters');
-    const user = requireUser(ctx.principal);
+    const user = requireVerifiedEmail(ctx.principal);
     const scope = authorizeTenant(ctx, asId(draft.buyerOrganizationId), 'editor');
 
     const existing = await this.deps.repos.engagements.findByIdempotencyKey(scope, idempotencyKey);

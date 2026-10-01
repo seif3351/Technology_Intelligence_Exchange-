@@ -1,4 +1,5 @@
 import type { ApplicationDeps } from './deps';
+import { AccountService } from './services/account';
 import { AdminService } from './services/admin';
 import { CatalogService } from './services/catalog';
 import { EngagementService } from './services/engagements';
@@ -26,6 +27,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     ingestion: new IngestionService(deps),
     indexing: new IndexingService(deps),
     identity: new IdentityService(deps, passwords),
+    account: new AccountService(deps, passwords),
     invitations: new InvitationService(deps),
   };
 };

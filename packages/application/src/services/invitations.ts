@@ -13,6 +13,7 @@ import {
 import type { ApplicationDeps } from '../deps';
 import { requirePlatformAdmin } from '../policies';
 import type { RequestContext } from '../principal';
+import { deliver } from './account-mail';
 import { generateSecretToken, hashSecretToken, recordAudit } from './support';
 
 const DAY_MS = 86_400_000;
@@ -31,6 +32,8 @@ export interface InvitationView {
 export interface IssuedInvitation {
   readonly invitation: InvitationView;
   readonly url: string;
+  /** Whether the invitation email was delivered; if not, share `url` with the invitee yourself. */
+  readonly emailed: boolean;
 }
 
 /**
@@ -69,7 +72,20 @@ export class InvitationService {
         organizationId: null,
       });
     });
-    return { invitation: this.present(invitation, now), url: this.signupUrl(token) };
+    const url = this.signupUrl(token);
+    const emailed = await deliver(this.deps, {
+      to: email,
+      subject: 'Your invitation to the Automotive Technology Exchange pilot',
+      text: [
+        'Hello,',
+        '',
+        'You have been invited to join the Automotive Technology Exchange, an evidence-backed technical',
+        'discovery network for automotive technologies. Create your account with this personal link',
+        `(valid for ${INVITATION_TTL_DAYS} days, for ${email} only):`,
+        url,
+      ].join('\n'),
+    });
+    return { invitation: this.present(invitation, now), url, emailed };
   }
 
   async listPlatformInvitations(ctx: RequestContext): Promise<InvitationView[]> {
