@@ -74,6 +74,7 @@ export const parseOntologyDocuments = (
         label: asString(raw['label'], `${where}.label`),
         description: asString(raw['description'], `${where}.description`),
         aliases: asStringList(raw['aliases'], `${where}.aliases`),
+        caseSensitiveAliases: asStringList(raw['case_sensitive_aliases'], `${where}.case_sensitive_aliases`),
         status,
       });
       for (const type of RELATION_TYPES) {

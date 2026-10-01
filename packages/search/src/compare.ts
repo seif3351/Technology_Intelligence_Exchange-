@@ -1,4 +1,4 @@
-import type { AssessmentStatus, MatchResult, TrustTier } from '@atx/domain';
+import type { AssessmentStatus, ConstraintPriority, TrustTier } from '@atx/domain';
 
 /**
  * Side-by-side comparison matrix: one row per constraint, one cell per
@@ -14,11 +14,24 @@ export interface ComparisonCell {
 export interface ComparisonRow {
   readonly constraintId: string;
   readonly description: string;
-  readonly priority: 'hard' | 'preference';
+  readonly priority: ConstraintPriority;
   readonly cells: readonly ComparisonCell[];
 }
 
-export const buildComparisonMatrix = (matches: readonly MatchResult[]): ComparisonRow[] => {
+/** Structural input so both MatchResult and presented match views can be compared. */
+export interface ComparableMatch {
+  readonly offeringId: string;
+  readonly assessments: readonly {
+    readonly constraintId: string;
+    readonly description: string;
+    readonly priority: ConstraintPriority;
+    readonly status: AssessmentStatus;
+    readonly strongestTrustTier: TrustTier | null;
+    readonly supportingClaims: readonly { readonly claimId: string }[];
+  }[];
+}
+
+export const buildComparisonMatrix = (matches: readonly ComparableMatch[]): ComparisonRow[] => {
   const first = matches[0];
   if (!first) return [];
   return first.assessments.map((template) => ({

@@ -9,5 +9,11 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
-  "dependencies": {"@atx/application": "workspace:*", "@atx/domain": "workspace:*", "zod": "^4.2.1"}
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@atx/application": "workspace:*",
+    "@atx/domain": "workspace:*",
+    "@atx/search": "workspace:*",
+    "zod": "^4.2.1"
+  }
 }

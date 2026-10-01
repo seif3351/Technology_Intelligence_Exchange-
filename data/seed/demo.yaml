@@ -1,0 +1,380 @@
+# DEMO / SYNTHETIC DATA — every organization, product, person, certificate and
+# customer reference below is fictitious and exists only to exercise the
+# platform. No record is derived from any real supplier, marketplace or
+# competitor. All URLs use reserved example domains (RFC 2606).
+#
+# Loaded by `pnpm db:seed`. Records pass through the same domain rules as
+# user-created data (e.g. CERTIFIED claims need a certification body).
+
+demo_password_note: All demo users share the password "demo-password-2026" (development only).
+
+users:
+  - key: admin
+    email: admin@atx.example
+    display_name: Platform Admin (demo)
+    platform_role: platform_admin
+  - key: vectorforge
+    email: owner@vectorforge.example
+    display_name: Lena Brandt (demo)
+  - key: northstar
+    email: owner@northstar-ai.example
+    display_name: Erik Lindqvist (demo)
+  - key: drivemesh
+    email: owner@drivemesh.example
+    display_name: Maya Chen (demo)
+  - key: eurostack
+    email: owner@eurostack.example
+    display_name: Julien Moreau (demo)
+  - key: orionedge
+    email: owner@orionedge.example
+    display_name: Priya Raman (demo)
+  - key: buyer
+    email: buyer@aurelia-motors.example
+    display_name: Sam Keller (demo buyer)
+
+organizations:
+  - key: vectorforge
+    slug: vectorforge-systems
+    name: VectorForge Systems
+    kind: supplier
+    owner: vectorforge
+    country: DE
+    regions: [EU, NA]
+    employee_range: 51-200
+    website: https://vectorforge.example
+    verification: verified
+    summary: Middleware and communication stacks for high-performance automotive computers.
+    description: >-
+      Synthetic demo supplier. Develops AUTOSAR Adaptive-based middleware and
+      SOME/IP communication stacks for central compute platforms.
+    claims:
+      - concept: functional-safety
+        predicate: PROCESS_COMPLIANT
+        statement: Middleware development process follows ISO 26262 Part 6 work products.
+    evidence:
+      - key: vf-cert
+        kind: certificate
+        title: Functional safety certificate (synthetic sample)
+        description: Synthetic certificate summary for the Adaptive middleware safety element.
+        url: https://vectorforge.example/docs/fusa-certificate-sample.pdf
+        source_reference: Certificate FS-DEMO-0042 (fictitious)
+    offerings:
+      - key: vf-mw
+        slug: adaptive-middleware
+        type: product
+        name: VectorForge Adaptive Middleware
+        maturity: production
+        summary: AUTOSAR Adaptive communication middleware with SOME/IP and ara::com for central compute.
+        description: >-
+          Service-oriented middleware implementing AUTOSAR Adaptive communication
+          management (ara::com) over SOME/IP. Ports exist for QNX and Linux on
+          NVIDIA DRIVE Orin and Renesas R-Car.
+        details: { type: product, currentVersion: "4.2", licensingModel: per-ECU runtime license, deploymentModels: [embedded] }
+        commercial: { pricingModel: runtime royalty + engineering support, availability: [EU, NA], notes: null }
+        evidence:
+          - key: vf-datasheet
+            kind: document
+            title: Adaptive Middleware datasheet (synthetic)
+            description: Supported platforms, operating systems and AUTOSAR release.
+            url: https://vectorforge.example/docs/adaptive-middleware-datasheet.pdf
+          - key: vf-prodref
+            kind: production_reference
+            title: Series production at a European OEM (anonymized, synthetic)
+            description: Middleware deployed on a central compute unit in series production since 2025.
+            customer_disclosure: anonymized
+        videos:
+          - title: Service discovery over SOME/IP on NVIDIA DRIVE Orin with QNX
+            description: Walkthrough of ara::com service discovery and event subscription across two QNX partitions.
+            url: https://videos.example.com/vectorforge/someip-service-discovery.mp4
+            duration_seconds: 412
+        claims:
+          - { concept: autosar-adaptive, predicate: IMPLEMENTS, statement: "Implements AUTOSAR Adaptive Platform R23-11 communication management.", qualifiers: { release: R23-11 }, evidence: [vf-datasheet], verification: platform_verified }
+          - { concept: ara-com, predicate: IMPLEMENTS, statement: "ara::com API for events, methods and fields.", evidence: [vf-datasheet] }
+          - { concept: some-ip, predicate: SUPPORTS, statement: "SOME/IP and SOME/IP-SD transport binding.", evidence: [vf-datasheet] }
+          - { concept: middleware, predicate: PROVIDES_CAPABILITY, statement: "Communication middleware for high-performance computers." }
+          - { concept: qnx, predicate: SUPPORTS, statement: "Supported on QNX Neutrino 7.1 and 8.0.", evidence: [vf-datasheet] }
+          - { concept: linux, predicate: SUPPORTS, statement: "Supported on Yocto-based embedded Linux.", evidence: [vf-datasheet] }
+          - { concept: nvidia-drive-orin, predicate: SUPPORTS, statement: "Validated on NVIDIA DRIVE Orin reference hardware.", evidence: [vf-datasheet] }
+          - { concept: renesas-r-car, predicate: SUPPORTS, statement: "Port available for Renesas R-Car S4." }
+          - { concept: automotive-ethernet, predicate: SUPPORTS, statement: "Runs over 100BASE-T1 and 1000BASE-T1 automotive Ethernet." }
+          - { concept: iso-26262, predicate: CERTIFIED, statement: "Safety element out of context certified up to ASIL B.", qualifiers: { asil: B, certificationBody: "Example Certification Body (fictitious)" }, evidence: [vf-cert], verification: platform_verified }
+          - { concept: autosar-adaptive, predicate: PRODUCTION_DEPLOYMENT, statement: "In series production on a central compute unit.", evidence: [vf-prodref] }
+          - { concept: software-defined-vehicle, predicate: TARGETS_DOMAIN, statement: "Built for software-defined vehicle architectures." }
+      - key: vf-dds
+        slug: dds-gateway
+        type: product
+        name: VectorForge DDS-SOME/IP Gateway
+        maturity: pilot
+        summary: Bridges DDS/ROS 2 domains and SOME/IP services for mixed-criticality prototypes.
+        description: Gateway component translating DDS topics to SOME/IP events for prototype fleets.
+        details: { type: product, currentVersion: "0.9", licensingModel: per-project license, deploymentModels: [embedded] }
+        commercial: { pricingModel: per-project, availability: [EU], notes: null }
+        claims:
+          - { concept: dds, predicate: SUPPORTS, statement: "Supports OMG DDS 1.4 domains." }
+          - { concept: some-ip, predicate: SUPPORTS, statement: "Translates DDS topics to SOME/IP events." }
+          - { concept: ros-2, predicate: INTEGRATES_WITH, statement: "Integrates with ROS 2 Humble based prototypes." }
+          - { concept: linux, predicate: SUPPORTS, statement: "Runs on Linux." }
+
+  - key: northstar
+    slug: northstar-automotive-ai
+    name: Northstar Automotive AI
+    kind: supplier
+    owner: northstar
+    country: SE
+    regions: [EU]
+    employee_range: 11-50
+    website: https://northstar-ai.example
+    verification: verified
+    summary: AI-assisted integration testing and log analytics for ADAS software.
+    description: >-
+      Synthetic demo supplier. Builds machine-learning based test automation and
+      log analysis for ADAS integration on AUTOSAR Adaptive platforms.
+    claims:
+      - concept: iso-26262
+        predicate: EXPERIENCE_WITH
+        statement: Delivered test tooling qualification for three ISO 26262 ASIL B/D projects.
+        qualifiers: { asil: D }
+        evidence: [ns-case]
+    evidence:
+      - key: ns-case
+        kind: case_study
+        title: Tool qualification case study (synthetic)
+        description: Anonymized case study of ISO 26262 tool qualification for an ADAS program.
+        url: https://northstar-ai.example/case-studies/tool-qualification
+    offerings:
+      - key: ns-itp
+        slug: ai-integration-test-platform
+        type: product
+        name: Northstar AI Integration Test Platform
+        maturity: production
+        summary: Machine-learning assisted integration test automation for ADAS on AUTOSAR Adaptive, QNX and Ethernet.
+        description: >-
+          Orchestrates integration tests on HIL and SIL benches, prioritizes test
+          cases with machine learning and clusters failures automatically.
+          Supports AUTOSAR Adaptive applications on QNX and Linux communicating
+          over SOME/IP on automotive Ethernet.
+        details: { type: product, currentVersion: "3.1", licensingModel: subscription per test bench, deploymentModels: [on_premise, hybrid] }
+        commercial: { pricingModel: subscription, availability: [EU, NA], notes: null }
+        evidence:
+          - key: ns-prodref
+            kind: production_reference
+            title: Used in series ADAS release testing (anonymized, synthetic)
+            description: Integration test platform used for release testing of an L2+ ADAS feature in series production.
+            customer_disclosure: anonymized
+          - key: ns-doc
+            kind: document
+            title: Platform architecture overview (synthetic)
+            description: Supported bench interfaces, operating systems and protocols.
+            url: https://northstar-ai.example/docs/platform-overview.pdf
+        videos:
+          - title: Automated root-cause clustering of integration test failures
+            description: Demo of failure clustering and log-based root-cause suggestions for an ADAS integration run.
+            url: https://videos.example.com/northstar/root-cause-clustering.mp4
+            duration_seconds: 534
+        claims:
+          - { concept: integration-testing, predicate: PROVIDES_CAPABILITY, statement: "Automates HIL/SIL integration testing.", evidence: [ns-doc] }
+          - { concept: test-automation, predicate: PROVIDES_CAPABILITY, statement: "Test orchestration and scheduling across benches.", evidence: [ns-doc] }
+          - { concept: machine-learning, predicate: PROVIDES_CAPABILITY, statement: "ML-based test prioritization and failure clustering." }
+          - { concept: adas, predicate: TARGETS_DOMAIN, statement: "Built for ADAS feature integration." }
+          - { concept: autosar-adaptive, predicate: SUPPORTS, statement: "Tests AUTOSAR Adaptive applications.", evidence: [ns-doc] }
+          - { concept: qnx, predicate: SUPPORTS, statement: "Target agents for QNX 7.1.", evidence: [ns-doc] }
+          - { concept: linux, predicate: SUPPORTS, statement: "Target agents for Linux." }
+          - { concept: automotive-ethernet, predicate: SUPPORTS, statement: "Captures and replays automotive Ethernet traffic." }
+          - { concept: some-ip, predicate: SUPPORTS, statement: "Decodes SOME/IP traffic for assertions." }
+          - { concept: hil-testing, predicate: INTEGRATES_WITH, statement: "Integrates with HIL benches via ASAM XIL." }
+          - { concept: asam-xil, predicate: SUPPORTS, statement: "ASAM XIL API support." }
+          - { concept: integration-testing, predicate: PRODUCTION_DEPLOYMENT, statement: "Used for release testing of a series-production ADAS feature.", evidence: [ns-prodref] }
+          - { concept: nvidia-drive-orin, predicate: SUPPORTS, statement: "Bench adapters for NVIDIA DRIVE Orin targets.", status: draft, provenance: AI_INFERRED }
+      - key: ns-logs
+        slug: log-intelligence
+        type: technology_platform
+        name: Northstar Log Intelligence
+        maturity: pilot
+        summary: Automatically analyzes automotive integration logs (DLT, PCAP, MDF) to find anomalies and root causes.
+        description: >-
+          Ingests DLT traces, PCAP captures and MDF4 measurements from integration
+          benches and uses anomaly detection plus a language model to summarize
+          probable root causes for engineers.
+        details: { type: technology_platform, currentVersion: "1.4", licensingModel: SaaS or on-premise, deploymentModels: [cloud, on_premise] }
+        commercial: { pricingModel: usage-based, availability: [EU], notes: null }
+        videos:
+          - title: Analyzing integration logs automatically — DLT and PCAP walkthrough
+            description: Shows automatic anomaly detection across DLT traces and Ethernet captures from an integration bench.
+            url: https://videos.example.com/northstar/log-intelligence-walkthrough.mp4
+            duration_seconds: 388
+        claims:
+          - { concept: log-analysis, predicate: PROVIDES_CAPABILITY, statement: "Automated analysis of integration logs and traces." }
+          - { concept: autosar-dlt, predicate: SUPPORTS, statement: "Parses AUTOSAR DLT traces." }
+          - { concept: pcap, predicate: SUPPORTS, statement: "Parses PCAP/PCAPNG captures." }
+          - { concept: asam-mdf, predicate: SUPPORTS, statement: "Reads MDF4 measurement files." }
+          - { concept: anomaly-detection, predicate: PROVIDES_CAPABILITY, statement: "Anomaly detection on timing and signal behaviour." }
+          - { concept: large-language-models, predicate: PROVIDES_CAPABILITY, statement: "LLM-generated root-cause summaries for engineers." }
+          - { concept: integration-testing, predicate: SUPPORTS, statement: "Used alongside integration test campaigns." }
+
+  - key: drivemesh
+    slug: drivemesh-technologies
+    name: DriveMesh Technologies
+    kind: supplier
+    owner: drivemesh
+    country: US
+    regions: [NA, EU, APAC]
+    employee_range: 201-500
+    website: https://drivemesh.example
+    verification: verified
+    summary: Scenario-based ADAS simulation and virtual validation.
+    description: Synthetic demo supplier offering sensor-realistic simulation for ADAS validation.
+    offerings:
+      - key: dm-sim
+        slug: scenario-simulation-suite
+        type: product
+        name: DriveMesh Scenario Simulation Suite
+        maturity: production
+        summary: Sensor-realistic ADAS simulation with OpenSCENARIO scenarios for SIL and HIL validation.
+        description: >-
+          Physically based camera, radar and lidar simulation, scenario variation
+          and coverage analysis. Designed for ASIL-B projects and SOTIF
+          argumentation; not itself a certified safety element.
+        details: { type: product, currentVersion: "2026.2", licensingModel: named-user and node-locked, deploymentModels: [on_premise, cloud] }
+        commercial: { pricingModel: annual license, availability: [NA, EU, APAC], notes: null }
+        videos:
+          - title: Highway cut-in scenario variation for ADAS validation
+            description: Generates 500 cut-in variants from one OpenSCENARIO file and reports coverage.
+            url: https://videos.example.com/drivemesh/cut-in-variation.mp4
+            duration_seconds: 296
+        claims:
+          - { concept: simulation, predicate: PROVIDES_CAPABILITY, statement: "Vehicle, environment and sensor simulation." }
+          - { concept: sensor-simulation, predicate: PROVIDES_CAPABILITY, statement: "Physically based camera, radar and lidar models." }
+          - { concept: scenario-based-testing, predicate: PROVIDES_CAPABILITY, statement: "Scenario variation and coverage analysis." }
+          - { concept: adas, predicate: TARGETS_DOMAIN, statement: "Built for ADAS validation." }
+          - { concept: openscenario, predicate: SUPPORTS, statement: "Imports ASAM OpenSCENARIO 1.x and 2.0." }
+          - { concept: opendrive, predicate: SUPPORTS, statement: "Imports ASAM OpenDRIVE road networks." }
+          - { concept: fmi, predicate: SUPPORTS, statement: "Co-simulation via FMI 3.0." }
+          - { concept: sil-testing, predicate: SUPPORTS, statement: "Closed-loop SIL execution." }
+          - { concept: hil-testing, predicate: SUPPORTS, statement: "Real-time HIL sensor injection." }
+          - { concept: nvidia-drive-orin, predicate: INTEGRATES_WITH, statement: "Sensor injection into NVIDIA DRIVE Orin based ECUs on HIL." }
+          - { concept: asil, predicate: DESIGNED_FOR, statement: "Designed for ASIL-B projects.", qualifiers: { asil: B } }
+          - { concept: sotif, predicate: DESIGNED_FOR, statement: "Supports SOTIF (ISO 21448) argumentation with coverage metrics." }
+          - { concept: validation, predicate: PROVIDES_CAPABILITY, statement: "Virtual validation campaigns." }
+          - { concept: simulation, predicate: PRODUCTION_DEPLOYMENT, statement: "Used in validation of series-production ADAS functions." , source_url: "https://drivemesh.example/news/series-validation", provenance: PUBLIC_SOURCE }
+
+  - key: eurostack
+    slug: eurostack-mobility
+    name: EuroStack Mobility
+    kind: supplier
+    owner: eurostack
+    country: FR
+    regions: [EU]
+    employee_range: 501-1000
+    website: https://eurostack.example
+    verification: pending
+    summary: Engineering services for AUTOSAR integration, validation and functional safety.
+    description: Synthetic demo engineering-service provider with AUTOSAR and safety teams.
+    claims:
+      - { concept: iso-26262, predicate: EXPERIENCE_WITH, statement: "Safety engineering on ASIL D braking and steering programs.", qualifiers: { asil: D } }
+      - { concept: aspice, predicate: PROCESS_COMPLIANT, statement: "Organization assessed at ASPICE capability level 2 (synthetic)." }
+      - { concept: iso-21434, predicate: EXPERIENCE_WITH, statement: "TARA and cybersecurity concept work for body and gateway ECUs." }
+    capabilities:
+      - { concept: hil-testing, name: HIL validation engineering, description: "Bench design and HIL campaign execution." }
+    offerings:
+      - key: es-int
+        slug: autosar-integration-services
+        type: service
+        name: AUTOSAR Integration & Validation Services
+        maturity: production
+        summary: AUTOSAR Classic and Adaptive integration, HIL validation and CI/CD setup delivered by embedded teams.
+        description: Integration of AUTOSAR stacks on target ECUs, validation on HIL benches and CI pipelines for automotive software.
+        details: { type: service, deliveryModel: hybrid, engagementModels: [time and material, fixed scope work package] }
+        commercial: { pricingModel: time and material, availability: [EU], notes: null }
+        claims:
+          - { concept: software-integration, predicate: PROVIDES_CAPABILITY, statement: "Integration of AUTOSAR stacks on target hardware." }
+          - { concept: autosar-classic, predicate: EXPERIENCE_WITH, statement: "Classic Platform integration on AURIX and S32G." }
+          - { concept: autosar-adaptive, predicate: EXPERIENCE_WITH, statement: "Adaptive Platform integration on Linux and QNX." }
+          - { concept: integration-testing, predicate: PROVIDES_CAPABILITY, statement: "Integration test design and execution." }
+          - { concept: validation, predicate: PROVIDES_CAPABILITY, statement: "System validation on HIL benches." }
+          - { concept: ci-cd, predicate: PROVIDES_CAPABILITY, statement: "CI/CD pipelines for embedded automotive software." }
+          - { concept: qnx, predicate: EXPERIENCE_WITH, statement: "Project experience on QNX." }
+          - { concept: infineon-aurix, predicate: EXPERIENCE_WITH, statement: "Project experience on AURIX TC3xx." }
+          - { concept: nxp-s32g, predicate: EXPERIENCE_WITH, statement: "Project experience on NXP S32G." }
+
+  - key: orionedge
+    slug: orionedge-software
+    name: OrionEdge Software
+    kind: supplier
+    owner: orionedge
+    country: IN
+    regions: [APAC, EU]
+    employee_range: 51-200
+    website: https://orionedge.example
+    verification: unverified
+    summary: Vehicle security monitoring, fleet telemetry and AI-generated tests.
+    description: Synthetic demo supplier focused on cybersecurity monitoring and vehicle data.
+    offerings:
+      - key: oe-vsm
+        slug: vehicle-security-monitor
+        type: product
+        name: OrionEdge Vehicle Security Monitor
+        maturity: pilot
+        summary: In-vehicle intrusion detection and fleet security monitoring aligned with ISO/SAE 21434 and UNECE R155.
+        description: Host and network intrusion detection sensors with a cloud security operations backend.
+        details: { type: product, currentVersion: "1.2", licensingModel: per-vehicle subscription, deploymentModels: [embedded, cloud] }
+        commercial: { pricingModel: per-vehicle subscription, availability: [EU, APAC], notes: null }
+        claims:
+          - { concept: security-monitoring, predicate: PROVIDES_CAPABILITY, statement: "Intrusion detection and fleet security monitoring." }
+          - { concept: iso-21434, predicate: PROCESS_COMPLIANT, statement: "Developed according to ISO/SAE 21434." }
+          - { concept: unece-r155, predicate: DESIGNED_FOR, statement: "Designed to support UNECE R155 CSMS monitoring obligations." }
+          - { concept: anomaly-detection, predicate: PROVIDES_CAPABILITY, statement: "ML-based anomaly detection on CAN and Ethernet traffic." }
+          - { concept: can, predicate: SUPPORTS, statement: "CAN and CAN FD sensors." }
+          - { concept: automotive-ethernet, predicate: SUPPORTS, statement: "Ethernet network sensor." }
+          - { concept: secoc, predicate: SUPPORTS, statement: "Monitors SecOC verification failures." }
+          - { concept: linux, predicate: SUPPORTS, statement: "Host sensor for Linux." }
+      - key: oe-tel
+        slug: fleet-telemetry-platform
+        type: technology_platform
+        name: OrionEdge Fleet Telemetry Platform
+        maturity: production
+        summary: Vehicle data and telemetry pipeline with OTA campaign support.
+        description: Edge agent and cloud pipeline for vehicle signals, logs and OTA update campaigns.
+        details: { type: technology_platform, currentVersion: "5.0", licensingModel: per-vehicle subscription, deploymentModels: [cloud, embedded] }
+        commercial: { pricingModel: per-vehicle subscription, availability: [EU, APAC, NA], notes: null }
+        claims:
+          - { concept: vehicle-data-platform, predicate: PROVIDES_CAPABILITY, statement: "Vehicle signal collection and analytics." }
+          - { concept: mqtt, predicate: SUPPORTS, statement: "Vehicle-to-cloud over MQTT." }
+          - { concept: ota-updates, predicate: PROVIDES_CAPABILITY, statement: "OTA campaign management." }
+          - { concept: unece-r156, predicate: DESIGNED_FOR, statement: "Designed to support UNECE R156 SUMS processes." }
+          - { concept: android-automotive, predicate: SUPPORTS, statement: "Edge agent for Android Automotive OS." }
+          - { concept: linux, predicate: SUPPORTS, statement: "Edge agent for Linux." }
+      - key: oe-testgen
+        slug: testgen-ai
+        type: product
+        name: OrionEdge TestGen AI
+        maturity: prototype
+        summary: Generates test cases from requirements with a language model and exports them to CI pipelines.
+        description: Prototype that drafts test specifications from natural-language requirements for human review.
+        details: { type: product, currentVersion: "0.3", licensingModel: evaluation license, deploymentModels: [cloud] }
+        commercial: { pricingModel: evaluation, availability: [EU], notes: null }
+        claims:
+          - { concept: test-generation, predicate: PROVIDES_CAPABILITY, statement: "Generates test cases from requirements." }
+          - { concept: large-language-models, predicate: PROVIDES_CAPABILITY, statement: "Uses a large language model to draft tests." }
+          - { concept: requirements-engineering, predicate: INTEGRATES_WITH, statement: "Imports requirements from ReqIF exports." }
+          - { concept: ci-cd, predicate: INTEGRATES_WITH, statement: "Exports generated tests to CI pipelines." }
+
+  - key: aurelia
+    slug: aurelia-motors-demo
+    name: Aurelia Motors (synthetic demo OEM)
+    kind: buyer
+    owner: buyer
+    country: DE
+    regions: [EU]
+    employee_range: 10000+
+    website: https://aurelia-motors.example
+    verification: verified
+    summary: Fictitious OEM used to demonstrate buyer workflows.
+    description: Synthetic buyer organization.
+    requirements:
+      - title: Project Falcon — ADAS integration test automation
+        description: >-
+          For vehicle program VP-2031 (customer Contoso Fleet) we need AI-based
+          integration test automation for an ADAS platform using AUTOSAR
+          Adaptive, QNX and Ethernet. We want a supplier with ISO 26262
+          experience and production references.
+        confidential_terms: [Project Falcon, VP-2031, Contoso Fleet]

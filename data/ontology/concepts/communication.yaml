@@ -6,8 +6,9 @@
   related_to: [service-oriented-architecture]
 - id: can
   facet: communication-protocol
-  label: CAN
+  label: CAN bus
   aliases: [controller area network, CAN bus]
+  case_sensitive_aliases: [CAN]
   description: Controller Area Network.
 - id: can-fd
   facet: communication-protocol

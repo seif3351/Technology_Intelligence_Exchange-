@@ -45,7 +45,7 @@ export const interpretRequirementText = (text: string, ontology: Ontology): Inte
   const nextId = (): string => `c${++constraintCounter}`;
 
   for (const clause of clauses) {
-    let working = canonical(clause);
+    let working = canonical(ontology.maskCaseMismatches(clause));
     const priorityAt = (position: number): ConstraintPriority => {
       const preferenceIndex = working.search(PREFERENCE_CUE);
       return preferenceIndex >= 0 && position >= preferenceIndex ? 'preference' : 'hard';

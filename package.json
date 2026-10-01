@@ -30,6 +30,11 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm contracts:check"
   },
   "devDependencies": {
+    "@atx/application": "workspace:*",
+    "@atx/config": "workspace:*",
+    "@atx/domain": "workspace:*",
+    "@atx/infrastructure": "workspace:*",
+    "@atx/runtime": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.0",
     "eslint": "^10.11.0",

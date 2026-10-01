@@ -64,7 +64,7 @@
 - id: log-analysis
   facet: capability
   label: Log analysis
-  aliases: [log analytics, trace analysis, integration log analysis, log file analysis]
+  aliases: [log analytics, trace analysis, integration log analysis, log file analysis, logs, integration logs, log files]
   description: Automated analysis of logs and traces from test benches and vehicles.
 - id: ci-cd
   facet: capability

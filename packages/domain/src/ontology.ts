@@ -23,6 +23,11 @@ export interface Concept {
   readonly label: string;
   readonly description: string;
   readonly aliases: readonly string[];
+  /**
+   * Aliases that are also ordinary words (e.g. "CAN" vs "can") and therefore
+   * only match when written with exactly this casing.
+   */
+  readonly caseSensitiveAliases?: readonly string[];
   readonly status: ConceptStatus;
 }
 
@@ -67,6 +72,7 @@ export class Ontology {
   private readonly outgoing = new Map<ConceptId, ConceptRelation[]>();
   private readonly incoming = new Map<ConceptId, ConceptRelation[]>();
   private readonly aliasIndex: { readonly normalized: string; readonly conceptId: ConceptId }[] = [];
+  private readonly caseSensitive: { readonly exact: string; readonly pattern: RegExp }[] = [];
 
   constructor(snapshot: OntologySnapshot) {
     for (const facet of snapshot.facets) this.facetsById.set(facet.id, facet);
@@ -75,7 +81,10 @@ export class Ontology {
         throw new Error(`Concept ${concept.id} references unknown facet ${concept.facetId}`);
       }
       this.conceptsById.set(concept.id, concept);
-      const names = new Set([concept.label, ...concept.aliases].map(normalizeForMatching));
+      for (const exact of concept.caseSensitiveAliases ?? []) {
+        this.caseSensitive.push({ exact, pattern: new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(exact)}(?![A-Za-z0-9])`, 'gi') });
+      }
+      const names = new Set([concept.label, ...concept.aliases, ...(concept.caseSensitiveAliases ?? [])].map(normalizeForMatching));
       for (const normalized of names) {
         if (normalized.length > 0) this.aliasIndex.push({ normalized, conceptId: concept.id });
       }
@@ -174,7 +183,7 @@ export class Ontology {
    * Overlapping matches are resolved in favour of the longest alias.
    */
   findMentions(text: string): AliasMatch[] {
-    const normalized = ` ${normalizeForMatching(text)} `;
+    const normalized = ` ${normalizeForMatching(this.maskCaseMismatches(text))} `;
     const taken: boolean[] = new Array<boolean>(normalized.length).fill(false);
     const matches: AliasMatch[] = [];
     for (const entry of this.aliasIndex) {
@@ -193,6 +202,19 @@ export class Ontology {
       }
     }
     return matches.sort((a, b) => a.start - b.start);
+  }
+
+  /**
+   * Removes occurrences of case-sensitive aliases whose casing differs (so
+   * "solutions that can run" does not mention the CAN bus). Call this on raw
+   * text BEFORE any lower-casing normalization.
+   */
+  maskCaseMismatches(text: string): string {
+    let result = text;
+    for (const { exact, pattern } of this.caseSensitive) {
+      result = result.replace(pattern, (match) => (match === exact ? match : ' '));
+    }
+    return result;
   }
 
   /** Case/alias-insensitive lookup of a single term. */
@@ -224,3 +246,5 @@ const push = <K, V>(map: Map<K, V[]>, key: K, value: V): void => {
   if (list) list.push(value);
   else map.set(key, [value]);
 };
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
