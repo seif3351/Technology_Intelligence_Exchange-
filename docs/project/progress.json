@@ -37,10 +37,11 @@
     "R1 architecture review (docs/project/architecture-reviews.md): PublicationService extracted, email rules to domain, digest to support",
     "S3: Mailer port (SMTP/file/memory/none), email verification (required to create organizations and confirm requests), password reset (single-use, no enumeration, rate-limited), sign out everywhere; credentials_changed_at revokes sessions and agent tokens (ms-precision iat_ms); invitation emails; web /account, /forgot-password, /reset-password, /verify-email, unverified banner; ADR-0013",
     "Fixed: failed sign-in cleared the email field (React action form reset); e2e now runs against the production web build",
-    "S4: organization invitations with roles (role ceiling, owners only by owners, verified email), accept for existing users, member list, role change, removal and leaving with last-owner protection; web /members and invitation acceptance; ADR-0014; Playwright members journey"
+    "S4: organization invitations with roles (role ceiling, owners only by owners, verified email), accept for existing users, member list, role change, removal and leaving with last-owner protection; web /members and invitation acceptance; ADR-0014; Playwright members journey",
+    "R2 architecture review: SecretToken contract, URL-stripping of names in emails, contract-driven role order in web"
   ],
   "verification": {
-    "unit": "pnpm test — 83 passed",
+    "unit": "pnpm test — 84 passed",
     "integration": "pnpm test:integration — 67 passed",
     "e2e": "pnpm test:e2e — 12 passed against the production web build",
     "typecheck": "pnpm typecheck — clean",
@@ -63,7 +64,7 @@
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "R2 architecture review, then S5: engagement notifications and contact handover",
+  "nextRecommendedStep": "S5: engagement notifications and contact handover",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

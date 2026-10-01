@@ -1088,15 +1088,6 @@ components:
         - token
         - newPassword
       additionalProperties: false
-    InvitationLookup:
-      type: object
-      properties:
-        token:
-          type: string
-          pattern: ^[A-Za-z0-9_-]{20,200}$
-      required:
-        - token
-      additionalProperties: false
     InvitationPreview:
       type: object
       properties:
@@ -4327,9 +4318,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/$defs/InvitationLookup"
+              $ref: "#/$defs/SecretTokenBody"
               $defs:
-                InvitationLookup:
+                SecretTokenBody:
                   type: object
                   properties:
                     token:

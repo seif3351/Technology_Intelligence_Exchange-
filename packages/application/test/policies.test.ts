@@ -38,3 +38,12 @@ describe('visibility policies', () => {
     expect(canViewSupplier(anonymous, { ...org('verified'), kind: 'buyer' })).toBe(false);
   });
 });
+
+describe('names in outgoing emails', () => {
+  it('strips links from user-controlled names', async () => {
+    const { plainName } = await import('../src/services/account-mail');
+    expect(plainName('Kim https://evil.example/login now')).toBe('Kim now');
+    expect(plainName('www.evil.example')).toBe('A colleague');
+    expect(plainName('VectorForge GmbH')).toBe('VectorForge GmbH');
+  });
+});

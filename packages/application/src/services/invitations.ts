@@ -18,7 +18,7 @@ import {
 import type { ApplicationDeps } from '../deps';
 import { authorizeTenant, requirePlatformAdmin, requireVerifiedEmail } from '../policies';
 import type { RequestContext } from '../principal';
-import { deliver } from './account-mail';
+import { deliver, plainName } from './account-mail';
 import { generateSecretToken, hashSecretToken, recordAudit } from './support';
 
 const DAY_MS = 86_400_000;
@@ -105,9 +105,9 @@ export class InvitationService {
       organizationId: scope.organizationId,
       role: input.role,
       invitedBy: actor.userId,
-      subject: `Join ${organization.name} on the Automotive Technology Exchange`,
+      subject: `Join ${plainName(organization.name)} on the Automotive Technology Exchange`,
       intro: [
-        `${actor.displayName} invited you to join ${organization.name} as ${input.role} on the`,
+        `${plainName(actor.displayName)} invited you to join ${plainName(organization.name)} as ${input.role} on the`,
         'Automotive Technology Exchange. If you already have an account, sign in first, then open the link.',
       ],
     });

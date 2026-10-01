@@ -1,8 +1,7 @@
+import { SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { ActionForm } from '@/components/action-form';
 import { resetPassword } from '@/lib/actions/account';
-
-const TOKEN = /^[A-Za-z0-9_-]{20,200}$/;
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -10,7 +9,7 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  if (!token || !TOKEN.test(token))
+  if (!token || !SecretToken.safeParse(token).success)
     return (
       <div className="stack narrower">
         <h1>Link not valid</h1>

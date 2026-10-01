@@ -1,4 +1,4 @@
-import { InvitationRecord, MemberRecord } from '@atx/contracts';
+import { InvitationRecord, MemberRecord, OrganizationRoleEnum } from '@atx/contracts';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { ActionForm } from '@/components/action-form';
@@ -8,7 +8,8 @@ import { InviteMemberForm } from './invite-member-form';
 
 export const dynamic = 'force-dynamic';
 
-const ROLES = ['viewer', 'editor', 'admin', 'owner'] as const;
+/** Roles in ascending privilege, as defined by the API contract. */
+const ROLES = OrganizationRoleEnum.options;
 const rank = (role: string) => ROLES.indexOf(role as (typeof ROLES)[number]);
 
 export default async function MembersPage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {

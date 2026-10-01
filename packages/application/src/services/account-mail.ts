@@ -21,6 +21,17 @@ export const deliver = async (deps: ApplicationDeps, message: OutgoingEmail): Pr
   }
 };
 
+/**
+ * User-controlled names (display names, organization names) appear in emails we
+ * send to third parties; strip anything link-like so they cannot carry phishing URLs.
+ */
+export const plainName = (name: string): string =>
+  name
+    .replace(/\b[a-z][a-z0-9+.-]*:\/\/\S*/gi, '')
+    .replace(/\bwww\.\S+/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim() || 'A colleague';
+
 export const webLink = (deps: ApplicationDeps, pathname: string, token: string): string => {
   const url = new URL(pathname, deps.settings.publicWebUrl);
   url.searchParams.set('token', token);
@@ -56,7 +67,7 @@ export const sendEmailVerification = async (
     to: user.email,
     subject: 'Confirm your email address — Automotive Technology Exchange',
     text: [
-      `Hello ${user.displayName},`,
+      `Hello ${plainName(user.displayName)},`,
       '',
       'Please confirm your email address by opening this link (valid for 3 days):',
       webLink(deps, '/verify-email', token),

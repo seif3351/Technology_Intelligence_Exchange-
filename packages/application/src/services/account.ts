@@ -2,7 +2,7 @@ import { AppError, isUserTokenUsable, normalizeEmail, validationError } from '@a
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
 import type { RequestContext } from '../principal';
-import { deliver, issueUserToken, sendEmailVerification, webLink } from './account-mail';
+import { deliver, issueUserToken, plainName, sendEmailVerification, webLink } from './account-mail';
 import type { PasswordHasher } from './identity';
 import { hashSecretToken, recordAudit } from './support';
 
@@ -77,7 +77,7 @@ export class AccountService {
       to: user.email,
       subject: 'Reset your password — Automotive Technology Exchange',
       text: [
-        `Hello ${user.displayName},`,
+        `Hello ${plainName(user.displayName)},`,
         '',
         'Someone (hopefully you) asked to reset the password of your account. Open this link within one hour:',
         webLink(this.deps, '/reset-password', token),

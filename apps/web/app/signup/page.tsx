@@ -1,4 +1,4 @@
-import { InvitationPreview, RegistrationPolicy } from '@atx/contracts';
+import { InvitationPreview, RegistrationPolicy, SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { api, currentUser } from '@/lib/api';
 import { AcceptInvitation } from './accept-invitation';
@@ -6,12 +6,10 @@ import { SignupForm } from './signup-form';
 
 export const dynamic = 'force-dynamic';
 
-const TOKEN = /^[A-Za-z0-9_-]{20,200}$/;
-
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ invite?: string }> }) {
   const { invite } = await searchParams;
   const policy = await api('/v1/auth/registration', { schema: RegistrationPolicy, anonymous: true });
-  const token = invite && TOKEN.test(invite) ? invite : null;
+  const token = invite && SecretToken.safeParse(invite).success ? invite : null;
   const invitation = token
     ? await api('/v1/invitations/lookup', {
         method: 'POST',

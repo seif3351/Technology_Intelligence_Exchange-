@@ -1,10 +1,9 @@
+import { SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { z } from 'zod';
 import { api } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
-
-const TOKEN = /^[A-Za-z0-9_-]{20,200}$/;
 
 export default async function VerifyEmailPage({
   searchParams,
@@ -13,7 +12,7 @@ export default async function VerifyEmailPage({
 }) {
   const { token } = await searchParams;
   const ok =
-    token && TOKEN.test(token)
+    token && SecretToken.safeParse(token).success
       ? await api('/v1/auth/email-verification/confirm', {
           method: 'POST',
           body: { token },

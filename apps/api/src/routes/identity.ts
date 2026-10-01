@@ -1,7 +1,6 @@
 import { SCOPES, type Scope, requireUser } from '@atx/application';
 import {
   AgentTokenRequest,
-  InvitationLookup,
   InvitationPreview,
   LoginRequest,
   Me,
@@ -149,7 +148,7 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
         'Describe a pending invitation (token in the body, never in the URL, so it stays out of access logs)',
       tags: ['auth'],
       auth: 'none',
-      body: InvitationLookup,
+      body: SecretTokenBody,
       response: InvitationPreview,
       rateLimit: AUTH_RATE_LIMIT,
       handler: async ({ body }) => app.invitations.describe(body.token),

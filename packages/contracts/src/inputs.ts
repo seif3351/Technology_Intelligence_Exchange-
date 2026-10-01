@@ -242,31 +242,26 @@ export const OrganizationUpdate = z
 export const LoginRequest = z
   .object({ email: z.email().max(254), password: z.string().min(1).max(200) })
   .meta({ id: 'LoginRequest' });
+/** Format of every single-use secret mailed to users (invitations, verification, password reset). */
+export const SecretToken = z.string().regex(/^[A-Za-z0-9_-]{20,200}$/);
 export const RegisterRequest = z
   .object({
     email: z.email().max(254),
     password: z.string().min(12).max(200),
     displayName: z.string().min(1).max(120),
     acceptTerms: z.literal(true).describe('The user explicitly accepted the current terms of use.'),
-    invitationToken: z
-      .string()
-      .regex(/^[A-Za-z0-9_-]{20,200}$/)
-      .optional()
-      .describe('Secret token from an invitation link (required when registration is invite-only).'),
+    invitationToken: SecretToken.optional().describe(
+      'Secret token from an invitation link (required when registration is invite-only).',
+    ),
   })
   .meta({ id: 'RegisterRequest' });
-export const SecretTokenBody = z
-  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/) })
-  .meta({ id: 'SecretTokenBody' });
+export const SecretTokenBody = z.object({ token: SecretToken }).meta({ id: 'SecretTokenBody' });
 export const PasswordResetRequest = z
   .object({ email: z.email().max(254) })
   .meta({ id: 'PasswordResetRequest' });
 export const PasswordResetConfirm = z
-  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/), newPassword: z.string().min(12).max(200) })
+  .object({ token: SecretToken, newPassword: z.string().min(12).max(200) })
   .meta({ id: 'PasswordResetConfirm' });
-export const InvitationLookup = z
-  .object({ token: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/) })
-  .meta({ id: 'InvitationLookup' });
 export const InvitationPreview = z
   .object({ email: z.string(), organizationName: z.string().nullable(), role: z.string().nullable() })
   .meta({ id: 'InvitationPreview' });
