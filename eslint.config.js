@@ -12,7 +12,7 @@ const restrict = (patterns, message) => ({
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'coverage/**', 'apps/web/next-env.d.ts', '**/*.generated.*'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'coverage/**', '.var/**', 'apps/web/next-env.d.ts', '**/*.generated.*'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -26,6 +26,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['apps/mcp-server/src/apps/views/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+  {
     files: ['packages/domain/src/**/*.ts'],
     rules: restrict(
       ['@atx/*', 'pg', 'zod', 'fastify', 'react', 'next', '@modelcontextprotocol/*', 'node:*'],
@@ -35,19 +39,19 @@ export default tseslint.config(
   {
     files: ['packages/search/src/**/*.ts'],
     rules: restrict(
-      ['@atx/application', '@atx/infrastructure', '@atx/contracts', 'pg', 'fastify', 'react', 'next', '@modelcontextprotocol/*'],
+      ['@atx/application', '@atx/infrastructure', '@atx/contracts', '@atx/runtime', 'pg', 'fastify', 'react', 'next', '@modelcontextprotocol/*'],
       'The search/matching engine may only depend on @atx/domain.',
     ),
   },
   {
     files: ['packages/application/src/**/*.ts'],
     rules: restrict(
-      ['@atx/infrastructure', '@atx/ai', '@atx/contracts', 'pg', 'fastify', 'react', 'next', '@modelcontextprotocol/*', 'jose'],
+      ['@atx/infrastructure', '@atx/ai', '@atx/auth', '@atx/contracts', '@atx/runtime', '@atx/observability', 'pg', 'fastify', 'react', 'next', '@modelcontextprotocol/*', 'jose'],
       'Application use cases depend on ports, never on adapters, transports or frameworks.',
     ),
   },
   {
-    files: ['apps/*/src/**/*.ts', 'apps/web/**/*.{ts,tsx}', 'scripts/**/*.ts'],
+    files: ['apps/*/src/**/*.ts', 'apps/*/scripts/**/*.ts', 'apps/web/**/*.{ts,tsx}', 'scripts/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
 );

@@ -35,7 +35,7 @@ export const asId = <T extends string>(value: string): Brand<string, T> => value
 export const slugify = (value: string): string =>
   value
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

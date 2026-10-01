@@ -1,11 +1,10 @@
-import { type Scope, requireUser } from '@atx/application';
+import { SCOPES, type Scope, requireUser } from '@atx/application';
 import { AgentTokenRequest, LoginRequest, Me, RegisterRequest, TokenResponse } from '@atx/contracts';
 import type { Runtime } from '@atx/runtime';
 import { z } from 'zod';
 import { type AnyRouteSpec, defineRoute } from '../http/route';
 
 const SESSION_TTL_SECONDS = 8 * 3600;
-const AUTH_RATE_LIMIT = { max: 10, timeWindow: '1 minute' } as const;
 
 /**
  * Built-in identity endpoints (development and small deployments). Larger
@@ -13,9 +12,15 @@ const AUTH_RATE_LIMIT = { max: 10, timeWindow: '1 minute' } as const;
  */
 export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
   const { app, tokens, env } = runtime;
+  const AUTH_RATE_LIMIT = { max: env.AUTH_RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' } as const;
+  /**
+   * First-party sessions carry the full scope ceiling; effective permissions
+   * are derived per request from current memberships and roles (so creating
+   * an organization does not require a new login). Agent tokens, below, are
+   * narrowly scoped instead.
+   */
   const issueSession = async (userId: string) => {
-    const principal = await app.identity.principalFor(userId as never, { channel: 'web', clientId: null, grantedScopes: 'all' });
-    const scopes = [...principal.scopes].sort();
+    const scopes = [...SCOPES];
     const accessToken = await tokens.issuer.issue({ subject: userId, audience: env.API_PUBLIC_URL, scopes, ttlSeconds: SESSION_TTL_SECONDS });
     return { accessToken, tokenType: 'Bearer' as const, expiresIn: SESSION_TTL_SECONDS, audience: env.API_PUBLIC_URL, scopes };
   };

@@ -12,7 +12,6 @@
   "dependencies": {
     "@atx/application": "workspace:*",
     "@atx/domain": "workspace:*",
-    "@atx/observability": "workspace:*",
     "@atx/search": "workspace:*",
     "@aws-sdk/client-s3": "^3.1144.0",
     "pg": "^8.16.3",

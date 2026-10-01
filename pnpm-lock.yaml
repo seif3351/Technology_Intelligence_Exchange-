@@ -8,12 +8,18 @@ importers:
 
   .:
     devDependencies:
+      '@atx/api':
+        specifier: workspace:*
+        version: link:apps/api
       '@atx/application':
         specifier: workspace:*
         version: link:packages/application
       '@atx/config':
         specifier: workspace:*
         version: link:packages/config
+      '@atx/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@atx/domain':
         specifier: workspace:*
         version: link:packages/domain
@@ -53,6 +59,9 @@ importers:
       yaml:
         specifier: ^2.8.1
         version: 2.9.1
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
 
   apps/api:
     dependencies:
@@ -92,6 +101,13 @@ importers:
       zod:
         specifier: ^4.6.5
         version: 4.6.5
+    devDependencies:
+      '@atx/test-utils':
+        specifier: workspace:*
+        version: link:../../packages/test-utils
+      '@atx/worker':
+        specifier: workspace:*
+        version: link:../worker
 
   apps/mcp-server:
     dependencies:
@@ -141,6 +157,31 @@ importers:
       esbuild:
         specifier: ^0.28
         version: 0.28.2
+
+  apps/worker:
+    dependencies:
+      '@atx/application':
+        specifier: workspace:*
+        version: link:../../packages/application
+      '@atx/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@atx/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@atx/infrastructure':
+        specifier: workspace:*
+        version: link:../../packages/infrastructure
+      '@atx/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@atx/test-utils':
+        specifier: workspace:*
+        version: link:../../packages/test-utils
 
   packages/ai:
     dependencies:
@@ -206,9 +247,6 @@ importers:
       '@atx/domain':
         specifier: workspace:*
         version: link:../domain
-      '@atx/observability':
-        specifier: workspace:*
-        version: link:../observability
       '@atx/search':
         specifier: workspace:*
         version: link:../search

@@ -151,7 +151,9 @@ export const createClaimRepository = (db: Queryable): ClaimRepository => ({
     const assignments = CLAIM_COLUMNS.split(',')
       .map((column) => column.trim())
       .map((column, index) => ({ column, index }))
-      .filter(({ column }) => !['id', 'organization_id', 'created_at'].includes(column))
+      // id and organization_id are only used in the WHERE clause; created_at is immutable
+      // but must still be referenced so PostgreSQL can infer every parameter's type.
+      .filter(({ column }) => !['id', 'organization_id'].includes(column))
       .map(({ column, index }) => `${column} = $${index + 1}`)
       .join(', ');
     params.push(expectedVersion);

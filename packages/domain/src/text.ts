@@ -3,8 +3,13 @@
  * never instructions: we strip control characters and bound its length before
  * it reaches any downstream consumer (UI, agent, LLM).
  */
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F​-‏‪-‮⁦-⁩]/g;
+const char = (code: number): string => String.fromCharCode(code);
+const range = (from: number, to: number): string => `${char(from)}-${char(to)}`;
+/** C0 controls (except tab/newline/CR), DEL, zero-width and bidirectional override characters. */
+const CONTROL_CHARS = new RegExp(
+  `[${range(0x00, 0x08)}${char(0x0b)}${char(0x0c)}${range(0x0e, 0x1f)}${char(0x7f)}${range(0x200b, 0x200f)}${range(0x202a, 0x202e)}${range(0x2066, 0x2069)}]`,
+  'g',
+);
 
 export const sanitizeUntrustedText = (value: string, maxLength = 5000): string => {
   const cleaned = value.replace(CONTROL_CHARS, '').replace(/\r\n?/g, '\n').trim();
@@ -19,7 +24,7 @@ export const sanitizeUntrustedText = (value: string, maxLength = 5000): string =
 export const normalizeForMatching = (value: string): string =>
   value
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9+#./:]+/g, ' ')
     .split(' ')

@@ -1,33 +1,26 @@
 {
-  "name": "@atx/api",
+  "name": "@atx/worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/server.ts",
-    "./openapi": "./src/http/openapi.ts"
+    ".": "./src/worker.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "tsx src/main.ts",
+    "reindex": "tsx --env-file-if-exists=../../.env src/main.ts reindex",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@atx/application": "workspace:*",
-    "@atx/auth": "workspace:*",
     "@atx/config": "workspace:*",
-    "@atx/contracts": "workspace:*",
     "@atx/domain": "workspace:*",
     "@atx/infrastructure": "workspace:*",
     "@atx/runtime": "workspace:*",
-    "@fastify/cors": "^11.3.0",
-    "@fastify/helmet": "^13.1.1",
-    "@fastify/rate-limit": "^11.2.0",
-    "fastify": "^5.12.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@atx/test-utils": "workspace:*",
-    "@atx/worker": "workspace:*"
+    "@atx/test-utils": "workspace:*"
   }
 }

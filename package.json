@@ -30,8 +30,10 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm contracts:check"
   },
   "devDependencies": {
+    "@atx/api": "workspace:*",
     "@atx/application": "workspace:*",
     "@atx/config": "workspace:*",
+    "@atx/contracts": "workspace:*",
     "@atx/domain": "workspace:*",
     "@atx/infrastructure": "workspace:*",
     "@atx/runtime": "workspace:*",
@@ -44,6 +46,7 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.46.0",
     "vitest": "^5.0.3",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.1",
+    "zod": "^4.6.5"
   }
 }

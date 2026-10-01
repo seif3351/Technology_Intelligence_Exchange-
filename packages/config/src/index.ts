@@ -24,6 +24,7 @@ export const EnvSchema = z.object({
   MCP_PUBLIC_URL: z.url().default('http://localhost:4100/mcp'),
   MCP_PORT: z.coerce.number().int().default(4100),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
+  AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(10),
   ALLOWED_HOSTS: z.string().default('localhost,127.0.0.1'),
 
   AUTH_ISSUER: z.url().optional(),

@@ -20,6 +20,7 @@ export const createTestRuntime = async (overrides: Record<string, string> = {}):
     STORAGE_DIR: path.join(REPO_ROOT, '.var/test-storage'),
     AUTH_DEV_KEY_FILE: path.join(REPO_ROOT, '.var/test-signing-key.json'),
     FEATURE_ENGAGEMENT_ACTIONS: 'true',
+    AUTH_RATE_LIMIT_PER_MINUTE: '1000',
     ...overrides,
   });
   const runtime = await createRuntime(env, 'atx-test');

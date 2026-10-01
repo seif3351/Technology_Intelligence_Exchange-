@@ -113,7 +113,7 @@ describe('technical claims', () => {
   });
 
   it('strips control and bidi characters from untrusted statements', () => {
-    const claim = draft({ statement: 'Supports‮ QNX\u0000' });
+    const claim = draft({ statement: `Supports${String.fromCharCode(0x202e)} QNX${String.fromCharCode(0)}` });
     expect(claim.statement).toBe('Supports QNX');
   });
 });
