@@ -47,7 +47,8 @@
     "R4 architecture review: hourly retention purge of expired secrets, unused OAuth clients and finished jobs (MaintenanceService)",
     "S9: MCP update_offering/revise_claim/retract_claim with agents-edit-drafts-only rule; CSV shortlist export (formula-injection safe) with web download; opt-in saved-requirement alerts on newly listed offerings (deduplicated, private, audited via the matcher); ADR-0018",
     "S10: CI publishes atx-node/atx-web images to GHCR (SHA tags, only from green main); infra/deploy production compose (Caddy TLS edge, ClamAV, release service for migrations/seed/admin CLIs, local-db rehearsal profile), smoke-tested end to end locally; docs/operations deployment guide, environment reference and runbook; ADR-0019. Fixes found while deploying: non-root image could not run pnpm (shared COREPACK_HOME; web starts Next directly), empty env vars now count as unset, and credential revocation (password reset, sign out everywhere) now also revokes OAuth grants/refresh tokens (ADR-0013 amendment) plus operator CLI `pnpm admin:revoke-access`",
-    "R5 final architecture review: revocation paths re-checked across all credential types (OAuth refresh gap fixed in S10), configuration drift guard test (test/operations.test.ts), shared operator CLI helper, SupplierService size accepted with an extraction trigger; review checklist extended"
+    "R5 final architecture review: revocation paths re-checked across all credential types (OAuth refresh gap fixed in S10), configuration drift guard test (test/operations.test.ts), shared operator CLI helper, SupplierService size accepted with an extraction trigger; review checklist extended",
+    "CI fix: e2e job let Playwright reuse an API started without the e2e mail inbox, so email journeys failed on GitHub since S3/S4 (green locally). Playwright now owns the servers on CI (reuseExistingServer off). First fully green main run, images published to GHCR (atx-node, atx-web)"
   ],
   "verification": {
     "unit": "pnpm test — 104 passed (incl. architecture and operations-config guards)",
@@ -56,7 +57,8 @@
     "typecheck": "pnpm typecheck — clean",
     "lint": "pnpm lint — clean",
     "contracts": "pnpm contracts:check — clean",
-    "deployment": "infra/deploy/compose.yml rehearsed locally with locally built images: release seed + admin bootstrap, proxy routing, OAuth metadata, MCP 401 challenge and authenticated tools/list, Host allow-list, no secrets in logs"
+    "deployment": "infra/deploy/compose.yml rehearsed locally with locally built images: release seed + admin bootstrap, proxy routing, OAuth metadata, MCP 401 challenge and authenticated tools/list, Host allow-list, no secrets in logs",
+    "ci": "GitHub Actions on main: verify, integration, e2e and both image builds green (run for commit 099b08c)"
   },
   "knownIssues": [
     "AI adapter not tested against the live Anthropic API in this environment (no key); behaviour verified with a fake LLM and fallbacks",
