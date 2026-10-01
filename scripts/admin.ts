@@ -5,8 +5,7 @@
  *   pnpm admin:create admin@example.com "Platform Admin"
  *   printf '%s' "$PASSWORD" | pnpm admin:create admin@example.com "Platform Admin"
  */
-import { loadConfig } from '@atx/config';
-import { createRuntime } from '@atx/runtime';
+import { OPERATOR_CONTEXT, runOperatorCommand } from './lib/operator';
 
 const readStdin = async (): Promise<string | null> => {
   if (process.stdin.isTTY) return null;
@@ -25,17 +24,11 @@ if (!email)
   );
 const password = process.env['ATX_ADMIN_PASSWORD'] ?? (await readStdin());
 
-const runtime = await createRuntime(loadConfig(), 'atx-admin-cli');
-try {
-  const { user, created } = await runtime.app.identity.bootstrapPlatformAdmin(
-    { principal: { kind: 'system', component: 'admin-cli' }, requestId: 'admin-cli' },
-    { email, displayName, password },
-  );
+await runOperatorCommand(async (runtime) => {
+  const { user, created } = await runtime.app.identity.bootstrapPlatformAdmin(OPERATOR_CONTEXT, {
+    email,
+    displayName,
+    password,
+  });
   console.log(`${created ? 'created' : 'promoted'} platform administrator ${user.email} (${user.id})`);
-} catch (error) {
-  // Messages only: stack traces add nothing for an operator.
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-} finally {
-  await runtime.close();
-}
+});

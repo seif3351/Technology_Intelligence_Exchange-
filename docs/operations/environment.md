@@ -48,14 +48,15 @@ In any environment, `MAIL_DRIVER=smtp` requires `SMTP_URL`, `AI_PROVIDER=anthrop
 
 ## Authentication and secrets
 
-| Variable                               | Default          | Notes                                                                                                  |
-| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| `AUTH_SIGNING_JWK`                     | dev key file     | **secret**; private ES256 JWK (`pnpm auth:generate-key`). Rotating it signs everyone out (see runbook) |
-| `AUTH_ISSUER`                          | `API_PUBLIC_URL` |                                                                                                        |
-| `MCP_AUTH_ISSUER`, `MCP_AUTH_JWKS_URL` | —                | only to delegate MCP authorization to an external authorization server                                 |
-| `MCP_REQUIRE_AUTH`                     | `false`          | `true` in the deploy compose: anonymous MCP calls get the OAuth challenge                              |
-| `CONFIRMATION_SECRET`                  | dev value        | **secret**, ≥32 chars; binds consequential-action confirmation tokens                                  |
-| `ASSET_URL_SECRET`                     | dev value        | **secret**, ≥32 chars; signs time-limited asset URLs                                                   |
+| Variable                               | Default                     | Notes                                                                                                  |
+| -------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `AUTH_SIGNING_JWK`                     | dev key file                | **secret**; private ES256 JWK (`pnpm auth:generate-key`). Rotating it signs everyone out (see runbook) |
+| `AUTH_DEV_KEY_FILE`                    | `.var/dev-signing-key.json` | development only: where the auto-generated signing key is kept when `AUTH_SIGNING_JWK` is unset        |
+| `AUTH_ISSUER`                          | `API_PUBLIC_URL`            |                                                                                                        |
+| `MCP_AUTH_ISSUER`, `MCP_AUTH_JWKS_URL` | —                           | only to delegate MCP authorization to an external authorization server                                 |
+| `MCP_REQUIRE_AUTH`                     | `false`                     | `true` in the deploy compose: anonymous MCP calls get the OAuth challenge                              |
+| `CONFIRMATION_SECRET`                  | dev value                   | **secret**, ≥32 chars; binds consequential-action confirmation tokens                                  |
+| `ASSET_URL_SECRET`                     | dev value                   | **secret**, ≥32 chars; signs time-limited asset URLs                                                   |
 
 ## Storage and content safety
 

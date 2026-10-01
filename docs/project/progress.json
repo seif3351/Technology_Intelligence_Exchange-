@@ -1,7 +1,7 @@
 {
   "project": "Automotive Technology Exchange",
   "updatedAt": "2026-10-01",
-  "currentPhase": "Pilot readiness (steps S1–S10, see docs/project/engineering-principles.md working method)",
+  "currentPhase": "Pilot-ready: steps S1–S10 and reviews R1–R5 complete; remaining items are operator decisions (hosting, DNS, SMTP, counsel-approved legal pages, DPAs)",
   "phases": {
     "0-research": "done — MCP 2026-07-28 changelog, SDK v2.2 typings, MCP Apps 2.0.3, Skills SEP-2640, MCP authorization (RFC 9728/8707) verified from packages and spec sources",
     "1-architecture-contracts": "done — modular monolith, ADR-0001..0010, Zod contracts, generated OpenAPI 3.1 + MCP JSON Schemas",
@@ -46,10 +46,11 @@
     "S8: production hardening — config guard requires ClamAV and an explicit DATABASE_SSL mode (off|require|verify + CA), MIGRATE_ON_START for release-step migrations, demo-account hints only with SHOW_DEMO_ACCOUNTS, web HSTS over https, compose production profile updated; per-concept default_level in the ontology (security mechanisms default to supports; fixes the SecOC partial-match issue); config unit tests; pnpm audit clean",
     "R4 architecture review: hourly retention purge of expired secrets, unused OAuth clients and finished jobs (MaintenanceService)",
     "S9: MCP update_offering/revise_claim/retract_claim with agents-edit-drafts-only rule; CSV shortlist export (formula-injection safe) with web download; opt-in saved-requirement alerts on newly listed offerings (deduplicated, private, audited via the matcher); ADR-0018",
-    "S10: CI publishes atx-node/atx-web images to GHCR (SHA tags, only from green main); infra/deploy production compose (Caddy TLS edge, ClamAV, release service for migrations/seed/admin CLIs, local-db rehearsal profile), smoke-tested end to end locally; docs/operations deployment guide, environment reference and runbook; ADR-0019. Fixes found while deploying: non-root image could not run pnpm (shared COREPACK_HOME; web starts Next directly), empty env vars now count as unset, and credential revocation (password reset, sign out everywhere) now also revokes OAuth grants/refresh tokens (ADR-0013 amendment) plus operator CLI `pnpm admin:revoke-access`"
+    "S10: CI publishes atx-node/atx-web images to GHCR (SHA tags, only from green main); infra/deploy production compose (Caddy TLS edge, ClamAV, release service for migrations/seed/admin CLIs, local-db rehearsal profile), smoke-tested end to end locally; docs/operations deployment guide, environment reference and runbook; ADR-0019. Fixes found while deploying: non-root image could not run pnpm (shared COREPACK_HOME; web starts Next directly), empty env vars now count as unset, and credential revocation (password reset, sign out everywhere) now also revokes OAuth grants/refresh tokens (ADR-0013 amendment) plus operator CLI `pnpm admin:revoke-access`",
+    "R5 final architecture review: revocation paths re-checked across all credential types (OAuth refresh gap fixed in S10), configuration drift guard test (test/operations.test.ts), shared operator CLI helper, SupplierService size accepted with an extraction trigger; review checklist extended"
   ],
   "verification": {
-    "unit": "pnpm test — 99 passed",
+    "unit": "pnpm test — 104 passed (incl. architecture and operations-config guards)",
     "integration": "pnpm test:integration — 91 passed",
     "e2e": "pnpm test:e2e — 15 passed against the production web build",
     "typecheck": "pnpm typecheck — clean",
@@ -72,9 +73,11 @@
     "OAuth: authorization errors after client validation are shown on the consent page instead of being redirected to the client; Client ID Metadata Documents are not supported (no server-side fetching)",
     "Legal pages (/terms, /privacy) are DRAFT text and must be replaced by counsel-approved versions before external users are invited (deployment.md go/no-go)",
     "Images contain the full workspace incl. dev tooling (~1.3 GB node image); a pruned production image is a later optimisation (ADR-0019)",
-    "Signing key rotation is single-key (all access tokens invalidated at once); overlapping keys / KMS later"
+    "Signing key rotation is single-key (all access tokens invalidated at once); overlapping keys / KMS later",
+    "Platform-admin demotion is SQL-only (not audited); add an audited CLI",
+    "SupplierService is ~800 lines; extract EvidenceService when evidence/assets change next (R5 K6)"
   ],
-  "nextRecommendedStep": "R5: final holistic architecture review and full verification",
+  "nextRecommendedStep": "Operator: follow docs/operations/deployment.md (go/no-go checklist first). Engineering follow-ups: audited admin demotion CLI, EvidenceService extraction, pruned production image, overlapping signing keys",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",
