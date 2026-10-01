@@ -157,6 +157,9 @@ importers:
       '@atx/test-utils':
         specifier: workspace:*
         version: link:../../packages/test-utils
+      '@atx/worker':
+        specifier: workspace:*
+        version: link:../worker
       esbuild:
         specifier: ^0.28
         version: 0.28.2

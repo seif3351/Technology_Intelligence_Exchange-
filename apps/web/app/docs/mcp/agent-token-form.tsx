@@ -8,6 +8,11 @@ const SCOPES = [
   { id: 'requirements:read', label: "Read your organization's private requirements" },
   { id: 'requirements:write', label: 'Save private requirement drafts' },
   { id: 'engagements:write', label: 'Prepare demo/RFI requests (each still needs your approval)' },
+  {
+    id: 'supplier:write',
+    label:
+      'Upload content and draft claims in your supplier workspace (publishing still needs your approval)',
+  },
 ];
 
 export function AgentTokenForm() {

@@ -1058,6 +1058,7 @@ components:
               - requirements:read
               - requirements:write
               - engagements:write
+              - supplier:write
         ttlHours:
           default: 8
           type: integer
@@ -3376,6 +3377,7 @@ paths:
                           - requirements:read
                           - requirements:write
                           - engagements:write
+                          - supplier:write
                     ttlHours:
                       default: 8
                       type: integer

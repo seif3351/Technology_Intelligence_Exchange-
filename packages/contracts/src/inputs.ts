@@ -252,7 +252,15 @@ export const RegisterRequest = z
 export const AgentTokenRequest = z
   .object({
     scopes: z
-      .array(z.enum(['catalog:read', 'requirements:read', 'requirements:write', 'engagements:write']))
+      .array(
+        z.enum([
+          'catalog:read',
+          'requirements:read',
+          'requirements:write',
+          'engagements:write',
+          'supplier:write',
+        ]),
+      )
       .min(1),
     ttlHours: z.number().int().min(1).max(24).default(8),
   })

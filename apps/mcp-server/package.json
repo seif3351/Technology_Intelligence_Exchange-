@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@atx/test-utils": "workspace:*",
+    "@atx/worker": "workspace:*",
     "esbuild": "^0.28"
   },
   "dependencies": {

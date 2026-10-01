@@ -20,7 +20,17 @@ Schemas: `docs/api/json-schema/mcp-tools.json` (generated from `packages/contrac
 | `create_requirement_draft`    | Save a PRIVATE requirement draft with confidential terms                         | `requirements:write`                 | Requirement builder  |
 | `prepare_engagement_request`* | Preview a demo/workshop/PoC/RFI request; nothing is sent                         | `engagements:write`                  | Request form         |
 | `confirm_engagement_request`* | Send after explicit user approval (token + idempotency key + `user_confirmed`)   | `engagements:write`                  | —                    |
+| `get_supplier_workspace`      | Own workspace: offerings, claims (incl. AI drafts), evidence, upload states      | `supplier:write`                     | —                    |
+| `create_offering`             | Create a PRIVATE draft offering                                                  | `supplier:write`                     | —                    |
+| `add_claim`                   | Add a draft claim (subject + predicate + concept + qualifiers)                   | `supplier:write`                     | —                    |
+| `add_evidence`                | Register certificate / case study / public URL / production reference            | `supplier:write`                     | —                    |
+| `register_demo_video`         | Link an externally hosted demo video (never fetched)                             | `supplier:write`                     | —                    |
+| `upload_document`             | Upload a datasheet/transcript (≤ ~8 MB); async scan, extraction, AI drafts       | `supplier:write`                     | —                    |
+| `prepare_publication`         | Preview exactly what would become public; nothing is published                   | `supplier:write`                     | —                    |
+| `confirm_publication`         | Publish after explicit user approval (token bound to user + exact versions)      | `supplier:write`                     | —                    |
 
 \* Registered only when `FEATURE_ENGAGEMENT_ACTIONS=true`.
+
+Supplier tools only ever create private drafts. Publication is a human review step: AI-drafted claims become supplier statements (`SUPPLIER_VERIFIED`), never platform-verified.
 
 All read tools are annotated `readOnlyHint: true, openWorldHint: false`. Action tools are `openWorldHint: true` (they disclose information to a third party).

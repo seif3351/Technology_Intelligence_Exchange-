@@ -31,12 +31,14 @@ export interface Links {
   offering(id: string): string;
   supplier(slug: string): string;
   requirement(id: string): string;
+  workspace(): string;
 }
 
 export const createLinks = (webBaseUrl: string): Links => ({
   offering: (id) => new URL(`/offerings/${id}`, webBaseUrl).toString(),
   supplier: (slug) => new URL(`/suppliers/${slug}`, webBaseUrl).toString(),
   requirement: (id) => new URL(`/buyer/requirements/${id}`, webBaseUrl).toString(),
+  workspace: () => new URL('/workspace', webBaseUrl).toString(),
 });
 
 export const offering = (view: OfferingSummaryView, links: Links): z.infer<typeof McpOffering> => ({

@@ -1,4 +1,11 @@
-import { CONSTRAINT_LEVELS, ENGAGEMENT_TYPES, MATURITY_LEVELS, OFFERING_TYPES } from '@atx/domain';
+import {
+  CLAIM_PREDICATES,
+  CONSTRAINT_LEVELS,
+  DEPLOYMENT_MODELS,
+  ENGAGEMENT_TYPES,
+  MATURITY_LEVELS,
+  OFFERING_TYPES,
+} from '@atx/domain';
 import { z } from 'zod';
 import { Untrusted } from './common';
 
@@ -178,6 +185,70 @@ export const McpVideo = z.object({
 });
 
 const notice = z.string().describe('How to treat this data.');
+
+// ------------------------------------------------------- supplier workspace
+
+const supplierOrganization = z
+  .uuid()
+  .optional()
+  .describe('Your supplier organization id; only needed if you belong to several organizations.');
+
+const MAX_UPLOAD_BASE64 = 11_200_000; // ~8 MB decoded; larger files go through the web workspace.
+
+export const McpWorkspaceClaim = z.object({
+  id,
+  subject: z.object({ type: z.string(), id: z.string() }),
+  concept: z.object({ id: z.string(), label: z.string() }),
+  predicate: z.string(),
+  predicateLabel: z.string().describe('Exact strength of the statement as buyers will see it.'),
+  statement: z.string(),
+  untrusted: Untrusted,
+  qualifiers: z.record(z.string(), z.string()),
+  status: z.string().describe('draft (private) | published (public) | retracted'),
+  provenance: z.string(),
+  aiDrafted: z
+    .boolean()
+    .describe('Drafted by AI from an uploaded document: the wording MUST be reviewed by a human.'),
+  evidenceIds: z.array(z.string()),
+  contentWarnings: z.array(z.string()),
+  version: z.number().int(),
+});
+
+export const McpWorkspaceOffering = z.object({
+  id,
+  slug: z.string(),
+  name: z.string(),
+  type: z.string(),
+  maturity: z.string(),
+  status: z.string(),
+  version: z.number().int(),
+  url: z.string(),
+});
+
+export const McpWorkspaceAsset = z.object({
+  id,
+  title: z.string(),
+  kind: z.string(),
+  offeringId: z.string().nullable(),
+  processingState: z
+    .string()
+    .describe('uploaded -> scanning -> processing -> ready (or quarantined / failed).'),
+  extractionState: z.string(),
+  failureReason: z.string().nullable(),
+});
+
+const publicationTarget = {
+  organization_id: supplierOrganization,
+  claim_ids: z
+    .array(z.uuid())
+    .max(50)
+    .default([])
+    .describe('Draft claims the user reviewed and wants to make public.'),
+  offering_id: z
+    .uuid()
+    .optional()
+    .describe('Also publish this draft offering (needs at least one published claim about it).'),
+};
 
 // -------------------------------------------------------------------- tools
 
@@ -451,6 +522,154 @@ export const McpTools = {
         .describe('Set to true ONLY after the human user explicitly approved this exact preview.'),
     }),
     output: z.object({ engagementId: z.string(), status: z.string(), replayed: z.boolean() }),
+  },
+  get_supplier_workspace: {
+    input: z.object({ organization_id: supplierOrganization }),
+    output: z.object({
+      organization: z.object({ id, name: z.string(), kind: z.string(), verificationState: z.string() }),
+      offerings: z.array(McpWorkspaceOffering),
+      claims: z.array(McpWorkspaceClaim),
+      evidence: z.array(McpEvidence.extend({ offeringId: z.string().nullable() })),
+      assets: z.array(McpWorkspaceAsset),
+      nextSteps: z.array(z.string()),
+    }),
+  },
+  create_offering: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      name: z.string().min(2).max(160),
+      slug: z
+        .string()
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+        .max(120)
+        .optional()
+        .describe('URL slug; derived from the name when omitted.'),
+      type: z.enum(OFFERING_TYPES),
+      summary: z.string().min(10).max(400),
+      description: z.string().max(8000).default(''),
+      maturity: z
+        .enum(MATURITY_LEVELS)
+        .describe('Be truthful: buyers filter on it and it is shown as supplier-stated.'),
+      current_version: z.string().max(40).optional().describe('Products/platforms only.'),
+      licensing_model: z.string().max(120).optional().describe('Products/platforms only.'),
+      deployment_models: z.array(z.enum(DEPLOYMENT_MODELS)).max(5).optional(),
+      delivery_model: z.enum(['onsite', 'remote', 'hybrid']).optional().describe('Services only.'),
+      regions: z.array(z.string().max(40)).max(20).optional(),
+    }),
+    output: z.object({ offering: McpWorkspaceOffering, nextSteps: z.array(z.string()) }),
+  },
+  add_claim: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      subject_type: z.enum(['offering', 'organization']).default('offering'),
+      subject_id: z
+        .uuid()
+        .optional()
+        .describe('Offering id (required for offering claims); omit for organization claims.'),
+      concept_id: conceptId.describe('Ontology concept id from search_technologies, e.g. "qnx".'),
+      predicate: z
+        .enum(CLAIM_PREDICATES)
+        .describe(
+          'Use the WEAKEST predicate that is literally true. DESIGNED_FOR is not CERTIFIED; SUPPORTS is not PRODUCTION_DEPLOYMENT. ' +
+            'CERTIFIED requires a certificationBody qualifier and should link certificate evidence.',
+        ),
+      statement: z.string().min(3).max(1000).describe('One factual sentence in your own words.'),
+      asil: z.enum(['A', 'B', 'C', 'D']).optional(),
+      qualifiers: z
+        .record(z.string().max(40), z.string().max(200))
+        .optional()
+        .describe('e.g. {"version": "R23-11"}; CERTIFIED requires {"certificationBody": "TÜV SÜD"}.'),
+      source_url: z.string().max(2048).optional().describe('Public https URL supporting the claim.'),
+      evidence_ids: z.array(z.uuid()).max(20).optional().describe('Your evidence items supporting it.'),
+    }),
+    output: z.object({ claim: McpWorkspaceClaim, nextSteps: z.array(z.string()) }),
+  },
+  add_evidence: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      offering_id: z.uuid().optional(),
+      kind: z.enum(['document', 'case_study', 'public_url', 'certificate', 'production_reference']),
+      title: z.string().min(3).max(200),
+      description: z.string().max(2000).default(''),
+      url: z.string().max(2048).optional().describe('Public https URL (required for public_url).'),
+      source_reference: z.string().max(300).optional().describe('e.g. certificate number, document id.'),
+      customer_disclosure: z
+        .enum(['named', 'anonymized'])
+        .optional()
+        .describe('production_reference only; default anonymized. Name customers only with their consent.'),
+    }),
+    output: z.object({ evidence: McpEvidence.extend({ offeringId: z.string().nullable() }) }),
+  },
+  register_demo_video: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      offering_id: z.uuid(),
+      title: z.string().min(3).max(200),
+      description: z.string().max(2000).default(''),
+      url: z.string().max(2048).describe('Public https URL of the hosted video. It is not fetched.'),
+      duration_seconds: z.number().int().min(0).max(36_000).optional(),
+    }),
+    output: z.object({ video: z.object({ id, title: z.string(), offeringId: z.string(), url: z.string() }) }),
+  },
+  upload_document: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      offering_id: z.uuid().optional().describe('Attach to an offering so drafted claims are about it.'),
+      title: z.string().min(3).max(200),
+      description: z.string().max(2000).default(''),
+      kind: z.enum(['document', 'transcript']).default('document'),
+      content_type: z.enum(['application/pdf', 'text/plain', 'text/markdown', 'text/html', 'text/vtt']),
+      content_base64: z
+        .string()
+        .max(MAX_UPLOAD_BASE64)
+        .optional()
+        .describe('File bytes, base64-encoded (max ~8 MB). Use for PDFs.'),
+      content_text: z
+        .string()
+        .max(2_000_000)
+        .optional()
+        .describe('Plain text / Markdown / HTML / VTT content, as an alternative to content_base64.'),
+    }),
+    output: z.object({ asset: McpWorkspaceAsset, nextSteps: z.array(z.string()) }),
+  },
+  prepare_publication: {
+    input: z.object(publicationTarget),
+    output: z.object({
+      preview: z.object({
+        claims: z.array(McpWorkspaceClaim),
+        offering: McpWorkspaceOffering.nullable(),
+        warnings: z.array(z.string()),
+      }),
+      publication: z.object({
+        claims: z.array(z.object({ id: z.string(), version: z.number().int() })),
+        offering: z.object({ id: z.string(), version: z.number().int() }).nullable(),
+      }),
+      confirmationToken: z.string(),
+      expiresAt: z.string(),
+      requiresHumanConfirmation: z.literal(true),
+      instructions: z.string(),
+    }),
+  },
+  confirm_publication: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      publication: z
+        .object({
+          claims: z.array(z.object({ id: z.uuid(), version: z.number().int().min(1) })).max(50),
+          offering: z.object({ id: z.uuid(), version: z.number().int().min(1) }).nullable(),
+        })
+        .describe('The `publication` object returned by prepare_publication, unchanged.'),
+      confirmation_token: z.string().min(20).max(4000),
+      user_confirmed: z
+        .literal(true)
+        .describe('Set to true ONLY after the human user explicitly approved this exact preview.'),
+    }),
+    output: z.object({
+      publishedClaimIds: z.array(z.string()),
+      alreadyPublished: z.number().int(),
+      offering: McpWorkspaceOffering.nullable(),
+      notice,
+    }),
   },
 } as const;
 

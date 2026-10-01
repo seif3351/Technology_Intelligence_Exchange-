@@ -27,11 +27,15 @@
     "Interfaces: Fastify API (53 paths), MCP server (14 tools + 2 feature-flagged action tools, Skills, Apps), worker, Next.js web app (buyer, supplier, admin, MCP onboarding)",
     "Synthetic demo dataset: 6 organizations, 9 offerings, 82 claims, videos, evidence, a private buyer requirement",
     "Tests: 75 unit/architecture, 34 PostgreSQL integration (API + MCP via official client), 9 Playwright journeys",
-    "CI workflow (verify, integration, e2e, docker); Dockerfiles verified locally (API and MCP containers boot in production mode)"
+    "CI workflow (verify, integration, e2e, docker); Dockerfiles verified locally (API and MCP containers boot in production mode)",
+    "Role-aware ATX skill (v2.0.0) for suppliers and OEMs: connection/sign-in, scopes per role, supplier publishing workflow and OEM discovery workflow",
+    "Supplier MCP tools (get_supplier_workspace, create_offering, add_claim, add_evidence, register_demo_video, upload_document, prepare_publication, confirm_publication) over SupplierService; publication requires a confirmation token bound to user + exact claim/offering versions and user_confirmed=true",
+    "supplier:write added to MCP scopes_supported, AgentTokenRequest and the web agent-token form",
+    "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check"
   ],
   "verification": {
     "unit": "pnpm test — 75 passed",
-    "integration": "pnpm test:integration — 34 passed",
+    "integration": "pnpm test:integration — 47 passed (incl. 13 skill role tests: supplier + OEM)",
     "e2e": "pnpm test:e2e — 9 passed (dev and production builds)",
     "typecheck": "pnpm typecheck — clean",
     "lint": "pnpm lint — clean",
@@ -47,7 +51,9 @@
     "Engagement notifications are logged only (no email/webhook/supplier-agent delivery yet)",
     "PostgreSQL row-level security not enabled (tenant isolation is enforced in application/repositories)",
     "Docker images run TypeScript via tsx; no bundling/slim runtime image yet; GitHub Actions workflow not yet executed on GitHub",
-    "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only"
+    "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only",
+    "Ontology: the cybersecurity facet default level is 'experience', which also applies to mechanisms (SecOC, HSM, secure boot); a bare 'SecOC stack' requirement rates an IMPLEMENTS SecOC claim as partial. Consider per-concept default levels (data) for mechanisms",
+    "MCP supplier tools have no revise/retract/delete for drafts or update_offering; unwanted drafts simply stay private (edit in the web workspace or API)"
   ],
   "nextRecommendedStep": "Integrate a production OIDC provider (JIT user provisioning + MCP authorization-server metadata), then onboard real supplier data through the document pipeline with a configured LLM and learned embeddings; add PostgreSQL RLS and shared rate limiting before multi-instance deployment.",
   "decisions": [
