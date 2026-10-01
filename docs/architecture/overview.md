@@ -48,6 +48,13 @@ Rules are enforced by `test/architecture.test.ts` and ESLint.
 
 See [search-and-matching.md](search-and-matching.md), [c4-context.md](c4-context.md), [c4-container.md](c4-container.md) and the [ADRs](../adr/README.md).
 
+## Onboarding and public listing
+
+1. An operator creates the first platform administrator (`pnpm admin:create`).
+2. Administrators issue sign-up invitations (ADR-0012); invitees register with the link, accept the terms and create their organization at `/onboarding`.
+3. Suppliers prepare drafts and publish them (web, API or MCP — publication via an agent always needs explicit human approval).
+4. Published supplier content becomes visible to other organizations only once an administrator verifies the organization (ADR-0011); suspension removes it again.
+
 ## Future: agent-to-agent
 
 Supplier agents can be added as another adapter: an `engagement.notify` handler (or a new job type) can forward the **disclosure snapshot** of a confirmed engagement to a supplier agent endpoint, and a new use case can ingest structured technical responses as claims with `providedBy.via = 'import'` and provenance. Because disclosures are allow-listed snapshots, human confirmation precedes any exchange, and matching is evidence-based, no core change is required.

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   AppError,
   type ConceptId,
@@ -17,7 +16,7 @@ import { authorizeTenant, requireScope, requireUser } from '../policies';
 import type { RequestContext } from '../principal';
 import { type ConstraintView, presentConstraint } from '../views';
 import { redact } from './matching';
-import { recordAudit } from './support';
+import { digest, recordAudit } from './support';
 
 export interface RequirementView {
   readonly id: string;
@@ -378,19 +377,3 @@ export class RequirementService {
     };
   }
 }
-
-/** Canonical JSON digest used to bind confirmations to exactly what the user reviewed. */
-export const digest = (value: unknown): string =>
-  createHash('sha256').update(canonicalJson(value)).digest('hex');
-
-const canonicalJson = (value: unknown): string => {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value ?? null);
-};

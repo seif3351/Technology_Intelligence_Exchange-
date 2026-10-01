@@ -33,7 +33,8 @@
     "supplier:write added to MCP scopes_supported, AgentTokenRequest and the web agent-token form",
     "Skill role tests (apps/mcp-server/test/skill-roles.int.test.ts): supplier and OEM agents follow the skill end to end via the MCP client; skill/tool consistency check",
     "S1: operator command `pnpm admin:create` (audited IdentityService.bootstrapPlatformAdmin, system principal only; password never via argv); root tsconfig typechecks scripts/ and test/",
-    "S2: invite-only registration (REGISTRATION_MODE, hashed single-use email-bound invitations, terms acceptance stored), web /signup, /onboarding (organization creation), /terms and /privacy drafts, admin invitation panel; listing rule ADR-0011 (public only while verified; fixes suspension not hiding content) enforced in policies, indexing and SQL; mobile header fix; Playwright onboarding journey"
+    "S2: invite-only registration (REGISTRATION_MODE, hashed single-use email-bound invitations, terms acceptance stored), web /signup, /onboarding (organization creation), /terms and /privacy drafts, admin invitation panel; listing rule ADR-0011 (public only while verified; fixes suspension not hiding content) enforced in policies, indexing and SQL; mobile header fix; Playwright onboarding journey",
+    "R1 architecture review (docs/project/architecture-reviews.md): PublicationService extracted, email rules to domain, digest to support"
   ],
   "verification": {
     "unit": "pnpm test — 81 passed",
@@ -59,7 +60,7 @@
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "R1 architecture review, then S3: email delivery (mailer port + outbox), email verification and password reset",
+  "nextRecommendedStep": "S3: email delivery (mailer port + outbox), email verification and password reset",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

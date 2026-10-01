@@ -9,6 +9,7 @@ import {
   sanitizeUntrustedText,
   unauthenticated,
   validationError,
+  isPlausibleEmail,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
@@ -19,8 +20,6 @@ export interface PasswordHasher {
   hash(password: string): Promise<string>;
   verify(password: string, hash: string): Promise<boolean>;
 }
-
-const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,20}$/;
 
 /**
  * Builds principals from verified identities. Credential checks exist for the
@@ -94,7 +93,7 @@ export class IdentityService {
     input: { readonly password: string; readonly displayName: string },
     terms: { readonly version: string; readonly acceptedAt: Date } | null,
   ): User {
-    if (!EMAIL.test(email)) throw validationError('Invalid email address');
+    if (!isPlausibleEmail(email)) throw validationError('Invalid email address');
     if (input.password.length < 12 || input.password.length > 200)
       throw validationError('Password must be 12-200 characters');
     return {

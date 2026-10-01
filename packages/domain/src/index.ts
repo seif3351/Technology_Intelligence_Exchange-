@@ -2,6 +2,7 @@ export * from './asset';
 export * from './audit';
 export * from './capability';
 export * from './claims';
+export * from './email';
 export * from './engagement';
 export * from './errors';
 export * from './evidence';

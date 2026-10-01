@@ -8,13 +8,13 @@ import {
   normalizeEmail,
   notFound,
   validationError,
+  isPlausibleEmail,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requirePlatformAdmin } from '../policies';
 import type { RequestContext } from '../principal';
 import { generateSecretToken, hashSecretToken, recordAudit } from './support';
 
-const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,20}$/;
 const DAY_MS = 86_400_000;
 
 export interface InvitationView {
@@ -44,7 +44,7 @@ export class InvitationService {
   async createPlatformInvitation(ctx: RequestContext, rawEmail: string): Promise<IssuedInvitation> {
     const admin = requirePlatformAdmin(ctx.principal);
     const email = normalizeEmail(rawEmail);
-    if (!EMAIL.test(email)) throw validationError('Invalid email address');
+    if (!isPlausibleEmail(email)) throw validationError('Invalid email address');
     const now = this.deps.clock.now();
     const token = generateSecretToken();
     const invitation: Invitation = {

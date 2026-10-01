@@ -12,6 +12,7 @@ export * from './services/indexing';
 export * from './services/ingestion';
 export * from './services/invitations';
 export * from './services/matching';
+export * from './services/publication';
 export * from './services/requirements';
 export * from './services/supplier';
 export * from './services/support';

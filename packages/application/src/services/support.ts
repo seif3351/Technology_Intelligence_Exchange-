@@ -33,6 +33,22 @@ export interface AuditInput {
 export const generateSecretToken = (): string => randomBytes(32).toString('base64url');
 export const hashSecretToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
+/** Canonical JSON digest used to bind confirmations to exactly what the user reviewed. */
+export const digest = (value: unknown): string =>
+  createHash('sha256').update(canonicalJson(value)).digest('hex');
+
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+};
+
 export const recordAudit = (
   log: AuditLog,
   ctx: RequestContext,

@@ -28,5 +28,3 @@ export const invitationStatus = (invitation: Invitation, now: Date): InvitationS
   if (invitation.revokedAt) return 'revoked';
   return invitation.expiresAt.getTime() <= now.getTime() ? 'expired' : 'pending';
 };
-
-export const normalizeEmail = (email: string): string => email.trim().toLowerCase();

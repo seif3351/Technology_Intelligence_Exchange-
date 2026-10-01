@@ -1,6 +1,5 @@
 import {
   ASSET_UPLOAD_POLICY,
-  AppError,
   type Asset,
   type AssetKind,
   type Capability,
@@ -24,7 +23,6 @@ import {
   conflict,
   createClaim,
   invariant,
-  isPubliclyListed,
   newId,
   normalizeOfferingInput,
   notFound,
@@ -40,10 +38,10 @@ import {
   validationError,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
-import { authorizeTenant, requireScope, requireUser } from '../policies';
+import { authorizeTenant, requireUser } from '../policies';
 import type { RequestContext, TenantScope } from '../principal';
 import { presentClaim, presentEvidence } from '../views';
-import { digest } from './requirements';
+import { ownedClaim, ownedOffering, supplierWriteScope } from './supplier-access';
 import { recordAudit } from './support';
 
 export interface ClaimInput {
@@ -92,16 +90,6 @@ export interface UploadInput {
   readonly description: string;
   readonly contentType: string;
   readonly bytes: Uint8Array;
-}
-
-const WORKSPACE_WRITE_ROLE = 'editor' as const;
-const PUBLICATION_TTL_SECONDS = 15 * 60;
-const MAX_PUBLICATION_CLAIMS = 50;
-
-/** What a human approves: exact claim/offering versions, so later edits invalidate the approval. */
-export interface PublicationRequest {
-  readonly claims: readonly { readonly id: string; readonly version: number }[];
-  readonly offering: { readonly id: string; readonly version: number } | null;
 }
 
 /** Supplier workspace use cases. Every method authorizes the tenant first. */
@@ -178,7 +166,7 @@ export class SupplierService {
       readonly contactEmail?: string | null;
     },
   ): Promise<Organization> {
-    const scope = this.writeScope(ctx, organizationId, 'admin');
+    const scope = supplierWriteScope(ctx, organizationId, 'admin');
     const now = this.deps.clock.now();
     return this.deps.transaction(async (repos) => {
       const current = await repos.organizations.findById(scope.organizationId);
@@ -222,7 +210,7 @@ export class SupplierService {
   }
 
   async requestVerification(ctx: RequestContext, organizationId: string): Promise<Organization> {
-    const scope = this.writeScope(ctx, organizationId, 'admin');
+    const scope = supplierWriteScope(ctx, organizationId, 'admin');
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
     return this.deps.transaction(async (repos) => {
@@ -265,7 +253,7 @@ export class SupplierService {
   }
 
   async createOffering(ctx: RequestContext, organizationId: string, input: OfferingInput): Promise<Offering> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const now = this.deps.clock.now();
     const normalized = normalizeOfferingInput(input);
     const offering: Offering = {
@@ -305,10 +293,10 @@ export class SupplierService {
       readonly commercial?: CommercialModel;
     },
   ): Promise<Offering> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const now = this.deps.clock.now();
     const offering = await this.deps.transaction(async (repos) => {
-      const current = await this.ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
+      const current = await ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
       const normalized = normalizeOfferingInput({
         slug: current.slug,
         type: current.type,
@@ -350,11 +338,11 @@ export class SupplierService {
     status: 'published' | 'draft' | 'archived',
     expectedVersion: number,
   ): Promise<Offering> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
     const offering = await this.deps.transaction(async (repos) => {
-      const current = await this.ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
+      const current = await ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
       if (status === 'published') {
         const claims = await repos.claims.listForTenant(scope, {
           offeringId: current.id,
@@ -386,7 +374,7 @@ export class SupplierService {
     organizationId: string,
     input: { readonly conceptId: string; readonly name: string; readonly description: string },
   ): Promise<Capability> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const ontology = await this.deps.ontology.current();
     if (!ontology.hasConcept(input.conceptId)) throw validationError(`Unknown concept "${input.conceptId}"`);
     const now = this.deps.clock.now();
@@ -416,7 +404,7 @@ export class SupplierService {
   // ---------------------------------------------------------------- claims
 
   async addClaim(ctx: RequestContext, organizationId: string, input: ClaimInput) {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const ontology = await this.deps.ontology.current();
     if (!ontology.hasConcept(input.conceptId)) throw validationError(`Unknown concept "${input.conceptId}"`);
@@ -455,14 +443,14 @@ export class SupplierService {
     claimId: string,
     input: Partial<ClaimInput> & { readonly expectedVersion: number },
   ) {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const ontology = await this.deps.ontology.current();
     if (input.conceptId && !ontology.hasConcept(input.conceptId))
       throw validationError(`Unknown concept "${input.conceptId}"`);
     const now = this.deps.clock.now();
     const evidenceIds = input.evidenceIds ? await this.ownedEvidenceIds(scope, input.evidenceIds) : undefined;
     const revised = await this.deps.transaction(async (repos) => {
-      const current = await this.ownedClaim(scope, claimId);
+      const current = await ownedClaim(this.deps.repos.claims, scope, claimId);
       const next = reviseClaim(
         current,
         {
@@ -521,176 +509,14 @@ export class SupplierService {
     );
   }
 
-  /**
-   * Step 1 of agent-assisted publication: returns exactly what would become
-   * public (claim wording and strength, provenance, AI-drafted flags) and a
-   * short-lived confirmation token bound to the user and these exact
-   * versions. Nothing is published.
-   */
-  async preparePublication(
-    ctx: RequestContext,
-    organizationId: string,
-    input: { readonly claimIds: readonly string[]; readonly offeringId: string | null },
-  ) {
-    const scope = this.writeScope(ctx, organizationId);
-    const user = requireUser(ctx.principal);
-    const ids = [...new Set(input.claimIds)];
-    if (ids.length === 0 && !input.offeringId) throw validationError('Nothing to publish');
-    if (ids.length > MAX_PUBLICATION_CLAIMS)
-      throw validationError(`At most ${MAX_PUBLICATION_CLAIMS} claims per publication`);
-    const ontology = await this.deps.ontology.current();
-    const claims = await Promise.all(ids.map((id) => this.ownedClaim(scope, id)));
-    const notPublishable = claims.filter((claim) => claim.status !== 'draft');
-    if (notPublishable.length > 0)
-      throw invariant(
-        `Only draft claims can be published (${notPublishable.map((c) => `${c.id} is ${c.status}`).join(', ')})`,
-      );
-    const offering = input.offeringId
-      ? await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)
-      : null;
-    if (offering) {
-      if (offering.status === 'published') throw invariant('The offering is already published');
-      const alreadyPublished = await this.deps.repos.claims.listForTenant(scope, {
-        offeringId: offering.id,
-        status: 'published',
-      });
-      const includedForOffering = claims.filter(
-        (claim) => claim.subject.type === 'offering' && claim.subject.id === offering.id,
-      );
-      if (alreadyPublished.length === 0 && includedForOffering.length === 0)
-        throw invariant('Include at least one claim about the offering before publishing it');
-    }
-    const request: PublicationRequest = {
-      claims: claims.map((claim) => ({ id: claim.id, version: claim.version })),
-      offering: offering ? { id: offering.id, version: offering.version } : null,
-    };
-    const { token, expiresAt } = await this.deps.confirmations.issue(
-      {
-        userId: user.userId,
-        organizationId: scope.organizationId,
-        action: 'supplier.publish',
-        digest: digest(request),
-      },
-      PUBLICATION_TTL_SECONDS,
-    );
-    return {
-      request,
-      claims: claims.map((claim) => presentClaim(claim, ontology)),
-      offering,
-      confirmationToken: token,
-      expiresAt: expiresAt.toISOString(),
-    };
-  }
-
-  /**
-   * Step 2: publishes exactly the previewed versions after explicit human
-   * approval. Publication is the supplier's review step: AI-drafted claims
-   * become supplier statements, never platform-verified ones.
-   */
-  async confirmPublication(
-    ctx: RequestContext,
-    organizationId: string,
-    request: PublicationRequest,
-    confirmationToken: string,
-  ) {
-    const scope = this.writeScope(ctx, organizationId);
-    const user = requireUser(ctx.principal);
-    const confirmation = await this.deps.confirmations.verify(confirmationToken);
-    const normalized: PublicationRequest = {
-      claims: request.claims.map((claim) => ({ id: claim.id, version: claim.version })),
-      offering: request.offering ? { id: request.offering.id, version: request.offering.version } : null,
-    };
-    if (
-      confirmation.action !== 'supplier.publish' ||
-      confirmation.userId !== user.userId ||
-      confirmation.organizationId !== scope.organizationId ||
-      confirmation.digest !== digest(normalized)
-    ) {
-      throw new AppError(
-        'CONFIRMATION_REQUIRED',
-        'Confirmation token does not match this publication; prepare it again',
-      );
-    }
-    const ontology = await this.deps.ontology.current();
-    const now = this.deps.clock.now();
-    const result = await this.deps.transaction(async (repos) => {
-      const published: TechnicalClaim[] = [];
-      let alreadyPublished = 0;
-      for (const expected of normalized.claims) {
-        const current = await repos.claims.findById(asId(expected.id));
-        if (!current || current.organizationId !== scope.organizationId) throw notFound('Claim');
-        // A replay after success finds the claim published one version later: report, do not fail.
-        if (current.status === 'published' && current.version === expected.version + 1) {
-          alreadyPublished += 1;
-          continue;
-        }
-        const next = publishClaim(current, user.userId, now);
-        await repos.claims.update(scope, next, expected.version);
-        await recordAudit(repos.audit, ctx, now, {
-          action: 'claim.publish',
-          resourceType: 'claim',
-          resourceId: next.id,
-          organizationId: scope.organizationId,
-          metadata: { via: current.providedBy.via, provenance: next.provenance.category, confirmed: true },
-        });
-        published.push(next);
-      }
-      let offering: Offering | null = null;
-      if (normalized.offering) {
-        const current = await this.ownedOffering(
-          repos.offerings.findById(asId(normalized.offering.id)),
-          scope,
-        );
-        if (current.status === 'published' && current.version === normalized.offering.version + 1) {
-          offering = current;
-        } else {
-          const claims = await repos.claims.listForTenant(scope, {
-            offeringId: current.id,
-            status: 'published',
-          });
-          if (claims.length === 0)
-            throw invariant('Publish at least one technical claim before publishing the offering');
-          offering = transitionOffering(current, 'published', user.userId, now);
-          await repos.offerings.update(scope, offering, normalized.offering.version);
-          await recordAudit(repos.audit, ctx, now, {
-            action: 'offering.published',
-            resourceType: 'offering',
-            resourceId: offering.id,
-            organizationId: scope.organizationId,
-            metadata: { confirmed: true },
-          });
-        }
-      }
-      return { published, alreadyPublished, offering };
-    });
-    const offeringIds = new Set<string>(
-      result.published.flatMap((claim) => (claim.subject.type === 'offering' ? [claim.subject.id] : [])),
-    );
-    if (result.offering) offeringIds.add(result.offering.id);
-    for (const offeringId of offeringIds)
-      await this.deps.jobs.enqueue(
-        'offering.reindex',
-        { offeringId: asId<'OfferingId'>(offeringId) },
-        { dedupeKey: `reindex:${offeringId}` },
-      );
-    const organization = await this.deps.repos.organizations.findById(scope.organizationId);
-    return {
-      claims: result.published.map((claim) => presentClaim(claim, ontology)),
-      alreadyPublished: result.alreadyPublished,
-      offering: result.offering,
-      /** False until the platform verifies the organization (ADR 0011): published content is not yet public. */
-      listed: organization ? isPubliclyListed(organization) : false,
-    };
-  }
-
   // -------------------------------------------------------- evidence/assets
 
   async addEvidence(ctx: RequestContext, organizationId: string, input: EvidenceInput) {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
     const offeringId = input.offeringId
-      ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
+      ? (await ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
       : null;
     const url = input.url ? this.safeUrl(input.url, 'url') : null;
     if (input.kind === 'public_url' && !url) throw validationError('public_url evidence requires a url');
@@ -744,13 +570,10 @@ export class SupplierService {
     organizationId: string,
     input: ExternalVideoInput,
   ): Promise<Asset> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
-    const offering = await this.ownedOffering(
-      this.deps.repos.offerings.findById(asId(input.offeringId)),
-      scope,
-    );
+    const offering = await ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope);
     const asset: Asset = {
       id: newId(),
       organizationId: scope.organizationId,
@@ -792,7 +615,7 @@ export class SupplierService {
    * (scan -> extract -> AI draft). Nothing about the content is trusted yet.
    */
   async uploadAsset(ctx: RequestContext, organizationId: string, input: UploadInput): Promise<Asset> {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const policy = ASSET_UPLOAD_POLICY[input.kind];
     const contentType = input.contentType.split(';')[0]?.trim().toLowerCase() ?? '';
@@ -801,7 +624,7 @@ export class SupplierService {
     if (input.bytes.byteLength === 0 || input.bytes.byteLength > policy.maxBytes)
       throw validationError('File is empty or too large');
     const offeringId = input.offeringId
-      ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
+      ? (await ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
       : null;
     const now = this.deps.clock.now();
     const id = newId<'AssetId'>();
@@ -847,38 +670,13 @@ export class SupplierService {
 
   // --------------------------------------------------------------- helpers
 
-  private writeScope(
-    ctx: RequestContext,
-    organizationId: string,
-    role: 'editor' | 'admin' = WORKSPACE_WRITE_ROLE,
-  ): TenantScope {
-    requireScope(ctx.principal, 'supplier:write');
-    return authorizeTenant(ctx, asId(organizationId), role);
-  }
-
-  private async ownedOffering(pending: Promise<Offering | null>, scope: TenantScope): Promise<Offering> {
-    const offering = await pending;
-    // Same error for "missing" and "belongs to another tenant" to avoid IDOR probing.
-    if (!offering || offering.organizationId !== scope.organizationId) throw notFound('Offering');
-    return offering;
-  }
-
-  private async ownedClaim(scope: TenantScope, claimId: string) {
-    const claim = await this.deps.repos.claims.findById(asId(claimId));
-    if (!claim || claim.organizationId !== scope.organizationId) throw notFound('Claim');
-    return claim;
-  }
-
   private async ownedSubject(scope: TenantScope, subject: ClaimInput['subject']): Promise<ClaimSubject> {
     switch (subject.type) {
       case 'organization':
         if (subject.id !== scope.organizationId) throw notFound('Organization');
         return { type: 'organization', id: scope.organizationId };
       case 'offering': {
-        const offering = await this.ownedOffering(
-          this.deps.repos.offerings.findById(asId(subject.id)),
-          scope,
-        );
+        const offering = await ownedOffering(this.deps.repos.offerings.findById(asId(subject.id)), scope);
         return { type: 'offering', id: offering.id };
       }
       case 'capability': {
@@ -962,17 +760,17 @@ export class SupplierService {
     expectedVersion: number,
     action: string,
     change: (
-      claim: Awaited<ReturnType<SupplierService['ownedClaim']>>,
+      claim: TechnicalClaim,
       userId: ReturnType<typeof requireUser>['userId'],
       now: Date,
-    ) => Awaited<ReturnType<SupplierService['ownedClaim']>>,
+    ) => TechnicalClaim,
   ) {
-    const scope = this.writeScope(ctx, organizationId);
+    const scope = supplierWriteScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const ontology = await this.deps.ontology.current();
     const now = this.deps.clock.now();
     const next = await this.deps.transaction(async (repos) => {
-      const current = await this.ownedClaim(scope, claimId);
+      const current = await ownedClaim(this.deps.repos.claims, scope, claimId);
       const updated = change(current, user.userId, now);
       await repos.claims.update(scope, updated, expectedVersion);
       await recordAudit(repos.audit, ctx, now, {

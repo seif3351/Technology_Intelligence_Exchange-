@@ -300,7 +300,7 @@ export const supplierTools = [
     requiredScopes: SUPPLIER_SCOPES,
     run: async (args, env) => {
       const organizationId = resolveOrganization(env, args.organization_id);
-      const result = await env.runtime.app.supplier.preparePublication(env.ctx, organizationId, {
+      const result = await env.runtime.app.publication.prepare(env.ctx, organizationId, {
         claimIds: args.claim_ids,
         offeringId: args.offering_id ?? null,
       });
@@ -357,7 +357,7 @@ export const supplierTools = [
     requiredScopes: SUPPLIER_SCOPES,
     run: async (args, env) => {
       const organizationId = resolveOrganization(env, args.organization_id);
-      const result = await env.runtime.app.supplier.confirmPublication(
+      const result = await env.runtime.app.publication.confirm(
         env.ctx,
         organizationId,
         args.publication,

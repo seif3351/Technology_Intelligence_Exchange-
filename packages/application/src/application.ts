@@ -7,6 +7,7 @@ import { IndexingService } from './services/indexing';
 import { IngestionService } from './services/ingestion';
 import { InvitationService } from './services/invitations';
 import { MatchingService } from './services/matching';
+import { PublicationService } from './services/publication';
 import { RequirementService } from './services/requirements';
 import { SupplierService } from './services/supplier';
 
@@ -18,6 +19,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     matching,
     catalog: new CatalogService(deps, matching),
     supplier: new SupplierService(deps),
+    publication: new PublicationService(deps),
     requirements: new RequirementService(deps),
     engagements: new EngagementService(deps),
     admin: new AdminService(deps),

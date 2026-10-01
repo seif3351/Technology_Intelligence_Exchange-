@@ -12,13 +12,13 @@ import {
   toSupplierFacingRequirement,
   transitionEngagement,
   validationError,
+  isPlausibleEmail,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { authorizeTenant, requireScope, requireUser } from '../policies';
 import type { RequestContext } from '../principal';
 import { presentConstraint } from '../views';
-import { digest } from './requirements';
-import { recordAudit } from './support';
+import { digest, recordAudit } from './support';
 
 export interface EngagementDraft {
   readonly buyerOrganizationId: string;
@@ -34,7 +34,6 @@ export interface EngagementDraft {
 }
 
 const CONFIRMATION_TTL_SECONDS = 10 * 60;
-const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,20}$/;
 
 /**
  * Demo / workshop / PoC / RFI requests. Two explicit steps:
@@ -200,7 +199,7 @@ export class EngagementService {
   private async buildDisclosure(ctx: RequestContext, draft: EngagementDraft) {
     requireScope(ctx.principal, 'engagements:write');
     const scope = authorizeTenant(ctx, asId(draft.buyerOrganizationId), 'editor');
-    if (!EMAIL.test(draft.contactEmail)) throw validationError('contactEmail is invalid');
+    if (!isPlausibleEmail(draft.contactEmail)) throw validationError('contactEmail is invalid');
     const message = sanitizeUntrustedText(draft.message, 3000);
     if (message.length < 10) throw validationError('message must be at least 10 characters');
 
