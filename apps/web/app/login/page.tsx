@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { webConfig } from '@/lib/config';
 import { LoginForm } from './login-form';
 
 export default async function LoginPage({
@@ -19,10 +20,12 @@ export default async function LoginPage({
         New here? Use the link in your invitation, or <Link href="/signup">create an account</Link> if
         registration is open.
       </p>
-      <p className="small muted">
-        Demo accounts (synthetic data): buyer@aurelia-motors.example, owner@northstar-ai.example,
-        admin@atx.example — password “demo-password-2026”.
-      </p>
+      {webConfig.showDemoAccounts ? (
+        <p className="small muted">
+          Demo accounts (synthetic data): buyer@aurelia-motors.example, owner@northstar-ai.example,
+          admin@atx.example — password “demo-password-2026”.
+        </p>
+      ) : null}
     </div>
   );
 }

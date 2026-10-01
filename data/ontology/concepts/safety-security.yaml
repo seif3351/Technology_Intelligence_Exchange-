@@ -58,18 +58,22 @@
   part_of: [iso-21434]
 - id: security-mechanism
   facet: cybersecurity
+  # A mechanism is something a product supports or implements; 'experience' is the facet default for standards.
+  default_level: supports
   label: Security mechanism
   aliases: []
   description: Umbrella concept for technical security mechanisms.
   is_a: [automotive-cybersecurity]
 - id: secure-boot
   facet: cybersecurity
+  default_level: supports
   label: Secure boot
   aliases: [verified boot, trusted boot]
   description: Cryptographically verified boot chain.
   is_a: [security-mechanism]
 - id: secoc
   facet: cybersecurity
+  default_level: supports
   label: SecOC
   aliases: [secure onboard communication]
   description: AUTOSAR Secure Onboard Communication.
@@ -77,6 +81,7 @@
   part_of: [autosar]
 - id: hsm
   facet: cybersecurity
+  default_level: supports
   label: HSM
   aliases: [hardware security module]
   description: Hardware security module.

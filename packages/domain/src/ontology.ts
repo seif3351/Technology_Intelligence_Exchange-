@@ -28,6 +28,12 @@ export interface Concept {
    * only match when written with exactly this casing.
    */
   readonly caseSensitiveAliases?: readonly string[];
+  /**
+   * Level assumed when a buyer names this concept without a level cue,
+   * overriding the facet default (e.g. a security mechanism such as SecOC in
+   * the cybersecurity facet, whose standards default to "experience").
+   */
+  readonly defaultConstraintLevel?: ConstraintLevel;
   readonly status: ConceptStatus;
 }
 

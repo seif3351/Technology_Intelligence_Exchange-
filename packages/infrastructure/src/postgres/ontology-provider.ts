@@ -47,9 +47,11 @@ export const createPostgresOntologyProvider = (
         }
         for (const concept of snapshot.concepts) {
           await client.query(
-            `INSERT INTO ontology_concepts (id, facet_id, label, description, aliases, case_sensitive_aliases, status) VALUES ($1,$2,$3,$4,$5,$6,$7)
+            `INSERT INTO ontology_concepts (id, facet_id, label, description, aliases, case_sensitive_aliases, status, default_level)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
              ON CONFLICT (id) DO UPDATE SET facet_id = EXCLUDED.facet_id, label = EXCLUDED.label, description = EXCLUDED.description,
-               aliases = EXCLUDED.aliases, case_sensitive_aliases = EXCLUDED.case_sensitive_aliases, status = EXCLUDED.status`,
+               aliases = EXCLUDED.aliases, case_sensitive_aliases = EXCLUDED.case_sensitive_aliases, status = EXCLUDED.status,
+               default_level = EXCLUDED.default_level`,
             [
               concept.id,
               concept.facetId,
@@ -58,6 +60,7 @@ export const createPostgresOntologyProvider = (
               concept.aliases,
               concept.caseSensitiveAliases ?? [],
               concept.status,
+              concept.defaultConstraintLevel ?? null,
             ],
           );
         }
@@ -117,6 +120,7 @@ export const readSnapshot = async (db: Queryable): Promise<OntologySnapshot> => 
       description: row['description'] as string,
       aliases: row['aliases'] as string[],
       caseSensitiveAliases: row['case_sensitive_aliases'] as string[],
+      ...(row['default_level'] ? { defaultConstraintLevel: row['default_level'] as ConstraintLevel } : {}),
       status: row['status'] as 'active' | 'deprecated',
     })),
     relations: relations.rows.map((row) => ({

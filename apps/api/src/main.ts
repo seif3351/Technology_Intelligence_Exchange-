@@ -5,7 +5,7 @@ import { buildServer } from './server';
 
 const env = loadConfig();
 const runtime = await createRuntime(env, 'atx-api');
-await migrate(runtime.pool);
+if (env.MIGRATE_ON_START) await migrate(runtime.pool);
 const server = await buildServer(runtime);
 
 const shutdown = async (signal: string) => {

@@ -87,6 +87,8 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
   const pool = createPool({
     connectionString: env.DATABASE_URL,
     maxConnections: env.DATABASE_MAX_CONNECTIONS,
+    ...(env.DATABASE_SSL ? { ssl: env.DATABASE_SSL } : {}),
+    ...(env.DATABASE_SSL_CA ? { sslCa: env.DATABASE_SSL_CA } : {}),
   });
 
   const issuer = await createIssuer(env);

@@ -42,10 +42,11 @@
     "S5: engagement notifications (supplier responders on new requests, buyer contact on responses; queued, metadata-only, retried), contact handover on acknowledge (required contact, optional reply; guarded single response), buyer /buyer/requests page; ADR-0015",
     "S6: revocable agent tokens backed by access grants (1-90 days, label, last use, individual revoke, first-party sessions only, scope ceiling); AccessTokenSigner port moves issuance into AgentTokenService; MCP principal resolved during token verification (proper 401 for revoked tokens); ADR-0016",
     "R3 architecture review: session issuance moved into IdentityService behind AccessTokenSigner; verifier error logging",
-    "S7: built-in OAuth 2.1 authorization server for MCP hosts (RFC 8414 metadata, RFC 7591 DCR, PKCE S256, RFC 8707 resource binding, RFC 9207 iss, consent page, rotating refresh tokens with reuse detection, RFC 7009 revocation, connected applications); least-privilege initial challenge; tested with the official MCP client SDK and Playwright; skill v2.1.0; ADR-0017"
+    "S7: built-in OAuth 2.1 authorization server for MCP hosts (RFC 8414 metadata, RFC 7591 DCR, PKCE S256, RFC 8707 resource binding, RFC 9207 iss, consent page, rotating refresh tokens with reuse detection, RFC 7009 revocation, connected applications); least-privilege initial challenge; tested with the official MCP client SDK and Playwright; skill v2.1.0; ADR-0017",
+    "S8: production hardening — config guard requires ClamAV and an explicit DATABASE_SSL mode (off|require|verify + CA), MIGRATE_ON_START for release-step migrations, demo-account hints only with SHOW_DEMO_ACCOUNTS, web HSTS over https, compose production profile updated; per-concept default_level in the ontology (security mechanisms default to supports; fixes the SecOC partial-match issue); config unit tests; pnpm audit clean"
   ],
   "verification": {
-    "unit": "pnpm test — 89 passed",
+    "unit": "pnpm test — 96 passed",
     "integration": "pnpm test:integration — 83 passed",
     "e2e": "pnpm test:e2e — 15 passed against the production web build",
     "typecheck": "pnpm typecheck — clean",
@@ -61,14 +62,13 @@
     "PostgreSQL row-level security not enabled (tenant isolation is enforced in application/repositories)",
     "Docker images run TypeScript via tsx; no bundling/slim runtime image yet; GitHub Actions workflow not yet executed on GitHub",
     "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only",
-    "Ontology: the cybersecurity facet default level is 'experience', which also applies to mechanisms (SecOC, HSM, secure boot); a bare 'SecOC stack' requirement rates an IMPLEMENTS SecOC claim as partial. Consider per-concept default levels (data) for mechanisms",
     "MCP supplier tools have no revise/retract/delete for drafts or update_offering; unwanted drafts simply stay private (edit in the web workspace or API)",
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot",
     "External OIDC: MCP_AUTH_ISSUER/JWKS validation works, but mapping external IdP subjects to platform users is not implemented (the built-in OAuth server covers MCP hosts, ADR-0017)",
     "OAuth: authorization errors after client validation are shown on the consent page instead of being redirected to the client; Client ID Metadata Documents are not supported (no server-side fetching)"
   ],
-  "nextRecommendedStep": "S8: production hardening",
+  "nextRecommendedStep": "R4 architecture review, then S9: usage gaps (supplier draft editing via MCP, shortlist export, saved-requirement alerts)",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

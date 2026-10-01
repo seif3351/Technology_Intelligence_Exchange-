@@ -21,6 +21,12 @@ x-app-env: &app-env
   AUTH_SIGNING_JWK: ${AUTH_SIGNING_JWK:?export AUTH_SIGNING_JWK (pnpm auth:generate-key)}
   STORAGE_DRIVER: filesystem
   STORAGE_DIR: /data/storage
+  # Production-mode guards (see packages/config): explicit DB TLS mode, mandatory malware scanning, real mail.
+  DATABASE_SSL: 'off' # private compose network only
+  CLAMAV_HOST: clamav
+  MAIL_DRIVER: ${MAIL_DRIVER:-none}
+  SMTP_URL: ${SMTP_URL:-}
+  REGISTRATION_MODE: ${REGISTRATION_MODE:-invite}
   FEATURE_ENGAGEMENT_ACTIONS: ${FEATURE_ENGAGEMENT_ACTIONS:-false}
   OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
 
@@ -78,7 +84,7 @@ services:
     ports: ['9000:9000', '9001:9001']
 
   clamav:
-    profiles: [storage]
+    profiles: [storage, app]
     image: clamav/clamav:stable
     ports: ['3310:3310']
 

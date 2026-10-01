@@ -522,9 +522,8 @@ describe('skill section 4: an OEM agent finds technology for a requirement', () 
     expect(gatekeeper).toBeDefined();
     const statusOf = (pattern: RegExp) =>
       gatekeeper?.assessments.find((assessment) => pattern.test(assessment.description));
-    // The supplier's SecOC claim is found. (Its level follows the cybersecurity facet default,
-    // "experience", so IMPLEMENTS counts as partial; see docs/project/progress.json known issues.)
-    expect(['met', 'partial']).toContain(statusOf(/SecOC/)?.status);
+    // Security mechanisms default to "supports" (ontology data), so IMPLEMENTS SecOC meets the requirement.
+    expect(statusOf(/SecOC/)?.status).toBe('met');
     expect(statusOf(/S32G/)?.status).toBe('met');
     expect(statusOf(/21434/)).toMatchObject({
       status: 'met',

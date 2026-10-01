@@ -38,6 +38,13 @@ const asStringList = (value: unknown, where: string): string[] => {
   return value.map((item, index) => asString(String(item), `${where}[${index}]`));
 };
 
+const parseLevel = (value: unknown, where: string): ConstraintLevel => {
+  const level = asString(value, `${where}.default_level`);
+  if (!(CONSTRAINT_LEVELS as readonly string[]).includes(level))
+    throw new Error(`${where}: default_level must be one of ${CONSTRAINT_LEVELS.join(', ')}`);
+  return level as ConstraintLevel;
+};
+
 export const parseOntologyDocuments = (
   facetsYaml: string,
   conceptFiles: readonly { readonly name: string; readonly content: string }[],
@@ -76,6 +83,9 @@ export const parseOntologyDocuments = (
         description: asString(raw['description'], `${where}.description`),
         aliases: asStringList(raw['aliases'], `${where}.aliases`),
         caseSensitiveAliases: asStringList(raw['case_sensitive_aliases'], `${where}.case_sensitive_aliases`),
+        ...(raw['default_level'] === undefined
+          ? {}
+          : { defaultConstraintLevel: parseLevel(raw['default_level'], where) }),
         status,
       });
       for (const type of RELATION_TYPES) {

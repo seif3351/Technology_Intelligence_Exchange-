@@ -12,6 +12,8 @@ export interface DatabaseOptions {
   readonly connectionString: string;
   readonly maxConnections?: number;
   readonly statementTimeoutMs?: number;
+  readonly ssl?: 'off' | 'require' | 'verify';
+  readonly sslCa?: string;
 }
 
 export const createPool = (options: DatabaseOptions): pg.Pool => {
@@ -20,6 +22,11 @@ export const createPool = (options: DatabaseOptions): pg.Pool => {
     max: options.maxConnections ?? 10,
     statement_timeout: options.statementTimeoutMs ?? 15_000,
     application_name: 'atx',
+    ...(options.ssl === 'require'
+      ? { ssl: { rejectUnauthorized: false } } // encrypted, server identity not verified
+      : options.ssl === 'verify'
+        ? { ssl: { rejectUnauthorized: true, ...(options.sslCa ? { ca: options.sslCa } : {}) } }
+        : {}),
   });
   // Without a listener an idle-client error would crash the process.
   pool.on('error', () => undefined);

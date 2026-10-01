@@ -106,7 +106,7 @@ export const interpretRequirementText = (text: string, ontology: Ontology): Inte
       if (!concept) return;
       const facet = ontology.getFacet(concept.facetId);
       const cueLevel = detectLevelCue(working, mention, mentions[index - 1], mentions[index + 1]);
-      const level = cueLevel ?? facet?.defaultConstraintLevel ?? 'supports';
+      const level = cueLevel ?? concept.defaultConstraintLevel ?? facet?.defaultConstraintLevel ?? 'supports';
       if (cueLevel)
         notes.push(`"${concept.label}" requires level "${cueLevel}" (cue found next to the term)`);
       const constraint: ConceptConstraint = {

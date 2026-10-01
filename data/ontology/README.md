@@ -17,3 +17,7 @@ Rules:
 - `is_a` must stay acyclic (validated at load).
 - This ontology is intentionally incomplete. Prefer adding concepts when real
   supplier or buyer data needs them.
+
+## Per-concept default level
+
+A concept may set `default_level` to override its facet's `default_level` (the level assumed when a requirement names the concept without a cue such as "certified" or "experience"). Example: security mechanisms (`secoc`, `hsm`, `secure-boot`) default to `supports`, while cybersecurity standards keep the facet default `experience`.

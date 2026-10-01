@@ -73,3 +73,18 @@ describe('interpretRequirementText', () => {
     expect(result.unrecognizedTerms).toContain('ZX9000');
   });
 });
+
+describe('per-concept default levels (ontology data)', () => {
+  it('treats a named security mechanism as "supports" but a security standard as "experience"', async () => {
+    const ontology = await loadTestOntology();
+    const { constraints } = interpretRequirementText(
+      'We need a SecOC stack for gateways and ISO/SAE 21434.',
+      ontology,
+    );
+    const level = (conceptId: string) =>
+      constraints.find((c) => c.kind === 'concept' && c.conceptId === conceptId) as
+        { level: string } | undefined;
+    expect(level('secoc')?.level).toBe('supports');
+    expect(level('iso-21434')?.level).toBe('experience');
+  });
+});

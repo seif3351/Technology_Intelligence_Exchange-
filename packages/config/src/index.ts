@@ -15,6 +15,12 @@ export const EnvSchema = z.object({
 
   DATABASE_URL: z.string().default('postgres://atx:atx@localhost:5432/atx'),
   DATABASE_MAX_CONNECTIONS: z.coerce.number().int().min(1).max(100).default(10),
+  /** off | require (encrypted) | verify (encrypted + certificate/hostname verification). Required in production. */
+  DATABASE_SSL: z.enum(['off', 'require', 'verify']).optional(),
+  /** PEM bundle of the database CA (e.g. the cloud provider's RDS bundle), used with DATABASE_SSL=verify. */
+  DATABASE_SSL_CA: z.string().optional(),
+  /** Run pending migrations when the API starts (development). Production runs `pnpm db:migrate` as a release step. */
+  MIGRATE_ON_START: bool.default(true),
 
   PUBLIC_WEB_URL: z.url().default('http://localhost:3000'),
   API_PUBLIC_URL: z.url().default('http://localhost:4000'),
@@ -97,6 +103,8 @@ export const loadConfig = (source: NodeJS.ProcessEnv = process.env): Env => {
     if (env.STORAGE_DRIVER === 's3' && !env.S3_BUCKET) problems.push('S3_BUCKET');
     if (env.MAIL_DRIVER === 'file' || env.MAIL_DRIVER === 'memory')
       problems.push('MAIL_DRIVER (use smtp or none)');
+    if (!env.CLAMAV_HOST) problems.push('CLAMAV_HOST (malware scanning is mandatory)');
+    if (!env.DATABASE_SSL) problems.push('DATABASE_SSL (verify recommended; off only on a private network)');
     if (problems.length > 0)
       throw new ConfigError(`Production requires explicit secure values for: ${problems.join(', ')}`);
   }
