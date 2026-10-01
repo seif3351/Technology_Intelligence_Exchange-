@@ -172,7 +172,8 @@ export interface EngagementRepository {
   listForBuyer(scope: TenantScope): Promise<EngagementRequest[]>;
   listForSupplier(scope: TenantScope): Promise<EngagementRequest[]>;
   insert(scope: TenantScope, engagement: EngagementRequest): Promise<void>;
-  updateStatus(engagement: EngagementRequest): Promise<void>;
+  /** Persists a status change (and supplier response) only if the stored status is still `from`; else CONFLICT. */
+  updateStatus(engagement: EngagementRequest, from: EngagementRequest['status']): Promise<void>;
 }
 
 export interface AuditQuery {

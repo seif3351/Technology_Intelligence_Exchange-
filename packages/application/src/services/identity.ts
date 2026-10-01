@@ -220,13 +220,15 @@ export class IdentityService {
 
 export const describePrincipal = async (deps: ApplicationDeps, ctx: RequestContext) => {
   const principal = requireUser(ctx.principal);
-  const organizations = await deps.repos.organizations.findManyByIds(
-    principal.memberships.map((m) => m.organizationId),
-  );
+  const [organizations, user] = await Promise.all([
+    deps.repos.organizations.findManyByIds(principal.memberships.map((m) => m.organizationId)),
+    deps.repos.users.findById(principal.userId),
+  ]);
   const byId = new Map(organizations.map((org) => [org.id, org]));
   return {
     user: {
       id: principal.userId,
+      email: user?.email ?? '',
       displayName: principal.displayName,
       platformRole: principal.platformRole,
       emailVerified: principal.emailVerified,

@@ -138,12 +138,22 @@ export const createEngagementRepository = (db: Queryable): EngagementRepository 
     );
     if (result.rowCount !== 1) throw conflict('A request with this idempotency key already exists');
   },
-  async updateStatus(e) {
-    await db.query('UPDATE engagement_requests SET status = $2, updated_at = $3 WHERE id = $1', [
-      e.id,
-      e.status,
-      e.updatedAt,
-    ]);
+  async updateStatus(e, from) {
+    const result = await db.query(
+      `UPDATE engagement_requests
+          SET status = $2, updated_at = $3, supplier_response = $4, responded_by = $5, responded_at = $6
+        WHERE id = $1 AND status = $7`,
+      [
+        e.id,
+        e.status,
+        e.updatedAt,
+        e.supplierResponse ? JSON.stringify(e.supplierResponse) : null,
+        e.respondedBy,
+        e.respondedAt,
+        from,
+      ],
+    );
+    if (result.rowCount !== 1) throw conflict('The request was updated by someone else; reload and retry');
   },
 });
 

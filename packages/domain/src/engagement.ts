@@ -26,8 +26,22 @@ export interface EngagementRequest {
   readonly idempotencyKey: string;
   readonly requestedBy: UserId;
   readonly confirmedAt: Date;
+  /** What the supplier chose to share back when responding (contact handover). */
+  readonly supplierResponse: SupplierResponse | null;
+  readonly respondedBy: UserId | null;
+  readonly respondedAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+}
+
+/**
+ * The supplier's answer. A contact is required to acknowledge a request, so
+ * the buyer always learns whom to talk to; declining needs no contact.
+ */
+export interface SupplierResponse {
+  readonly message: string | null;
+  readonly contactName: string | null;
+  readonly contactEmail: string | null;
 }
 
 export interface EngagementDisclosure {
@@ -44,6 +58,23 @@ const TRANSITIONS: Readonly<Record<EngagementStatus, readonly EngagementStatus[]
   declined: [],
   withdrawn: [],
   closed: [],
+};
+
+export const respondToEngagement = (
+  engagement: EngagementRequest,
+  to: Extract<EngagementStatus, 'acknowledged' | 'declined'>,
+  response: SupplierResponse,
+  respondedBy: UserId,
+  now: Date,
+): EngagementRequest => {
+  if (to === 'acknowledged' && (!response.contactName || !response.contactEmail))
+    throw invariant('Acknowledging a request requires a contact name and email for the buyer');
+  return {
+    ...transitionEngagement(engagement, to, now),
+    supplierResponse: response,
+    respondedBy,
+    respondedAt: now,
+  };
 };
 
 export const transitionEngagement = (

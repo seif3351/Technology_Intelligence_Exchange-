@@ -82,15 +82,52 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
             </div>
           ) : null}
           {e.status === 'submitted' ? (
-            <div className="row">
-              {['acknowledged', 'declined'].map((status) => (
-                <form key={status} action={respondToEngagement}>
-                  <input type="hidden" name="orgId" value={orgId} />
-                  <input type="hidden" name="engagementId" value={e.id} />
-                  <input type="hidden" name="status" value={status} />
-                  <button type="submit">{status === 'acknowledged' ? 'Acknowledge' : 'Decline'}</button>
-                </form>
-              ))}
+            <div className="grid2">
+              <ActionForm action={respondToEngagement} submitLabel="Accept and share contact">
+                <input type="hidden" name="orgId" value={orgId} />
+                <input type="hidden" name="engagementId" value={e.id} />
+                <input type="hidden" name="status" value="acknowledged" />
+                <p className="small muted">The buyer will see this contact person and your reply.</p>
+                <div>
+                  <label htmlFor={`contact-name-${e.id}`}>Contact name</label>
+                  <input
+                    id={`contact-name-${e.id}`}
+                    name="contactName"
+                    required
+                    defaultValue={me.user.displayName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`contact-email-${e.id}`}>Contact email</label>
+                  <input
+                    id={`contact-email-${e.id}`}
+                    name="contactEmail"
+                    type="email"
+                    required
+                    defaultValue={me.user.email}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`reply-${e.id}`}>Reply (optional)</label>
+                  <textarea id={`reply-${e.id}`} name="message" maxLength={2000} />
+                </div>
+              </ActionForm>
+              <ActionForm action={respondToEngagement} submitLabel="Decline" variant="secondary">
+                <input type="hidden" name="orgId" value={orgId} />
+                <input type="hidden" name="engagementId" value={e.id} />
+                <input type="hidden" name="status" value="declined" />
+                <div>
+                  <label htmlFor={`decline-${e.id}`}>Note to the buyer (optional)</label>
+                  <textarea id={`decline-${e.id}`} name="message" maxLength={2000} />
+                </div>
+              </ActionForm>
+            </div>
+          ) : e.supplierResponse ? (
+            <div className="small">
+              {e.supplierResponse.contactName
+                ? `Shared contact: ${e.supplierResponse.contactName} <${e.supplierResponse.contactEmail ?? ''}>`
+                : 'Declined'}
+              {e.supplierResponse.message ? ` — “${e.supplierResponse.message}”` : ''}
             </div>
           ) : null}
         </div>

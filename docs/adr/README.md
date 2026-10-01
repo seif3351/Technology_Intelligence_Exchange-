@@ -13,6 +13,7 @@
 | [0009](0009-data-driven-ontology.md)                   | Data-driven ontology (YAML → PostgreSQL) instead of code enums                                      | Accepted |
 | [0010](0010-consequential-actions.md)                  | Consequential actions require prepare/confirm with bound confirmation tokens                        | Accepted |
 | [0011](0011-listing-requires-verification.md)          | Published content is public only while the organization is platform-verified                        | Accepted |
+| [0015](0015-engagement-notifications.md)               | Engagement notifications (metadata-only, queued) and supplier contact handover                      | Accepted |
 | [0014](0014-organization-membership-administration.md) | Organization invitations with roles, role ceilings and last-owner protection                        | Accepted |
 | [0013](0013-account-email-and-revocation.md)           | Account emails via a Mailer port, password reset, per-user token revocation cut-off                 | Accepted |
 | [0012](0012-invite-only-registration.md)               | Invite-only registration with hashed, single-use, email-bound invitations                           | Accepted |

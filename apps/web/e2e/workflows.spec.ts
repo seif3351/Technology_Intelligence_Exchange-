@@ -47,7 +47,18 @@ test.describe('buyer and supplier workflows', () => {
     const supplierPage = await (await browser.newContext()).newPage();
     await signIn(supplierPage, 'owner@northstar-ai.example');
     await supplierPage.goto('/workspace');
-    await expect(supplierPage.getByTestId('incoming-request').filter({ hasText: message })).toBeVisible();
+    const request = supplierPage.getByTestId('incoming-request').filter({ hasText: message });
+    await expect(request).toBeVisible();
+
+    // Contact handover: accepting shares a contact person with the buyer.
+    await request.getByLabel('Contact name').fill('Nora Northstar');
+    await request.getByRole('button', { name: 'Accept and share contact' }).click();
+    await expect(request.getByText('Shared contact: Nora Northstar')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Requests', exact: true }).click();
+    const sent = page.getByTestId('outgoing-request').filter({ hasText: message });
+    await expect(sent).toContainText('Accepted by the supplier');
+    await expect(sent).toContainText('Nora Northstar');
   });
 
   test('supplier reviews an AI-drafted claim before it is published', async ({ page }) => {

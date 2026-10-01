@@ -84,6 +84,7 @@ export const Me = z
   .object({
     user: z.object({
       id: z.string(),
+      email: z.string(),
       displayName: z.string(),
       platformRole: z.string(),
       emailVerified: z.boolean(),

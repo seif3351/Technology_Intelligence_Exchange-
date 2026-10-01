@@ -140,11 +140,22 @@ export async function requestVerification(form: FormData): Promise<void> {
   revalidatePath('/workspace');
 }
 
-export async function respondToEngagement(form: FormData): Promise<void> {
-  await api(`/v1/organizations/${text(form, 'orgId')}/engagements/${text(form, 'engagementId')}/respond`, {
-    method: 'POST',
-    body: { status: text(form, 'status') },
-    schema: Engagement,
-  });
+export async function respondToEngagement(_state: FormState, form: FormData): Promise<FormState> {
+  const status = text(form, 'status');
+  try {
+    await api(`/v1/organizations/${text(form, 'orgId')}/engagements/${text(form, 'engagementId')}/respond`, {
+      method: 'POST',
+      body: {
+        status,
+        message: text(form, 'message') || null,
+        contactName: text(form, 'contactName') || null,
+        contactEmail: text(form, 'contactEmail') || null,
+      },
+      schema: Engagement,
+    });
+  } catch (error) {
+    return { error: describeError(error) };
+  }
   revalidatePath('/workspace');
+  return { message: status === 'acknowledged' ? 'Accepted; the buyer has been notified.' : 'Declined.' };
 }

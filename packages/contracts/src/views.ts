@@ -354,6 +354,15 @@ export const Engagement = z
         })
         .nullable(),
     }),
+    supplierResponse: z
+      .object({
+        message: z.string().nullable(),
+        contactName: z.string().nullable(),
+        contactEmail: z.string().nullable(),
+      })
+      .nullable()
+      .describe('What the supplier shared back when responding (contact handover).'),
+    respondedAt: z.string().nullable(),
     createdAt: z.string(),
   })
   .meta({ id: 'Engagement' });

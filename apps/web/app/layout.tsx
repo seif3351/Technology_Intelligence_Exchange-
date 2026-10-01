@@ -25,6 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/search">Search</Link>
             <Link href="/technologies">Technologies</Link>
             {isBuyer ? <Link href="/buyer/requirements">Requirements</Link> : null}
+            {isBuyer ? <Link href="/buyer/requests">Requests</Link> : null}
             {isSupplier ? <Link href="/workspace">Supplier workspace</Link> : null}
             {me?.user.platformRole === 'platform_admin' ? <Link href="/admin">Admin</Link> : null}
             <Link href="/docs/mcp">AI agents (MCP)</Link>

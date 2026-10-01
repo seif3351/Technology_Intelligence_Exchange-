@@ -1,6 +1,7 @@
 import type { Application } from '@atx/application';
 import {
   Engagement,
+  EngagementResponse,
   EngagementConfirmInput,
   EngagementDraftInput,
   EngagementPreview,
@@ -25,6 +26,8 @@ const engagementView = (e: Awaited<ReturnType<Application['engagements']['listFo
   supplierOrganizationId: e.supplierOrganizationId,
   offeringId: e.offeringId,
   disclosure: e.disclosure,
+  supplierResponse: e.supplierResponse,
+  respondedAt: e.respondedAt?.toISOString() ?? null,
   createdAt: e.createdAt.toISOString(),
 });
 
@@ -163,13 +166,13 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     method: 'POST',
     url: '/v1/organizations/:orgId/engagements/:engagementId/respond',
     operationId: 'respondToEngagement',
-    summary: 'Supplier acknowledges, declines or closes an incoming request',
+    summary: 'Supplier acknowledges (sharing a contact person), declines or closes an incoming request',
     tags: ['engagements'],
     auth: 'required',
     params: z.object({ orgId: Uuid, engagementId: Uuid }),
-    body: z.object({ status: z.enum(['acknowledged', 'declined', 'closed']) }),
+    body: EngagementResponse,
     response: Engagement,
     handler: async ({ params, body, ctx }) =>
-      engagementView(await app.engagements.respond(ctx, params.orgId, params.engagementId, body.status)),
+      engagementView(await app.engagements.respond(ctx, params.orgId, params.engagementId, body)),
   }),
 ];

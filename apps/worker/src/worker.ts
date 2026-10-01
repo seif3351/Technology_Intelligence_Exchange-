@@ -11,6 +11,7 @@ const payloads = {
   'asset.process': z.object({ assetId: z.uuid() }),
   'offering.reindex': z.object({ offeringId: z.uuid() }),
   'engagement.notify': z.object({ engagementId: z.uuid() }),
+  'engagement.response_notify': z.object({ engagementId: z.uuid() }),
 } satisfies Record<JobType, z.ZodType>;
 
 /**
@@ -32,9 +33,13 @@ export const executeJob = async (runtime: Runtime, job: ClaimedJob): Promise<voi
     }
     case 'engagement.notify': {
       const { engagementId } = payloads['engagement.notify'].parse(job.payload);
-      // Notification delivery (email/webhook/supplier agent) plugs in here. Until then the
-      // supplier sees the request in their workspace inbox; we only record that it is ready.
-      runtime.logger.info({ engagementId }, 'engagement ready for supplier inbox');
+      const notified = await runtime.app.engagements.notifySupplier(ctx, engagementId);
+      runtime.logger.info({ engagementId, recipients: notified }, 'supplier notified of engagement request');
+      return;
+    }
+    case 'engagement.response_notify': {
+      const { engagementId } = payloads['engagement.response_notify'].parse(job.payload);
+      await runtime.app.engagements.notifyBuyer(ctx, engagementId);
       return;
     }
   }

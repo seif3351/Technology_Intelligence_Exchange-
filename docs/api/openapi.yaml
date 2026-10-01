@@ -372,6 +372,35 @@ components:
         - contactName
         - contactEmail
       additionalProperties: false
+    EngagementResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - acknowledged
+            - declined
+            - closed
+        message:
+          anyOf:
+            - type: string
+              maxLength: 2000
+            - type: "null"
+        contactName:
+          anyOf:
+            - type: string
+              maxLength: 120
+            - type: "null"
+        contactEmail:
+          anyOf:
+            - type: string
+              maxLength: 254
+              format: email
+              pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+            - type: "null"
+      required:
+        - status
+      additionalProperties: false
     EngagementConfirm:
       type: object
       properties:
@@ -2503,6 +2532,33 @@ components:
             - message
             - requirement
           additionalProperties: false
+        supplierResponse:
+          anyOf:
+            - type: object
+              properties:
+                message:
+                  type:
+                    - string
+                    - "null"
+                contactName:
+                  type:
+                    - string
+                    - "null"
+                contactEmail:
+                  type:
+                    - string
+                    - "null"
+              required:
+                - message
+                - contactName
+                - contactEmail
+              additionalProperties: false
+            - type: "null"
+          description: What the supplier shared back when responding (contact handover).
+        respondedAt:
+          type:
+            - string
+            - "null"
         createdAt:
           type: string
       required:
@@ -2513,6 +2569,8 @@ components:
         - supplierOrganizationId
         - offeringId
         - disclosure
+        - supplierResponse
+        - respondedAt
         - createdAt
       additionalProperties: false
     OrganizationRecord:
@@ -2749,6 +2807,8 @@ components:
           properties:
             id:
               type: string
+            email:
+              type: string
             displayName:
               type: string
             platformRole:
@@ -2757,6 +2817,7 @@ components:
               type: boolean
           required:
             - id
+            - email
             - displayName
             - platformRole
             - emailVerified
@@ -5578,7 +5639,7 @@ paths:
   /v1/organizations/{orgId}/engagements/{engagementId}/respond:
     post:
       operationId: respondToEngagement
-      summary: Supplier acknowledges, declines or closes an incoming request
+      summary: Supplier acknowledges (sharing a contact person), declines or closes an incoming request
       tags:
         - engagements
       security:
@@ -5603,16 +5664,36 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  enum:
-                    - acknowledged
-                    - declined
-                    - closed
-              required:
-                - status
+              $ref: "#/$defs/EngagementResponse"
+              $defs:
+                EngagementResponse:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                        - acknowledged
+                        - declined
+                        - closed
+                    message:
+                      anyOf:
+                        - type: string
+                          maxLength: 2000
+                        - type: "null"
+                    contactName:
+                      anyOf:
+                        - type: string
+                          maxLength: 120
+                        - type: "null"
+                    contactEmail:
+                      anyOf:
+                        - type: string
+                          maxLength: 254
+                          format: email
+                          pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                        - type: "null"
+                  required:
+                    - status
       responses:
         "200":
           description: Success

@@ -115,6 +115,14 @@ export const EngagementDraftInput = z
   })
   .meta({ id: 'EngagementDraft' });
 
+export const EngagementResponse = z
+  .object({
+    status: z.enum(['acknowledged', 'declined', 'closed']),
+    message: z.string().max(2000).nullable().optional(),
+    contactName: z.string().max(120).nullable().optional(),
+    contactEmail: z.email().max(254).nullable().optional(),
+  })
+  .meta({ id: 'EngagementResponse' });
 export const EngagementConfirmInput = EngagementDraftInput.extend({
   confirmationToken: z.string().min(20).max(4000),
   idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),

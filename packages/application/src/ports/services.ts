@@ -119,13 +119,19 @@ export interface AssetUrlSigner {
   signedUrl(assetId: AssetId, ttlSeconds: number): string;
 }
 
-export const JOB_TYPES = ['asset.process', 'offering.reindex', 'engagement.notify'] as const;
+export const JOB_TYPES = [
+  'asset.process',
+  'offering.reindex',
+  'engagement.notify',
+  'engagement.response_notify',
+] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
 export interface JobPayloads {
   'asset.process': { readonly assetId: AssetId };
   'offering.reindex': { readonly offeringId: OfferingId };
   'engagement.notify': { readonly engagementId: string };
+  'engagement.response_notify': { readonly engagementId: string };
 }
 
 export interface EnqueueOptions {

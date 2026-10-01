@@ -10,14 +10,18 @@ import {
   notFound,
   sanitizeUntrustedText,
   toSupplierFacingRequirement,
+  respondToEngagement,
+  roleAtLeast,
   transitionEngagement,
   validationError,
   isPlausibleEmail,
+  normalizeEmail,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { authorizeTenant, requireScope, requireUser, requireVerifiedEmail } from '../policies';
 import type { RequestContext } from '../principal';
 import { presentConstraint } from '../views';
+import { plainName } from './account-mail';
 import { digest, recordAudit } from './support';
 
 export interface EngagementDraft {
@@ -34,6 +38,12 @@ export interface EngagementDraft {
 }
 
 const CONFIRMATION_TTL_SECONDS = 10 * 60;
+const ENGAGEMENT_LABEL: Readonly<Record<EngagementType, string>> = {
+  demo: 'demo',
+  workshop: 'workshop',
+  poc: 'proof-of-concept',
+  rfi: 'RFI',
+};
 
 /**
  * Demo / workshop / PoC / RFI requests. Two explicit steps:
@@ -139,6 +149,9 @@ export class EngagementService {
       idempotencyKey,
       requestedBy: user.userId,
       confirmedAt: now,
+      supplierResponse: null,
+      respondedBy: null,
+      respondedAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -175,25 +188,117 @@ export class EngagementService {
     return items;
   }
 
+  /**
+   * Supplier response. Acknowledging requires a contact person, which is then
+   * shared with the buyer (contact handover); declining may include a note.
+   */
   async respond(
     ctx: RequestContext,
     supplierOrganizationId: string,
     engagementId: string,
-    status: Extract<EngagementStatus, 'acknowledged' | 'declined' | 'closed'>,
+    input: {
+      readonly status: Extract<EngagementStatus, 'acknowledged' | 'declined' | 'closed'>;
+      readonly message?: string | null;
+      readonly contactName?: string | null;
+      readonly contactEmail?: string | null;
+    },
   ) {
     const scope = authorizeTenant(ctx, asId(supplierOrganizationId), 'editor');
+    const user = requireVerifiedEmail(ctx.principal);
     const engagement = await this.deps.repos.engagements.findById(asId(engagementId));
     if (!engagement || engagement.supplierOrganizationId !== scope.organizationId)
       throw notFound('Engagement');
-    const next = transitionEngagement(engagement, status, this.deps.clock.now());
-    await this.deps.repos.engagements.updateStatus(next);
-    await recordAudit(this.deps.repos.audit, ctx, next.updatedAt, {
-      action: `engagement.${status}`,
-      resourceType: 'engagement',
-      resourceId: next.id,
-      organizationId: scope.organizationId,
+    const now = this.deps.clock.now();
+    let next: EngagementRequest;
+    if (input.status === 'closed') {
+      next = transitionEngagement(engagement, 'closed', now);
+    } else {
+      const contactEmail = input.contactEmail ? normalizeEmail(input.contactEmail) : null;
+      if (contactEmail && !isPlausibleEmail(contactEmail)) throw validationError('contactEmail is invalid');
+      next = respondToEngagement(
+        engagement,
+        input.status,
+        {
+          message: input.message ? sanitizeUntrustedText(input.message, 2000) : null,
+          contactName: input.contactName ? sanitizeUntrustedText(input.contactName, 120) : null,
+          contactEmail,
+        },
+        user.userId,
+        now,
+      );
+    }
+    await this.deps.transaction(async (repos) => {
+      await repos.engagements.updateStatus(next, engagement.status);
+      await recordAudit(repos.audit, ctx, now, {
+        action: `engagement.${input.status}`,
+        resourceType: 'engagement',
+        resourceId: next.id,
+        organizationId: scope.organizationId,
+        metadata: { contactShared: next.supplierResponse?.contactEmail != null },
+      });
     });
+    if (input.status !== 'closed')
+      await this.deps.jobs.enqueue('engagement.response_notify', { engagementId: next.id });
     return next;
+  }
+
+  /**
+   * Worker: tells the supplier's responders (editor and above) about a new
+   * request. Only metadata and a link; the request itself stays in the app.
+   * Throws on delivery failure so the job is retried.
+   */
+  async notifySupplier(ctx: RequestContext, engagementId: string): Promise<number> {
+    const engagement = await this.deps.repos.engagements.findById(asId(engagementId));
+    if (!engagement) return 0;
+    const scope = authorizeTenant(ctx, engagement.supplierOrganizationId, 'viewer');
+    const offering = engagement.offeringId
+      ? await this.deps.repos.offerings.findById(engagement.offeringId)
+      : null;
+    const recipients = (await this.deps.repos.users.listMembers(scope)).filter((m) =>
+      roleAtLeast(m.role, 'editor'),
+    );
+    const link = new URL('/workspace', this.deps.settings.publicWebUrl).toString();
+    for (const recipient of recipients)
+      await this.deps.mailer.send({
+        to: recipient.email,
+        subject: `New ${ENGAGEMENT_LABEL[engagement.type]} request on the Automotive Technology Exchange`,
+        text: [
+          `Hello ${plainName(recipient.displayName)},`,
+          '',
+          `${plainName(engagement.disclosure.buyerOrganizationName)} sent a ${ENGAGEMENT_LABEL[engagement.type]} request` +
+            (offering ? ` about ${plainName(offering.name)}.` : '.'),
+          'Read it and respond in your supplier workspace:',
+          link,
+        ].join('\n'),
+      });
+    this.deps.telemetry.increment('atx.engagement.notifications', {
+      kind: 'supplier',
+      count: recipients.length,
+    });
+    return recipients.length;
+  }
+
+  /** Worker: tells the buyer contact that the supplier responded. */
+  async notifyBuyer(_ctx: RequestContext, engagementId: string): Promise<boolean> {
+    const engagement = await this.deps.repos.engagements.findById(asId(engagementId));
+    if (!engagement || !engagement.supplierResponse) return false;
+    const supplier = await this.deps.repos.organizations.findById(engagement.supplierOrganizationId);
+    const verb = engagement.status === 'acknowledged' ? 'accepted' : 'declined';
+    await this.deps.mailer.send({
+      to: engagement.disclosure.contactEmail,
+      subject: `${plainName(supplier?.name ?? 'A supplier')} ${verb} your ${ENGAGEMENT_LABEL[engagement.type]} request`,
+      text: [
+        `Hello ${plainName(engagement.disclosure.contactName)},`,
+        '',
+        `${plainName(supplier?.name ?? 'The supplier')} ${verb} your ${ENGAGEMENT_LABEL[engagement.type]} request.`,
+        engagement.status === 'acknowledged'
+          ? 'Their contact person and reply are shown with the request:'
+          : 'Details are shown with the request:',
+        new URL('/buyer/requests', this.deps.settings.publicWebUrl).toString(),
+      ].join('\n'),
+    });
+    this.deps.telemetry.increment('atx.engagement.notifications', { kind: 'buyer', count: 1 });
+    return true;
   }
 
   private async buildDisclosure(ctx: RequestContext, draft: EngagementDraft) {

@@ -38,7 +38,8 @@
     "S3: Mailer port (SMTP/file/memory/none), email verification (required to create organizations and confirm requests), password reset (single-use, no enumeration, rate-limited), sign out everywhere; credentials_changed_at revokes sessions and agent tokens (ms-precision iat_ms); invitation emails; web /account, /forgot-password, /reset-password, /verify-email, unverified banner; ADR-0013",
     "Fixed: failed sign-in cleared the email field (React action form reset); e2e now runs against the production web build",
     "S4: organization invitations with roles (role ceiling, owners only by owners, verified email), accept for existing users, member list, role change, removal and leaving with last-owner protection; web /members and invitation acceptance; ADR-0014; Playwright members journey",
-    "R2 architecture review: SecretToken contract, URL-stripping of names in emails, contract-driven role order in web"
+    "R2 architecture review: SecretToken contract, URL-stripping of names in emails, contract-driven role order in web",
+    "S5: engagement notifications (supplier responders on new requests, buyer contact on responses; queued, metadata-only, retried), contact handover on acknowledge (required contact, optional reply; guarded single response), buyer /buyer/requests page; ADR-0015"
   ],
   "verification": {
     "unit": "pnpm test — 84 passed",
@@ -55,7 +56,6 @@
     "MCP App view bundle is ~600 KiB (ext-apps SDK includes its schema layer)",
     "Rate limiting is in-process (per instance); use a shared store or gateway when scaling out",
     "Large video uploads go through the API (50 MB limit); presigned direct-to-storage uploads and speech-to-text are not implemented",
-    "Engagement notifications are logged only (no email/webhook/supplier-agent delivery yet)",
     "PostgreSQL row-level security not enabled (tenant isolation is enforced in application/repositories)",
     "Docker images run TypeScript via tsx; no bundling/slim runtime image yet; GitHub Actions workflow not yet executed on GitHub",
     "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only",
@@ -64,7 +64,7 @@
     "Terms of use and privacy notice pages are drafts and must be replaced by counsel-approved text before external users are invited",
     "Unverified buyer organizations can send engagement requests; mitigated by invite-only registration during the pilot"
   ],
-  "nextRecommendedStep": "S5: engagement notifications and contact handover",
+  "nextRecommendedStep": "S6: agent token management (list/revoke individual tokens)",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

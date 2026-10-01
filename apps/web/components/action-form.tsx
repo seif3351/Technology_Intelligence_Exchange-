@@ -9,11 +9,14 @@ export function ActionForm({
   children,
   submitLabel,
   className = 'stack',
+  variant = 'primary',
 }: {
   action: (state: FormState, form: FormData) => Promise<FormState>;
   children: React.ReactNode;
   submitLabel: string;
   className?: string;
+  /** Secondary for less common or negative choices (e.g. declining). */
+  variant?: 'primary' | 'secondary';
 }) {
   const [state, run, pending] = useActionState<FormState, FormData>(action, {});
   return (
@@ -30,7 +33,7 @@ export function ActionForm({
         </p>
       ) : null}
       <div>
-        <button type="submit" className="primary" disabled={pending}>
+        <button type="submit" className={variant === 'primary' ? 'primary' : undefined} disabled={pending}>
           {pending ? 'Working…' : submitLabel}
         </button>
       </div>

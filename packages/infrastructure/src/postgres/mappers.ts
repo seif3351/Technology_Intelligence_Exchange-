@@ -241,6 +241,9 @@ export const toEngagement = (row: Row): EngagementRequest => ({
   idempotencyKey: str(row, 'idempotency_key'),
   requestedBy: asId(str(row, 'requested_by')),
   confirmedAt: date(row, 'confirmed_at'),
+  supplierResponse: (row['supplier_response'] as EngagementRequest['supplierResponse']) ?? null,
+  respondedBy: row['responded_by'] ? asId(str(row, 'responded_by')) : null,
+  respondedAt: dateOrNull(row, 'responded_at'),
   createdAt: date(row, 'created_at'),
   updatedAt: date(row, 'updated_at'),
 });
