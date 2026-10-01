@@ -1,4 +1,12 @@
-import { AppError, isUserTokenUsable, normalizeEmail, validationError } from '@atx/domain';
+import {
+  AppError,
+  forbidden,
+  isUserTokenUsable,
+  normalizeEmail,
+  notFound,
+  validationError,
+  type UserId,
+} from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
 import { requireUser } from '../policies';
 import type { RequestContext } from '../principal';
@@ -99,6 +107,8 @@ export class AccountService {
       if (!(await repos.userTokens.markUsed(record.id, now))) throw invalidLink();
       await repos.userTokens.invalidateAll(record.userId, 'password_reset', now);
       await repos.users.updatePassword(record.userId, passwordHash, now);
+      // Refresh tokens would otherwise keep minting new access tokens for connected apps.
+      await repos.accessGrants.revokeAllForUser(record.userId, now);
       // Receiving the reset link proves ownership of the address.
       await repos.users.markEmailVerified(record.userId, now);
       await recordAudit(repos.audit, ctx, now, {
@@ -110,16 +120,45 @@ export class AccountService {
     });
   }
 
-  /** Invalidates every session and agent token issued so far for the signed-in user. */
+  /**
+   * Invalidates every session, agent token and connected app (OAuth grant)
+   * of the signed-in user.
+   */
   async signOutEverywhere(ctx: RequestContext): Promise<void> {
     const principal = requireUser(ctx.principal);
+    await this.revokeAllAccess(ctx, principal.userId, 'user.sessions.revoke_all');
+  }
+
+  /**
+   * Operator incident response (CLI only): cuts off a possibly compromised
+   * account the same way as "sign out everywhere". The password is left
+   * unchanged; the owner recovers through the password-reset email.
+   */
+  async revokeAccessAsOperator(
+    ctx: RequestContext,
+    rawEmail: string,
+  ): Promise<{ readonly userId: UserId; readonly revokedGrants: number }> {
+    if (ctx.principal.kind !== 'system') throw forbidden("Only operators can revoke another user's access");
+    const found = await this.deps.repos.users.findCredentialByEmail(normalizeEmail(rawEmail));
+    if (!found) throw notFound('Account');
+    const revokedGrants = await this.revokeAllAccess(ctx, found.user.id, 'user.access.revoke_by_operator');
+    return { userId: found.user.id, revokedGrants };
+  }
+
+  private async revokeAllAccess(ctx: RequestContext, userId: UserId, action: string): Promise<number> {
     const now = this.deps.clock.now();
-    await this.deps.repos.users.revokeAllTokens(principal.userId, now);
-    await recordAudit(this.deps.repos.audit, ctx, now, {
-      action: 'user.sessions.revoke_all',
-      resourceType: 'user',
-      resourceId: principal.userId,
-      organizationId: null,
+    let revokedGrants = 0;
+    await this.deps.transaction(async (repos) => {
+      await repos.users.revokeAllTokens(userId, now);
+      revokedGrants = await repos.accessGrants.revokeAllForUser(userId, now);
+      await recordAudit(repos.audit, ctx, now, {
+        action,
+        resourceType: 'user',
+        resourceId: userId,
+        organizationId: null,
+        metadata: { revokedGrants },
+      });
     });
+    return revokedGrants;
   }
 }

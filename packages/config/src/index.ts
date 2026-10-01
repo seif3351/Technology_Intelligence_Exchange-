@@ -88,7 +88,9 @@ export class ConfigError extends Error {
 }
 
 export const loadConfig = (source: NodeJS.ProcessEnv = process.env): Env => {
-  const parsed = EnvSchema.safeParse(source);
+  // An empty value means "unset" (orchestrators such as compose pass optional variables as '').
+  const defined = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+  const parsed = EnvSchema.safeParse(defined);
   if (!parsed.success) {
     // Report variable names only — never values, which may be secrets.
     const names = [...new Set(parsed.error.issues.map((issue) => issue.path.join('.')))];

@@ -11,6 +11,7 @@ Pilot users need password recovery, the platform needs proof of email ownership 
 - **Email ownership**: accepting an email-bound invitation or completing a reset proves the address; open registrations receive a verification link. Creating an organization and confirming engagement requests require a verified email.
 - **Password reset** never reveals whether an address is registered (always 202) and is limited to 3 emails per account and hour.
 - **Revocation**: `users.credentials_changed_at`. `principalFor` (which already loads the user on every request) rejects tokens issued before it. Our tokens carry a millisecond `iat_ms` claim because `iat` (seconds) cannot order a token against a reset within the same second; external tokens fall back to `iat × 1000`. Password reset and "sign out everywhere" set the timestamp, invalidating web sessions and MCP agent tokens alike.
+  - _Amendment (S10):_ with revocable access grants (ADR-0016) and OAuth refresh tokens (ADR-0017), the timestamp alone is not enough: a refresh token would keep minting fresh access tokens. Credential revocation therefore also revokes every active access grant of the user, in the same transaction. Operators can trigger the same revocation for a possibly compromised account with `pnpm admin:revoke-access <email>` (system principal only; audited as `user.access.revoke_by_operator`).
 
 ## Consequences
 

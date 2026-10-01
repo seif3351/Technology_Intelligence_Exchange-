@@ -321,6 +321,58 @@ describe('authorization server hardening', () => {
   });
 });
 
+describe('credential revocation disconnects apps', () => {
+  const email = 'owner@vectorforge.example';
+  const connect = async () => {
+    const host = new TestHostProvider();
+    await auth(host, { serverUrl: runtime.env.MCP_PUBLIC_URL, fetchFn });
+    const redirect = new URL((await consent(host.authorizationUrl!, email)).json().redirectTo as string);
+    await auth(host, {
+      serverUrl: runtime.env.MCP_PUBLIC_URL,
+      authorizationCode: redirect.searchParams.get('code') ?? '',
+      iss: redirect.searchParams.get('iss') ?? '',
+      fetchFn,
+    });
+    return host;
+  };
+  const refresh = (host: TestHostProvider) =>
+    tokenRequest({
+      grant_type: 'refresh_token',
+      refresh_token: host.stored?.refresh_token ?? '',
+      client_id: host.client?.client_id ?? '',
+    });
+
+  it('"sign out everywhere" also stops refresh tokens from minting new access tokens', async () => {
+    const host = await connect();
+    const session = await http.login(email, PASSWORD);
+    expect((await http.post('/v1/auth/sign-out-everywhere', {}, session)).statusCode).toBeLessThan(300);
+    expect((await refresh(host)).json().error).toBe('invalid_grant');
+    await expect(mcpClient(host.stored?.access_token ?? '').then((c) => c.listTools())).rejects.toThrow();
+  });
+
+  it('lets an operator cut off a compromised account (CLI only)', async () => {
+    const host = await connect();
+    const operator = { principal: { kind: 'system', component: 'test' } as const, requestId: 'ops' };
+    const result = await runtime.app.account.revokeAccessAsOperator(operator, email.toUpperCase());
+    expect(result.revokedGrants).toBeGreaterThanOrEqual(1);
+    expect((await refresh(host)).json().error).toBe('invalid_grant');
+    await expect(mcpClient(host.stored?.access_token ?? '').then((c) => c.listTools())).rejects.toThrow();
+    // The account itself still works after the owner signs in again.
+    expect((await http.get('/v1/me', await http.login(email, PASSWORD))).statusCode).toBe(200);
+    await expect(
+      runtime.app.account.revokeAccessAsOperator(operator, 'nobody@example.com'),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    const user = await runtime.app.identity.principalFor(DEMO.users.admin, {
+      channel: 'web',
+      clientId: null,
+      grantedScopes: 'all',
+    });
+    await expect(
+      runtime.app.account.revokeAccessAsOperator({ principal: user, requestId: 'x' }, email),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});
+
 describe('least-privilege start when MCP authentication is required', () => {
   it('the initial 401 challenge asks for catalog:read only, so hosts start minimal and step up', async () => {
     const strict = await createTestRuntime({ MCP_REQUIRE_AUTH: 'true' });

@@ -83,8 +83,8 @@ export default async function AccountPage() {
       <div className="card stack">
         <h2>Security</h2>
         <p className="small">
-          Lost a device or shared an agent token by mistake? This ends every session and invalidates all agent
-          tokens you created.
+          Lost a device or shared an agent token by mistake? This ends every session, invalidates all agent
+          tokens you created and disconnects every connected app.
         </p>
         <form action={signOutEverywhere}>
           <button type="submit">Sign out everywhere</button>

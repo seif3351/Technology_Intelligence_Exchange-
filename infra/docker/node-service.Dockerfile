@@ -1,12 +1,14 @@
 # syntax=docker/dockerfile:1.7
 # Image for the Node services (api, mcp-server, worker). One image, selected by SERVICE.
 FROM node:22-bookworm-slim AS base
-ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true
+# COREPACK_HOME is shared so the non-root runtime user can run operator commands
+# (`pnpm db:migrate`, `pnpm admin:create`) without downloading pnpm at runtime.
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true COREPACK_HOME=/corepack
 # Optional extra CA bundle for TLS-intercepting corporate proxies:
 #   docker build --secret id=ca_bundle,src=/path/to/ca.pem ...
 RUN --mount=type=secret,id=ca_bundle,required=false \
     NODE_EXTRA_CA_CERTS=$([ -f /run/secrets/ca_bundle ] && echo /run/secrets/ca_bundle) \
-    sh -c 'corepack enable && corepack prepare pnpm@10.28.0 --activate'
+    sh -c 'corepack enable && corepack prepare pnpm@10.28.0 --activate && chmod -R a+rX /corepack'
 WORKDIR /app
 
 FROM base AS build

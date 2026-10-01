@@ -36,6 +36,8 @@ Try: `I need an AUTOSAR Adaptive middleware solution for QNX and NVIDIA Orin wit
 
 Full stack in containers: `export AUTH_SIGNING_JWK=$(pnpm -s auth:generate-key) && docker compose --profile app up --build`.
 
+Production (pilot): CI publishes images to GHCR; deploy them with `infra/deploy/compose.yml` — see the [deployment guide](docs/operations/deployment.md).
+
 ## Quality gates
 
 ```bash
@@ -51,6 +53,7 @@ pnpm contracts:check    # OpenAPI + MCP JSON Schemas up to date
 
 - Architecture: [overview](docs/architecture/overview.md) · [C4 context](docs/architecture/c4-context.md) · [C4 containers](docs/architecture/c4-container.md) · [search & matching](docs/architecture/search-and-matching.md)
 - Decisions: [ADRs](docs/adr/README.md) · Security: [threat model](docs/security/threat-model.md)
+- Operations: [deployment](docs/operations/deployment.md) · [environment reference](docs/operations/environment.md) · [runbook](docs/operations/runbook.md)
 - Domain: [ontology](docs/domain/ontology.md) · [glossary](docs/domain/glossary.md)
 - MCP: [server](docs/mcp/README.md) · [tools](docs/mcp/tools.md) · [skill](docs/mcp/skill.md) · API: [openapi.yaml](docs/api/openapi.yaml)
 - Progress & next steps: [docs/project/progress.json](docs/project/progress.json)

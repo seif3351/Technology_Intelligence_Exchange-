@@ -30,7 +30,8 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm contracts:check",
     "auth:generate-key": "tsx scripts/generate-signing-key.ts",
     "auth:token": "tsx scripts/issue-token.ts",
-    "admin:create": "tsx scripts/admin.ts"
+    "admin:create": "tsx scripts/admin.ts",
+    "admin:revoke-access": "tsx scripts/revoke-access.ts"
   },
   "devDependencies": {
     "@atx/api": "workspace:*",

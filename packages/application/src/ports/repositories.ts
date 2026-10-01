@@ -245,6 +245,8 @@ export interface AccessGrantRepository {
   revoke(id: AccessGrantId, userId: UserId, at: Date): Promise<boolean>;
   /** Revokes a grant regardless of who asks (OAuth reuse detection, client revocation). */
   revokeById(id: AccessGrantId, at: Date): Promise<void>;
+  /** Revokes every active grant of a user (credential revocation); returns how many were revoked. */
+  revokeAllForUser(userId: UserId, at: Date): Promise<number>;
   /** Records use, at most every few minutes (keeps the hot path cheap). */
   touch(id: AccessGrantId, at: Date): Promise<void>;
 }

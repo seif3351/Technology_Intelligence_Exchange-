@@ -21,7 +21,9 @@ export default async function ResetPasswordPage({
   return (
     <div className="stack narrower">
       <h1>Choose a new password</h1>
-      <p className="small muted">This signs you out everywhere, including AI agent tokens.</p>
+      <p className="small muted">
+        This signs you out everywhere, including AI agent tokens and connected apps.
+      </p>
       <ActionForm action={resetPassword} submitLabel="Set new password">
         <input type="hidden" name="token" value={token} />
         <div>

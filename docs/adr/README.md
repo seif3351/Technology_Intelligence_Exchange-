@@ -13,6 +13,7 @@
 | [0009](0009-data-driven-ontology.md)                   | Data-driven ontology (YAML → PostgreSQL) instead of code enums                                      | Accepted |
 | [0010](0010-consequential-actions.md)                  | Consequential actions require prepare/confirm with bound confirmation tokens                        | Accepted |
 | [0011](0011-listing-requires-verification.md)          | Published content is public only while the organization is platform-verified                        | Accepted |
+| [0019](0019-pilot-deployment-topology.md)              | Pilot deployment: one VM, CI-published images pinned by SHA, Caddy TLS edge, explicit migrations    | Accepted |
 | [0018](0018-agents-edit-drafts-only.md)                | Agents edit drafts only; CSV shortlist export; opt-in private requirement alerts                    | Accepted |
 | [0017](0017-built-in-oauth-authorization-server.md)    | Built-in OAuth 2.1 authorization server for MCP hosts (DCR, PKCE, rotating refresh, consent)        | Accepted |
 | [0016](0016-revocable-access-grants.md)                | Revocable access grants behind agent tokens (1–90 days), principal resolved at token verification   | Accepted |

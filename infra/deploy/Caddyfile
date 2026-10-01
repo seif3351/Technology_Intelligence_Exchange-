@@ -1,0 +1,31 @@
+# TLS termination and routing for the three public hostnames. Caddy obtains and renews
+# certificates automatically (ACME); it forwards X-Forwarded-For/-Proto/-Host by default.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header -Server
+	request_body {
+		max_size 60MB
+	}
+}
+
+{$ATX_WEB_SITE} {
+	import common
+	reverse_proxy web:3000
+}
+
+{$ATX_API_SITE} {
+	import common
+	reverse_proxy api:4000
+}
+
+{$ATX_MCP_SITE} {
+	import common
+	# Streamable HTTP: flush responses immediately (SSE).
+	reverse_proxy mcp-server:4100 {
+		flush_interval -1
+	}
+}

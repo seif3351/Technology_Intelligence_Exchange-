@@ -32,6 +32,10 @@ try {
     { email, displayName, password },
   );
   console.log(`${created ? 'created' : 'promoted'} platform administrator ${user.email} (${user.id})`);
+} catch (error) {
+  // Messages only: stack traces add nothing for an operator.
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
 } finally {
   await runtime.close();
 }

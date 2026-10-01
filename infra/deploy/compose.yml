@@ -1,0 +1,138 @@
+# Production deployment for a single-VM pilot (see docs/operations/deployment.md).
+# Images are built and pushed by CI (.github/workflows/ci.yml) and pinned by ATX_IMAGE_TAG (a commit SHA).
+#
+#   cp atx.env.example atx.env && $EDITOR atx.env           # fill in hosts, secrets, database, SMTP
+#   docker compose --env-file atx.env pull
+#   docker compose --env-file atx.env run --rm release pnpm db:seed   # migrations + ontology (no demo data)
+#   docker compose --env-file atx.env up -d
+#
+# The database is external (managed PostgreSQL 16 + pgvector in the pilot's region) by default.
+# `--profile local-db` runs PostgreSQL on this VM instead (then DATABASE_SSL=off and DATABASE_URL=...@postgres:5432/atx).
+name: atx
+
+x-node-image: &node-image ${ATX_IMAGE_REGISTRY:-ghcr.io/example}/atx-node:${ATX_IMAGE_TAG:?set ATX_IMAGE_TAG to the commit SHA to deploy}
+
+x-app-env: &app-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: ${DATABASE_URL:?}
+  DATABASE_SSL: ${DATABASE_SSL:?off | require | verify}
+  DATABASE_SSL_CA: ${DATABASE_SSL_CA:-}
+  # Migrations are a release step (the `release` service), never a side effect of starting the API.
+  MIGRATE_ON_START: 'false'
+  PUBLIC_WEB_URL: https://${ATX_WEB_HOST:?}
+  API_PUBLIC_URL: https://${ATX_API_HOST:?}
+  MCP_PUBLIC_URL: https://${ATX_MCP_HOST:?}/mcp
+  CORS_ORIGINS: https://${ATX_WEB_HOST}
+  ALLOWED_HOSTS: ${ATX_MCP_HOST}
+  # Only the reverse proxy and the web BFF (both on the private network below) may set X-Forwarded-For.
+  TRUSTED_PROXIES: 172.30.0.0/24
+  AUTH_SIGNING_JWK: ${AUTH_SIGNING_JWK:?generate with pnpm auth:generate-key}
+  CONFIRMATION_SECRET: ${CONFIRMATION_SECRET:?}
+  ASSET_URL_SECRET: ${ASSET_URL_SECRET:?}
+  MCP_REQUIRE_AUTH: 'true'
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-filesystem}
+  STORAGE_DIR: /data/storage
+  S3_BUCKET: ${S3_BUCKET:-}
+  S3_REGION: ${S3_REGION:-eu-central-1}
+  CLAMAV_HOST: clamav
+  MAIL_DRIVER: smtp
+  SMTP_URL: ${SMTP_URL:?}
+  MAIL_FROM: ${MAIL_FROM:?}
+  REGISTRATION_MODE: ${REGISTRATION_MODE:-invite}
+  TERMS_VERSION: ${TERMS_VERSION:-pilot-2026-10}
+  FEATURE_ENGAGEMENT_ACTIONS: ${FEATURE_ENGAGEMENT_ACTIONS:-false}
+  AI_PROVIDER: ${AI_PROVIDER:-none}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-hashing}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+
+services:
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    environment:
+      ATX_WEB_SITE: ${ATX_SITE_SCHEME:-}${ATX_WEB_HOST}
+      ATX_API_SITE: ${ATX_SITE_SCHEME:-}${ATX_API_HOST}
+      ATX_MCP_SITE: ${ATX_SITE_SCHEME:-}${ATX_MCP_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:?contact address for certificate expiry notices}
+    volumes: ['./Caddyfile:/etc/caddy/Caddyfile:ro', 'caddy-data:/data', 'caddy-config:/config']
+    depends_on: [web, api, mcp-server]
+
+  web:
+    image: ${ATX_IMAGE_REGISTRY:-ghcr.io/example}/atx-web:${ATX_IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://api:4000
+      PUBLIC_WEB_URL: https://${ATX_WEB_HOST}
+      MCP_PUBLIC_URL: https://${ATX_MCP_HOST}/mcp
+    depends_on: [api]
+
+  api:
+    image: *node-image
+    restart: unless-stopped
+    environment: { <<: *app-env, SERVICE: api }
+    volumes: ['storage:/data/storage']
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/readyz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 15s
+      retries: 5
+    depends_on: [clamav]
+
+  mcp-server:
+    image: *node-image
+    restart: unless-stopped
+    environment: { <<: *app-env, SERVICE: mcp-server }
+    depends_on: [api]
+
+  worker:
+    image: *node-image
+    restart: unless-stopped
+    environment: { <<: *app-env, SERVICE: worker }
+    volumes: ['storage:/data/storage']
+    depends_on: [clamav]
+
+  # One-shot operator commands (migrations, ontology load, admin bootstrap):
+  #   docker compose --env-file atx.env run --rm release pnpm db:migrate
+  release:
+    image: *node-image
+    profiles: [release]
+    environment: *app-env
+    command: ['pnpm', 'db:migrate']
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [local-db]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atx
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_DB: atx
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U atx']
+      interval: 5s
+      retries: 20
+
+networks:
+  default:
+    ipam:
+      config: [{ subnet: 172.30.0.0/24 }]
+
+volumes:
+  storage:
+  pgdata:
+  caddy-data:
+  caddy-config:

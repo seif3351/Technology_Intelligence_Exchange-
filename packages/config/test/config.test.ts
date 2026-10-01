@@ -26,6 +26,20 @@ describe('production configuration guard', () => {
     expect(() => loadConfig({ ...SECURE, ...override })).toThrow(ConfigError);
   });
 
+  it('treats empty values as unset, as orchestrators pass optional variables', () => {
+    const env = loadConfig({
+      ...SECURE,
+      OTEL_EXPORTER_OTLP_ENDPOINT: '',
+      S3_ENDPOINT: '',
+      DATABASE_SSL_CA: '',
+    });
+    expect(env.OTEL_EXPORTER_OTLP_ENDPOINT).toBeUndefined();
+    expect(env.DATABASE_SSL_CA).toBeUndefined();
+    // ...including for the production guard: an empty secret is still a missing secret.
+    expect(() => loadConfig({ ...SECURE, CLAMAV_HOST: '' })).toThrow(/CLAMAV_HOST/);
+    expect(() => loadConfig({ ...SECURE, CONFIRMATION_SECRET: '' })).toThrow(/CONFIRMATION_SECRET/);
+  });
+
   it('names offending variables but never echoes their values', () => {
     try {
       loadConfig({ ...SECURE, CLAMAV_HOST: undefined, SMTP_URL: undefined, MAIL_DRIVER: 'smtp' });

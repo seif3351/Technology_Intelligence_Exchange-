@@ -55,6 +55,13 @@ export const createAccessGrantRepository = (db: Queryable): AccessGrantRepositor
   async revokeById(id, at) {
     await db.query('UPDATE access_grants SET revoked_at = $2 WHERE id = $1 AND revoked_at IS NULL', [id, at]);
   },
+  async revokeAllForUser(userId, at) {
+    const result = await db.query(
+      'UPDATE access_grants SET revoked_at = $2 WHERE user_id = $1 AND revoked_at IS NULL',
+      [userId, at],
+    );
+    return result.rowCount ?? 0;
+  },
   async touch(id, at) {
     await db.query(
       `UPDATE access_grants SET last_used_at = $2
