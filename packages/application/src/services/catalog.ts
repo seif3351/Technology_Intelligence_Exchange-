@@ -269,6 +269,13 @@ export class CatalogService {
     }));
   }
 
+  /** A stored asset that may be served through a signed URL (public and fully processed only). */
+  async downloadableAsset(assetId: string): Promise<{ readonly storageKey: string; readonly contentType: string; readonly id: string }> {
+    const asset = isUuid(assetId) ? await this.deps.repos.assets.findById(asId(assetId)) : null;
+    if (!asset || !asset.storageKey || asset.visibility !== 'public' || asset.processingState !== 'ready') throw notFound('Asset');
+    return { storageKey: asset.storageKey, contentType: asset.contentType, id: asset.id };
+  }
+
   async getOntology() {
     const ontology = await this.deps.ontology.current();
     return { facets: ontology.facets, concepts: ontology.concepts.filter((c) => c.status === 'active') };

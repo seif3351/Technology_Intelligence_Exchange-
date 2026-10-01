@@ -9,5 +9,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
-  "dependencies": {"zod": "^4.2.1"}
+  "dependencies": {
+    "@atx/domain": "workspace:*",
+    "zod": "^4.2.1"
+  }
 }

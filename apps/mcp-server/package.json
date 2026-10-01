@@ -1,0 +1,34 @@
+{
+  "name": "@atx/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/server.ts"
+  },
+  "scripts": {
+    "build:views": "tsx scripts/build-views.ts",
+    "dev": "pnpm build:views && tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "start": "pnpm build:views && tsx src/main.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.views.json"
+  },
+  "devDependencies": {
+    "@atx/test-utils": "workspace:*",
+    "esbuild": "^0.28"
+  },
+  "dependencies": {
+    "@atx/application": "workspace:*",
+    "@atx/auth": "workspace:*",
+    "@atx/config": "workspace:*",
+    "@atx/contracts": "workspace:*",
+    "@atx/domain": "workspace:*",
+    "@atx/runtime": "workspace:*",
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/core": "^2.2.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/node": "^2.1.0",
+    "@modelcontextprotocol/server": "^2.2.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  }
+}

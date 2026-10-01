@@ -8,7 +8,8 @@ import {
   validationError,
 } from '@atx/domain';
 import type { ApplicationDeps } from '../deps';
-import { SCOPES, type Scope, type UserPrincipal } from '../principal';
+import { requireUser } from '../policies';
+import { type RequestContext, SCOPES, type Scope, type UserPrincipal } from '../principal';
 
 export interface PasswordHasher {
   hash(password: string): Promise<string>;
@@ -43,6 +44,10 @@ export class IdentityService {
     };
     await this.deps.repos.users.insert(user, await this.passwords.hash(input.password));
     return user;
+  }
+
+  profile(ctx: RequestContext) {
+    return describePrincipal(this.deps, ctx);
   }
 
   /** Constant-work credential check: same error for unknown user and wrong password. */
@@ -83,6 +88,22 @@ export class IdentityService {
     };
   }
 }
+
+export const describePrincipal = async (deps: ApplicationDeps, ctx: RequestContext) => {
+  const principal = requireUser(ctx.principal);
+  const organizations = await deps.repos.organizations.findManyByIds(principal.memberships.map((m) => m.organizationId));
+  const byId = new Map(organizations.map((org) => [org.id, org]));
+  return {
+    user: { id: principal.userId, displayName: principal.displayName, platformRole: principal.platformRole },
+    memberships: principal.memberships.flatMap((membership) => {
+      const org = byId.get(membership.organizationId);
+      return org
+        ? [{ organizationId: org.id, organizationName: org.name, organizationSlug: org.slug, organizationKind: org.kind, role: membership.role }]
+        : [];
+    }),
+    scopes: [...principal.scopes].sort(),
+  };
+};
 
 // A well-formed hash of a random password, used to equalize timing for unknown users.
 const DUMMY_HASH = 'scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';

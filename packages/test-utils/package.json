@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@atx/application": "workspace:*",
+    "@atx/config": "workspace:*",
     "@atx/domain": "workspace:*",
     "@atx/infrastructure": "workspace:*",
+    "@atx/runtime": "workspace:*",
     "pg": "^8.16.3"
   }
 }

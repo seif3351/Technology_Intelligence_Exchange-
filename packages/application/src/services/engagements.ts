@@ -77,7 +77,7 @@ export class EngagementService {
       },
       confirmationToken: token,
       expiresAt: expiresAt.toISOString(),
-      requiresHumanConfirmation: true,
+      requiresHumanConfirmation: true as const,
     };
   }
 
