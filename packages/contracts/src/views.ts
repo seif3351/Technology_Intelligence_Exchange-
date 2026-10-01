@@ -35,6 +35,7 @@ export const ClaimView = z
     reviewAt: z.string().nullable(),
     expiresAt: z.string().nullable(),
     contentWarnings: z.array(z.string()),
+    version: z.number().int(),
   })
   .meta({ id: 'Claim' });
 

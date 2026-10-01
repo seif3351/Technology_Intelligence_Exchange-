@@ -34,7 +34,8 @@ export const buildServer = async (runtime: Runtime): Promise<FastifyInstance> =>
   const app = Fastify({
     // pino's Logger is the concrete implementation of Fastify's logger interface.
     loggerInstance: runtime.logger as FastifyBaseLogger,
-    trustProxy: true,
+    // Only trusted proxies may set the client IP (used for rate limiting and logs).
+    trustProxy: listSetting(runtime.env.TRUSTED_PROXIES),
     bodyLimit: 1024 * 1024,
     genReqId: (request) => {
       const incoming = request.headers['x-request-id'];

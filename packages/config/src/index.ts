@@ -24,6 +24,8 @@ export const EnvSchema = z.object({
   MCP_PUBLIC_URL: z.url().default('http://localhost:4100/mcp'),
   MCP_PORT: z.coerce.number().int().default(4100),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
+  /** Proxies (e.g. the web BFF, load balancer) whose X-Forwarded-For is trusted. */
+  TRUSTED_PROXIES: z.string().default('127.0.0.1,::1,::ffff:127.0.0.1'),
   AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(10),
   ALLOWED_HOSTS: z.string().default('localhost,127.0.0.1'),
 

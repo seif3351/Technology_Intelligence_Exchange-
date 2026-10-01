@@ -61,6 +61,8 @@ export interface ClaimView {
   readonly reviewAt: string | null;
   readonly expiresAt: string | null;
   readonly contentWarnings: readonly string[];
+  /** For optimistic concurrency on owner edits. */
+  readonly version: number;
 }
 
 export interface EvidenceView {
@@ -217,6 +219,7 @@ export const presentClaim = (claim: TechnicalClaim, ontology: Ontology): ClaimVi
     reviewAt: iso(claim.reviewAt),
     expiresAt: iso(claim.expiresAt),
     contentWarnings: detectInjectionSignals(claim.statement).length > 0 ? ['possible_instruction_like_content'] : [],
+    version: claim.version,
   };
 };
 

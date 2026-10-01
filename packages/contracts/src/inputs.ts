@@ -10,6 +10,8 @@ import {
 import { z } from 'zod';
 import { Cursor, Limit, Slug, Uuid } from './common';
 
+export const ClaimPredicate = z.enum(CLAIM_PREDICATES).meta({ id: 'ClaimPredicate' });
+
 const ConceptId = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120);
 
 export const ConstraintInput = z
@@ -136,7 +138,7 @@ export const OfferingStatusChange = z.object({ status: z.enum(['published', 'dra
 export const ClaimCreate = z
   .object({
     subject: z.object({ type: z.enum(['organization', 'offering', 'capability']), id: Uuid }),
-    predicate: z.enum(CLAIM_PREDICATES),
+    predicate: ClaimPredicate,
     conceptId: ConceptId,
     qualifiers: z.record(z.string().max(40), z.string().max(200)).optional(),
     statement: z.string().min(3).max(1000),
