@@ -43,12 +43,12 @@ packages are private, log the VM in with a read-only token:
 
 ## 2. Infrastructure
 
-| Component  | Requirement                                                                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| VM         | 4 vCPU / 8 GB RAM (ClamAV alone needs ~3 GB) / 40 GB disk, Docker Engine + Compose v2, inbound 80/443 only, SSH restricted                                                           |
-| PostgreSQL | 16 with the `vector` extension available (e.g. a managed service in the EU), TLS on, automated backups + point-in-time recovery, a dedicated `atx` role that owns the `atx` database |
-| SMTP       | Authenticated relay with SPF, DKIM and DMARC aligned for the `MAIL_FROM` domain                                                                                                      |
-| Storage    | `STORAGE_DRIVER=filesystem` (a Docker volume, include it in backups) or an S3 bucket in the same region (`STORAGE_DRIVER=s3`, encryption at rest, no public access)                  |
+| Component  | Requirement                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| VM         | 2 vCPU / 4 GB RAM + 2 GB swap is enough for a pilot (measured idle: ~1.5 GB total, of which ClamAV ~1 GB; ClamAV briefly doubles while reloading signatures) / 40 GB disk, Docker Engine + Compose v2, inbound 80/443 only, SSH restricted |
+| PostgreSQL | 16 with the `vector` extension available (e.g. a managed service in the EU), TLS on, automated backups + point-in-time recovery, a dedicated `atx` role that owns the `atx` database                                                       |
+| SMTP       | Authenticated relay with SPF, DKIM and DMARC aligned for the `MAIL_FROM` domain                                                                                                                                                            |
+| Storage    | `STORAGE_DRIVER=filesystem` (a Docker volume, include it in backups) or an S3 bucket in the same region (`STORAGE_DRIVER=s3`, encryption at rest, no public access)                                                                        |
 
 The migration runs `CREATE EXTENSION IF NOT EXISTS vector`. On managed services, either allow the `atx` role
 to create it or create it once as the admin user.
