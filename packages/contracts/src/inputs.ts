@@ -326,9 +326,34 @@ export const AgentTokenRequest = z
         ]),
       )
       .min(1),
-    ttlHours: z.number().int().min(1).max(24).default(8),
+    label: z
+      .string()
+      .min(1)
+      .max(80)
+      .default('Agent token')
+      .describe('Where the token is used, e.g. "Claude Code laptop".'),
+    expiresInDays: z.number().int().min(1).max(90).default(30),
   })
   .meta({ id: 'AgentTokenRequest' });
+export const AgentTokenRecord = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    scopes: z.array(z.string()),
+    status: z.enum(['active', 'revoked', 'expired']),
+    createdAt: z.string(),
+    expiresAt: z.string(),
+    lastUsedAt: z.string().nullable(),
+  })
+  .meta({ id: 'AgentTokenRecord' });
+export const IssuedAgentToken = z
+  .object({
+    accessToken: z.string().describe('Shown once. Treat it like a password.'),
+    tokenType: z.literal('Bearer'),
+    audience: z.string(),
+    grant: AgentTokenRecord,
+  })
+  .meta({ id: 'IssuedAgentToken' });
 export const TokenResponse = z
   .object({
     accessToken: z.string(),

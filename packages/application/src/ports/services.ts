@@ -176,3 +176,18 @@ export interface OutgoingEmail {
 export interface Mailer {
   send(message: OutgoingEmail): Promise<void>;
 }
+
+// ------------------------------------------------------------ access tokens
+
+/** Signs audience-bound access tokens (implemented by @atx/auth). */
+export interface AccessTokenSigner {
+  sign(input: {
+    readonly subject: string;
+    readonly audience: string;
+    readonly scopes: readonly string[];
+    readonly clientId: string | null;
+    readonly ttlSeconds: number;
+    /** Persisted grant the token belongs to; revoking the grant invalidates the token. */
+    readonly grantId: string | null;
+  }): Promise<string>;
+}

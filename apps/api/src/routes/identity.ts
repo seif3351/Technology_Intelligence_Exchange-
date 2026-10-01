@@ -1,6 +1,8 @@
-import { SCOPES, type Scope, requireUser } from '@atx/application';
+import { SCOPES } from '@atx/application';
 import {
+  AgentTokenRecord,
   AgentTokenRequest,
+  IssuedAgentToken,
   InvitationPreview,
   LoginRequest,
   Me,
@@ -10,6 +12,7 @@ import {
   RegistrationPolicy,
   SecretTokenBody,
   TokenResponse,
+  Uuid,
 } from '@atx/contracts';
 import type { Runtime } from '@atx/runtime';
 import { z } from 'zod';
@@ -180,31 +183,41 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       method: 'POST',
       url: '/v1/auth/agent-tokens',
       operationId: 'issueAgentToken',
-      summary: 'Issue a scoped, short-lived token for an AI agent host to call the MCP server on your behalf',
+      summary:
+        'Create a revocable token (1-90 days) for an AI agent host to call the MCP server on your behalf',
       tags: ['auth'],
       auth: 'required',
       body: AgentTokenRequest,
-      response: TokenResponse,
+      response: IssuedAgentToken,
+      status: 201,
       rateLimit: AUTH_RATE_LIMIT,
       handler: async ({ body, ctx }) => {
-        const user = requireUser(ctx.principal);
-        // A token can never carry more than the issuing session already has.
-        const scopes = body.scopes.filter((scope) => user.scopes.has(scope as Scope));
-        const ttlSeconds = body.ttlHours * 3600;
-        const accessToken = await tokens.issuer.issue({
-          subject: user.userId,
-          audience: env.MCP_PUBLIC_URL,
-          scopes,
-          clientId: 'personal-agent-token',
-          ttlSeconds,
-        });
-        return {
-          accessToken,
-          tokenType: 'Bearer' as const,
-          expiresIn: ttlSeconds,
-          audience: env.MCP_PUBLIC_URL,
-          scopes,
-        };
+        const { token, grant } = await app.agentTokens.issue(ctx, body);
+        return { accessToken: token, tokenType: 'Bearer' as const, audience: env.MCP_PUBLIC_URL, grant };
+      },
+    }),
+    defineRoute({
+      method: 'GET',
+      url: '/v1/auth/agent-tokens',
+      operationId: 'listAgentTokens',
+      summary: 'Your agent tokens (never the token values)',
+      tags: ['auth'],
+      auth: 'required',
+      response: z.object({ items: z.array(AgentTokenRecord) }),
+      handler: async ({ ctx }) => ({ items: await app.agentTokens.list(ctx) }),
+    }),
+    defineRoute({
+      method: 'POST',
+      url: '/v1/auth/agent-tokens/:grantId/revoke',
+      operationId: 'revokeAgentToken',
+      summary: 'Revoke one agent token immediately',
+      tags: ['auth'],
+      auth: 'required',
+      params: z.object({ grantId: Uuid }),
+      response: z.object({ revoked: z.literal(true) }),
+      handler: async ({ params, ctx }) => {
+        await app.agentTokens.revoke(ctx, params.grantId);
+        return { revoked: true as const };
       },
     }),
     defineRoute({

@@ -1,6 +1,7 @@
 import type { ApplicationDeps } from './deps';
 import { AccountService } from './services/account';
 import { AdminService } from './services/admin';
+import { AgentTokenService } from './services/agent-tokens';
 import { CatalogService } from './services/catalog';
 import { EngagementService } from './services/engagements';
 import { IdentityService, type PasswordHasher } from './services/identity';
@@ -29,6 +30,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     indexing: new IndexingService(deps),
     identity: new IdentityService(deps, passwords),
     account: new AccountService(deps, passwords),
+    agentTokens: new AgentTokenService(deps),
     invitations: new InvitationService(deps),
     members: new MembershipService(deps),
   };

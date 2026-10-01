@@ -1,4 +1,7 @@
-import { currentUser } from '@/lib/api';
+import { AgentTokenRecord } from '@atx/contracts';
+import { z } from 'zod';
+import { revokeAgentToken } from '@/lib/actions/agents';
+import { api, currentUser } from '@/lib/api';
 import { webConfig } from '@/lib/config';
 import { AgentTokenForm } from './agent-token-form';
 
@@ -6,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function McpDocsPage() {
   const me = await currentUser();
+  const tokens = me
+    ? (await api('/v1/auth/agent-tokens', { schema: z.object({ items: z.array(AgentTokenRecord) }) })).items
+    : [];
   return (
     <div className="stack narrow">
       <h1>Use Automotive Technology Exchange from your AI agent</h1>
@@ -33,9 +39,49 @@ export default async function McpDocsPage() {
       <p>
         The MCP server is an OAuth 2.1 resource server. Hosts that support MCP authorization discover the
         authorization server from <code>/.well-known/oauth-protected-resource</code>. For hosts that accept a
-        bearer token, generate a short-lived, scoped token below.
+        bearer token, generate a scoped, revocable token below (valid up to 90 days).
       </p>
       {me ? <AgentTokenForm /> : <p className="notice">Sign in to generate an agent token.</p>}
+      {tokens.length > 0 ? (
+        <>
+          <h3>Your agent tokens</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Scopes</th>
+                <th>Status</th>
+                <th>Last used</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {tokens.map((token) => (
+                <tr key={token.id}>
+                  <td>{token.label}</td>
+                  <td className="small">{token.scopes.join(' ')}</td>
+                  <td className="small">
+                    {token.status === 'active'
+                      ? `active until ${token.expiresAt.slice(0, 10)}`
+                      : token.status}
+                  </td>
+                  <td className="small">
+                    {token.lastUsedAt ? token.lastUsedAt.slice(0, 16).replace('T', ' ') : 'never'}
+                  </td>
+                  <td>
+                    {token.status === 'active' ? (
+                      <form action={revokeAgentToken}>
+                        <input type="hidden" name="grantId" value={token.id} />
+                        <button type="submit">Revoke</button>
+                      </form>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : null}
       <h2>Safety model</h2>
       <ul>
         <li>

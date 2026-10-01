@@ -21,6 +21,7 @@ export type AuditEventId = Brand<string, 'AuditEventId'>;
 export type DraftId = Brand<string, 'DraftId'>;
 export type InvitationId = Brand<string, 'InvitationId'>;
 export type UserTokenId = Brand<string, 'UserTokenId'>;
+export type AccessGrantId = Brand<string, 'AccessGrantId'>;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

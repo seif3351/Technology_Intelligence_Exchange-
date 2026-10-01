@@ -1,6 +1,7 @@
 import type { Repositories, TransactionRunner } from '@atx/application';
 import type pg from 'pg';
 import { type Queryable, withTransaction } from '../db';
+import { createAccessGrantRepository } from './access-grants';
 import { createAuditLog, createEngagementRepository, createRequirementRepository } from './buyers';
 import {
   createAssetRepository,
@@ -18,6 +19,7 @@ export const createRepositories = (db: Queryable): Repositories => ({
   users: createUserRepository(db),
   invitations: createInvitationRepository(db),
   userTokens: createUserTokenRepository(db),
+  accessGrants: createAccessGrantRepository(db),
   offerings: createOfferingRepository(db),
   claims: createClaimRepository(db),
   capabilities: createCapabilityRepository(db),

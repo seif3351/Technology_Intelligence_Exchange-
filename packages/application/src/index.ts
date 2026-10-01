@@ -6,6 +6,7 @@ export * from './ports/services';
 export * from './ports/telemetry';
 export * from './services/account';
 export * from './services/admin';
+export * from './services/agent-tokens';
 export * from './services/catalog';
 export * from './services/engagements';
 export * from './services/identity';

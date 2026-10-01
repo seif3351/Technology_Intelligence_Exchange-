@@ -1,5 +1,6 @@
 import type { Repositories, TransactionRunner } from './ports/repositories';
 import type {
+  AccessTokenSigner,
   AssetUrlSigner,
   Clock,
   ConfirmationTokens,
@@ -29,6 +30,8 @@ export interface PlatformSettings {
   readonly termsVersion: string;
   /** Base URL of the web application, used to build links in invitations and emails. */
   readonly publicWebUrl: string;
+  /** The MCP server's resource identifier (token audience for agent tokens). */
+  readonly mcpResourceUrl: string;
 }
 
 /** Everything the use cases need, passed explicitly (no service locator). */
@@ -49,6 +52,7 @@ export interface ApplicationDeps {
   /** Delivery of account emails; may be disabled (sending then throws and callers degrade). */
   readonly mailer: Mailer;
   readonly confirmations: ConfirmationTokens;
+  readonly tokenSigner: AccessTokenSigner;
   readonly clock: Clock;
   readonly telemetry: Telemetry;
   readonly features: FeatureFlags;

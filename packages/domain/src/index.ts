@@ -1,3 +1,4 @@
+export * from './access-grant';
 export * from './asset';
 export * from './audit';
 export * from './capability';

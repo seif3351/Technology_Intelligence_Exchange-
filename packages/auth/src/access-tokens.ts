@@ -17,6 +17,8 @@ export interface AccessTokenClaims {
   readonly expiresAt: number;
   /** Issue time in milliseconds (`iat_ms` when present, else `iat` × 1000); tokens older than a credential change are rejected. */
   readonly issuedAtMs: number;
+  /** Persisted grant (agent token / OAuth grant) the token belongs to, if any. */
+  readonly grantId: string | null;
 }
 
 export class InvalidTokenError extends Error {
@@ -26,6 +28,9 @@ export class InvalidTokenError extends Error {
   }
 }
 
+/** Upper bound for any token: revocable agent-token grants may live up to 90 days. */
+const MAX_TTL_SECONDS = 90 * 24 * 3600;
+
 /** Issues short-lived JWT access tokens bound to one audience (RFC 8707 resource). */
 export const createAccessTokenIssuer = (key: SigningKey, issuer: string) => ({
   async issue(input: {
@@ -34,12 +39,14 @@ export const createAccessTokenIssuer = (key: SigningKey, issuer: string) => ({
     readonly scopes: readonly string[];
     readonly clientId?: string | null;
     readonly ttlSeconds: number;
+    readonly grantId?: string | null;
   }): Promise<string> {
     return new SignJWT({
       scope: input.scopes.join(' '),
       // Millisecond issue time: `iat` (seconds) is too coarse to order tokens against a password reset.
       iat_ms: Date.now(),
       ...(input.clientId ? { client_id: input.clientId } : {}),
+      ...(input.grantId ? { grant: input.grantId } : {}),
     })
       .setProtectedHeader({ alg: ACCESS_TOKEN_ALG, kid: key.kid, typ: 'at+jwt' })
       .setIssuer(issuer)
@@ -47,7 +54,7 @@ export const createAccessTokenIssuer = (key: SigningKey, issuer: string) => ({
       .setAudience(input.audience)
       .setIssuedAt()
       .setJti(randomUUID())
-      .setExpirationTime(`${Math.max(60, Math.min(input.ttlSeconds, 24 * 3600))}s`)
+      .setExpirationTime(`${Math.max(60, Math.min(input.ttlSeconds, MAX_TTL_SECONDS))}s`)
       .sign(key.privateKey);
   },
   jwks: () => ({ keys: [key.publicJwk] }),
@@ -88,6 +95,7 @@ export const createAccessTokenVerifier = (options: {
           clientId: typeof payload['client_id'] === 'string' ? payload['client_id'] : null,
           expiresAt: payload.exp,
           issuedAtMs: typeof payload['iat_ms'] === 'number' ? payload['iat_ms'] : payload.iat * 1000,
+          grantId: typeof payload['grant'] === 'string' ? payload['grant'] : null,
         };
       } catch (error) {
         if (error instanceof InvalidTokenError) throw error;

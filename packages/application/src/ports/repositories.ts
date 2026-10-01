@@ -1,4 +1,6 @@
 import type {
+  AccessGrant,
+  AccessGrantId,
   Asset,
   AssetId,
   AuditEvent,
@@ -201,6 +203,16 @@ export interface InvitationRepository {
   listForOrganization(scope: TenantScope): Promise<Invitation[]>;
 }
 
+export interface AccessGrantRepository {
+  insert(grant: AccessGrant): Promise<void>;
+  findById(id: AccessGrantId): Promise<AccessGrant | null>;
+  listForUser(userId: UserId, kind: AccessGrant['kind']): Promise<AccessGrant[]>;
+  /** Revokes only the user's own, not yet revoked grant; false otherwise. */
+  revoke(id: AccessGrantId, userId: UserId, at: Date): Promise<boolean>;
+  /** Records use, at most every few minutes (keeps the hot path cheap). */
+  touch(id: AccessGrantId, at: Date): Promise<void>;
+}
+
 export interface UserTokenRepository {
   insert(token: UserToken): Promise<void>;
   findByTokenHash(tokenHash: string): Promise<UserToken | null>;
@@ -216,6 +228,7 @@ export interface Repositories {
   readonly users: UserRepository;
   readonly invitations: InvitationRepository;
   readonly userTokens: UserTokenRepository;
+  readonly accessGrants: AccessGrantRepository;
   readonly offerings: OfferingRepository;
   readonly claims: ClaimRepository;
   readonly capabilities: CapabilityRepository;

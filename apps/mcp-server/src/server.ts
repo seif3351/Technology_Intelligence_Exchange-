@@ -1,6 +1,7 @@
 import type { Principal } from '@atx/application';
 import { InvalidTokenError } from '@atx/auth';
 import { listSetting } from '@atx/config';
+import { isAppError } from '@atx/domain';
 import type { Runtime } from '@atx/runtime';
 import { EXTENSION_ID as UI_EXTENSION_ID } from '@modelcontextprotocol/ext-apps/server';
 import {
@@ -90,21 +91,37 @@ export const buildMcpServer = (runtime: Runtime, principal: Principal, options: 
  * audience-bound JWT validation (RFC 8707), RFC 9728 protected resource
  * metadata, WWW-Authenticate challenges. Tokens are never forwarded anywhere.
  */
+const PRINCIPAL = 'principal';
+
+/**
+ * Token validation includes the user-level checks (revoked grant, credentials
+ * changed, deleted user), so every rejected token yields a proper 401
+ * `invalid_token` challenge that MCP clients act on.
+ */
 const createVerifier = (runtime: Runtime): OAuthTokenVerifier => ({
   async verifyAccessToken(token): Promise<AuthInfo> {
     try {
       const claims = await runtime.tokens.mcpVerifier.verify(token);
+      const principal = await runtime.app.identity.principalFor(claims.subject as never, {
+        channel: 'mcp',
+        clientId: claims.clientId ?? 'unknown-client',
+        grantedScopes: claims.scopes,
+        issuedAtMs: claims.issuedAtMs,
+        grantId: claims.grantId,
+      });
       return {
         token,
         clientId: claims.clientId ?? 'unknown-client',
         scopes: [...claims.scopes],
         expiresAt: claims.expiresAt,
         resource: new URL(runtime.env.MCP_PUBLIC_URL),
-        extra: { subject: claims.subject, issuedAtMs: claims.issuedAtMs },
+        extra: { [PRINCIPAL]: principal },
       };
     } catch (error) {
-      if (error instanceof InvalidTokenError)
+      if (error instanceof InvalidTokenError || (isAppError(error) && error.code === 'UNAUTHENTICATED'))
         throw new OAuthError(OAuthErrorCode.InvalidToken, error.message);
+      // Unexpected (e.g. database) failure: answered as 500 server_error; never log the token itself.
+      runtime.logger.error({ err: error }, 'mcp token verification failed unexpectedly');
       throw error;
     }
   },
@@ -119,19 +136,12 @@ export const createMcpHttpApp = (runtime: Runtime, options: McpAppOptions) => {
   const authorizationServer =
     runtime.env.MCP_AUTH_ISSUER ?? runtime.env.AUTH_ISSUER ?? runtime.env.API_PUBLIC_URL;
 
-  const principalFor = async (authInfo: AuthInfo | undefined): Promise<Principal> => {
-    if (!authInfo) return { kind: 'anonymous', channel: 'mcp' };
-    const subject = String(authInfo.extra?.['subject'] ?? '');
-    return runtime.app.identity.principalFor(subject as never, {
-      channel: 'mcp',
-      clientId: authInfo.clientId,
-      grantedScopes: authInfo.scopes,
-      issuedAtMs: Number(authInfo.extra?.['issuedAtMs'] ?? 0),
-    });
-  };
+  // Resolved once, during token verification (see createVerifier).
+  const principalFor = (authInfo: AuthInfo | undefined): Principal =>
+    (authInfo?.extra?.[PRINCIPAL] as Principal | undefined) ?? { kind: 'anonymous', channel: 'mcp' };
 
   const handler = createMcpHandler(
-    async ({ authInfo }) => buildMcpServer(runtime, await principalFor(authInfo), options),
+    async ({ authInfo }) => buildMcpServer(runtime, principalFor(authInfo), options),
     {
       onerror: (error) => runtime.logger.warn({ err: error }, 'mcp handler error'),
     },

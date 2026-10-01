@@ -1,5 +1,7 @@
 import {
   type Channel,
+  accessGrantStatus,
+  asId,
   type User,
   type UserId,
   forbidden,
@@ -183,6 +185,8 @@ export class IdentityService {
       readonly grantedScopes: readonly string[] | 'all';
       /** Issue time of the presented access token (ms); tokens older than a credential change are rejected. */
       readonly issuedAtMs?: number;
+      /** Grant referenced by the token; it must exist, belong to the user and be active. */
+      readonly grantId?: string | null;
     },
   ): Promise<UserPrincipal> {
     const user = await this.deps.repos.users.findById(userId);
@@ -193,6 +197,13 @@ export class IdentityService {
       options.issuedAtMs < user.credentialsChangedAt.getTime()
     )
       throw unauthenticated('Your session has ended; please sign in again');
+    if (options.grantId) {
+      const now = this.deps.clock.now();
+      const grant = await this.deps.repos.accessGrants.findById(asId(options.grantId));
+      if (!grant || grant.userId !== user.id || accessGrantStatus(grant, now) !== 'active')
+        throw unauthenticated('This token was revoked or has expired');
+      await this.deps.repos.accessGrants.touch(grant.id, now);
+    }
     const memberships = await this.deps.repos.users.listMemberships(user.id);
     const allowed = new Set<Scope>(['catalog:read']);
     if (memberships.length > 0) {

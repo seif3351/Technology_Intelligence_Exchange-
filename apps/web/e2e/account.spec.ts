@@ -30,3 +30,23 @@ test.describe('account recovery', () => {
     await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   });
 });
+
+test.describe('agent tokens', () => {
+  test('generate a named token, see it listed without its value, revoke it', async ({ page }) => {
+    const { signIn } = await import('./helpers');
+    await signIn(page, 'owner@vectorforge.example');
+    await page.goto('/docs/mcp');
+    await page.getByLabel('Name (where you will use it)').fill('E2E laptop agent');
+    await page.getByLabel('Valid for').selectOption('7');
+    await page.getByRole('checkbox', { name: /Upload content and draft claims/ }).check();
+    await page.getByRole('button', { name: 'Generate token' }).click();
+    const value = await page.getByLabel('Agent token').inputValue();
+    expect(value.split('.')).toHaveLength(3);
+
+    const row = page.getByRole('row').filter({ hasText: 'E2E laptop agent' });
+    await expect(row).toContainText('supplier:write');
+    await expect(page.locator('table')).not.toContainText(value);
+    await row.getByRole('button', { name: 'Revoke' }).click();
+    await expect(row).toContainText('revoked');
+  });
+});
