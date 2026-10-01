@@ -31,3 +31,25 @@ export interface Membership {
 
 export const roleAtLeast = (role: OrganizationRole, minimum: OrganizationRole): boolean =>
   ORGANIZATION_ROLES.indexOf(role) >= ORGANIZATION_ROLES.indexOf(minimum);
+
+/**
+ * Membership administration rules. An actor needs at least `admin`, can only
+ * grant or change roles up to their own, and only owners can touch owners.
+ */
+export const canManageMember = (
+  actorRole: OrganizationRole,
+  currentRole: OrganizationRole | null,
+  newRole: OrganizationRole | null,
+): boolean => {
+  if (!roleAtLeast(actorRole, 'admin')) return false;
+  const touchesOwner = currentRole === 'owner' || newRole === 'owner';
+  if (touchesOwner && actorRole !== 'owner') return false;
+  return newRole === null || roleAtLeast(actorRole, newRole);
+};
+
+/** An organization must always keep at least one owner. */
+export const leavesOrganizationWithoutOwner = (
+  ownerCount: number,
+  currentRole: OrganizationRole,
+  newRole: OrganizationRole | null,
+): boolean => currentRole === 'owner' && newRole !== 'owner' && ownerCount <= 1;

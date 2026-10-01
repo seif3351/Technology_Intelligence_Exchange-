@@ -17,6 +17,7 @@ import type {
   OfferingStatus,
   Organization,
   OrganizationId,
+  OrganizationRole,
   OrganizationVerificationState,
   Requirement,
   RequirementId,
@@ -62,6 +63,14 @@ export interface UserCredential {
   readonly passwordHash: string;
 }
 
+export interface MemberRecord {
+  readonly userId: UserId;
+  readonly displayName: string;
+  readonly email: string;
+  readonly role: OrganizationRole;
+  readonly createdAt: Date;
+}
+
 export interface UserRepository {
   findById(id: UserId): Promise<User | null>;
   findCredentialByEmail(email: string): Promise<UserCredential | null>;
@@ -74,6 +83,11 @@ export interface UserRepository {
   revokeAllTokens(userId: UserId, at: Date): Promise<void>;
   listMemberships(userId: UserId): Promise<PrincipalMembership[]>;
   addMembership(membership: Membership): Promise<void>;
+  listMembers(scope: TenantScope): Promise<MemberRecord[]>;
+  findMemberRole(scope: TenantScope, userId: UserId): Promise<OrganizationRole | null>;
+  countOwners(scope: TenantScope): Promise<number>;
+  updateMembershipRole(scope: TenantScope, userId: UserId, role: OrganizationRole): Promise<void>;
+  removeMembership(scope: TenantScope, userId: UserId): Promise<void>;
 }
 
 export interface OfferingRepository {

@@ -1,5 +1,12 @@
 import type { OrganizationRepository, PrincipalMembership, UserRepository } from '@atx/application';
-import { type Membership, type Organization, type User, asId, conflict } from '@atx/domain';
+import {
+  type Membership,
+  type Organization,
+  type OrganizationRole,
+  type User,
+  asId,
+  conflict,
+} from '@atx/domain';
 import type { Queryable } from '../db';
 import { toOrganization, toUser } from '../mappers';
 
@@ -153,6 +160,49 @@ export const createUserRepository = (db: Queryable): UserRepository => ({
       organizationKind: row['kind'] as PrincipalMembership['organizationKind'],
       role: row['role'] as PrincipalMembership['role'],
     }));
+  },
+  async listMembers(scope) {
+    const { rows } = await db.query(
+      `SELECT u.id, u.display_name, u.email, m.role, m.created_at
+         FROM memberships m JOIN users u ON u.id = m.user_id
+        WHERE m.organization_id = $1
+        ORDER BY array_position(ARRAY['owner','admin','editor','viewer'], m.role), u.display_name, u.id`,
+      [scope.organizationId],
+    );
+    return rows.map((row) => ({
+      userId: asId(row['id'] as string),
+      displayName: row['display_name'] as string,
+      email: row['email'] as string,
+      role: row['role'] as OrganizationRole,
+      createdAt: row['created_at'] as Date,
+    }));
+  },
+  async findMemberRole(scope, userId) {
+    const { rows } = await db.query(
+      'SELECT role FROM memberships WHERE organization_id = $1 AND user_id = $2',
+      [scope.organizationId, userId],
+    );
+    return (rows[0]?.['role'] as OrganizationRole | undefined) ?? null;
+  },
+  async countOwners(scope) {
+    const { rows } = await db.query(
+      "SELECT count(*)::int AS n FROM memberships WHERE organization_id = $1 AND role = 'owner'",
+      [scope.organizationId],
+    );
+    return Number(rows[0]?.['n'] ?? 0);
+  },
+  async updateMembershipRole(scope, userId, role) {
+    await db.query('UPDATE memberships SET role = $3 WHERE organization_id = $1 AND user_id = $2', [
+      scope.organizationId,
+      userId,
+      role,
+    ]);
+  },
+  async removeMembership(scope, userId) {
+    await db.query('DELETE FROM memberships WHERE organization_id = $1 AND user_id = $2', [
+      scope.organizationId,
+      userId,
+    ]);
   },
   async addMembership(membership: Membership) {
     await db.query(

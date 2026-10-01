@@ -8,6 +8,7 @@ import { IndexingService } from './services/indexing';
 import { IngestionService } from './services/ingestion';
 import { InvitationService } from './services/invitations';
 import { MatchingService } from './services/matching';
+import { MembershipService } from './services/members';
 import { PublicationService } from './services/publication';
 import { RequirementService } from './services/requirements';
 import { SupplierService } from './services/supplier';
@@ -29,6 +30,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     identity: new IdentityService(deps, passwords),
     account: new AccountService(deps, passwords),
     invitations: new InvitationService(deps),
+    members: new MembershipService(deps),
   };
 };
 

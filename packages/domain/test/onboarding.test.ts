@@ -3,7 +3,9 @@ import {
   ORGANIZATION_VERIFICATION_STATES,
   type Invitation,
   asId,
+  canManageMember,
   invitationStatus,
+  leavesOrganizationWithoutOwner,
   isPubliclyListed,
   normalizeEmail,
 } from '../src';
@@ -43,5 +45,23 @@ describe('invitations', () => {
 
   it('normalizes emails for matching', () => {
     expect(normalizeEmail('  Founder@Helix.Example ')).toBe('founder@helix.example');
+  });
+});
+
+describe('membership administration rules', () => {
+  it('requires admin and never lets an actor grant more than their own role', () => {
+    expect(canManageMember('editor', null, 'viewer')).toBe(false);
+    expect(canManageMember('admin', null, 'editor')).toBe(true);
+    expect(canManageMember('admin', null, 'admin')).toBe(true);
+    expect(canManageMember('admin', null, 'owner')).toBe(false);
+    expect(canManageMember('admin', 'owner', null)).toBe(false);
+    expect(canManageMember('owner', 'owner', 'admin')).toBe(true);
+  });
+
+  it('protects the last owner', () => {
+    expect(leavesOrganizationWithoutOwner(1, 'owner', 'admin')).toBe(true);
+    expect(leavesOrganizationWithoutOwner(1, 'owner', null)).toBe(true);
+    expect(leavesOrganizationWithoutOwner(2, 'owner', null)).toBe(false);
+    expect(leavesOrganizationWithoutOwner(1, 'admin', null)).toBe(false);
   });
 });

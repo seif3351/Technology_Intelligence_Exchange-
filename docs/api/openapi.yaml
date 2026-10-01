@@ -1164,6 +1164,55 @@ components:
         - expiresAt
         - createdAt
       additionalProperties: false
+    OrganizationRole:
+      type: string
+      enum:
+        - viewer
+        - editor
+        - admin
+        - owner
+    OrganizationInvitationCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          maxLength: 254
+          format: email
+          pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+        role:
+          $ref: "#/components/schemas/OrganizationRole"
+      required:
+        - email
+        - role
+      additionalProperties: false
+    MemberRoleUpdate:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/OrganizationRole"
+      required:
+        - role
+      additionalProperties: false
+    MemberRecord:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/OrganizationRole"
+        since:
+          type: string
+      required:
+        - userId
+        - displayName
+        - email
+        - role
+        - since
+      additionalProperties: false
     PlatformInvitationCreate:
       type: object
       properties:
@@ -4222,6 +4271,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         5XX: *a29
+  /v1/invitations/accept:
+    post:
+      operationId: acceptInvitation
+      summary: Accept an organization invitation addressed to your email (signed-in users)
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/$defs/SecretTokenBody"
+              $defs:
+                SecretTokenBody:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      pattern: ^[A-Za-z0-9_-]{20,200}$
+                  required:
+                    - token
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizationId:
+                    type: string
+                required:
+                  - organizationId
+                additionalProperties: false
+        4XX: &a30
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a30
   /v1/invitations/lookup:
     post:
       operationId: lookupInvitation
@@ -4251,13 +4344,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvitationPreview"
-        4XX: &a30
+        4XX: &a31
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a30
+        5XX: *a31
   /v1/matches:
     post:
       operationId: findMatches
@@ -4395,13 +4488,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MatchResponse"
-        4XX: &a31
+        4XX: &a32
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a31
+        5XX: *a32
   /v1/matches/compare:
     post:
       operationId: compareOfferings
@@ -4520,13 +4613,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompareResponse"
-        4XX: &a32
+        4XX: &a33
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a32
+        5XX: *a33
   /v1/matches/explain:
     post:
       operationId: explainMatch
@@ -4649,13 +4742,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Match"
-        4XX: &a33
+        4XX: &a34
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a33
+        5XX: *a34
   /v1/me:
     get:
       operationId: me
@@ -4672,13 +4765,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Me"
-        4XX: &a34
+        4XX: &a35
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a34
+        5XX: *a35
   /v1/offerings/{offeringId}:
     get:
       operationId: getOffering
@@ -4703,13 +4796,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferingDetail"
-        4XX: &a35
+        4XX: &a36
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a35
+        5XX: *a36
   /v1/offerings/search:
     post:
       operationId: searchOfferings
@@ -4771,13 +4864,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferingSearchResponse"
-        4XX: &a36
+        4XX: &a37
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a36
+        5XX: *a37
   /v1/ontology:
     get:
       operationId: getOntology
@@ -4834,13 +4927,13 @@ paths:
                   - facets
                   - concepts
                 additionalProperties: false
-        4XX: &a37
+        4XX: &a38
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a37
+        5XX: *a38
   /v1/organizations:
     post:
       operationId: createOrganization
@@ -4895,13 +4988,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationRecord"
-        4XX: &a38
+        4XX: &a39
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a38
+        5XX: *a39
   /v1/organizations/{orgId}:
     patch:
       operationId: updateOrganization
@@ -4969,13 +5062,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationRecord"
-        4XX: &a39
+        4XX: &a40
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a39
+        5XX: *a40
   /v1/organizations/{orgId}/assets:
     put:
       operationId: uploadAsset
@@ -5030,13 +5123,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetRecord"
-        4XX: &a40
+        4XX: &a41
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a40
+        5XX: *a41
   /v1/organizations/{orgId}/capabilities:
     post:
       operationId: createCapability
@@ -5081,13 +5174,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CapabilityRecord"
-        4XX: &a41
+        4XX: &a42
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a41
+        5XX: *a42
   /v1/organizations/{orgId}/claims:
     post:
       operationId: createClaim
@@ -5213,13 +5306,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Claim"
-        4XX: &a42
+        4XX: &a43
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a42
+        5XX: *a43
   /v1/organizations/{orgId}/claims/{claimId}:
     patch:
       operationId: reviseClaim
@@ -5337,56 +5430,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Claim"
-        4XX: &a43
-          description: Error (RFC 9457 problem details)
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-        5XX: *a43
-  /v1/organizations/{orgId}/claims/{claimId}/publish:
-    post:
-      operationId: publishClaim
-      summary: "Human review step: publish a draft claim (including AI-extracted drafts)"
-      tags:
-        - workspace
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: orgId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-        - name: claimId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                expectedVersion:
-                  type: integer
-                  minimum: 1
-                  maximum: 9007199254740991
-              required:
-                - expectedVersion
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Claim"
         4XX: &a44
           description: Error (RFC 9457 problem details)
           content:
@@ -5394,10 +5437,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         5XX: *a44
-  /v1/organizations/{orgId}/claims/{claimId}/retract:
+  /v1/organizations/{orgId}/claims/{claimId}/publish:
     post:
-      operationId: retractClaim
-      summary: Retract a claim
+      operationId: publishClaim
+      summary: "Human review step: publish a draft claim (including AI-extracted drafts)"
       tags:
         - workspace
       security:
@@ -5444,6 +5487,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         5XX: *a45
+  /v1/organizations/{orgId}/claims/{claimId}/retract:
+    post:
+      operationId: retractClaim
+      summary: Retract a claim
+      tags:
+        - workspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+                  minimum: 1
+                  maximum: 9007199254740991
+              required:
+                - expectedVersion
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        4XX: &a46
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a46
   /v1/organizations/{orgId}/engagements:
     get:
       operationId: listEngagements
@@ -5484,13 +5577,13 @@ paths:
                 required:
                   - items
                 additionalProperties: false
-        4XX: &a46
+        4XX: &a47
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a46
+        5XX: *a47
   /v1/organizations/{orgId}/engagements/{engagementId}/respond:
     post:
       operationId: respondToEngagement
@@ -5536,13 +5629,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Engagement"
-        4XX: &a47
+        4XX: &a48
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a47
+        5XX: *a48
   /v1/organizations/{orgId}/evidence:
     post:
       operationId: createEvidence
@@ -5623,13 +5716,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Evidence"
-        4XX: &a48
+        4XX: &a49
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a48
+        5XX: *a49
+  /v1/organizations/{orgId}/invitations:
+    get:
+      operationId: listOrganizationInvitations
+      summary: Invitations to join the organization (admins)
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InvitationRecord"
+                required:
+                  - items
+                additionalProperties: false
+        4XX: &a50
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a50
+    post:
+      operationId: inviteMember
+      summary: Invite a colleague by email with a role; returns the secret link once
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/$defs/OrganizationInvitationCreate"
+              $defs:
+                OrganizationInvitationCreate:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      maxLength: 254
+                      format: email
+                      pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                    role:
+                      $ref: "#/$defs/OrganizationRole"
+                  required:
+                    - email
+                    - role
+                OrganizationRole:
+                  type: string
+                  enum:
+                    - viewer
+                    - editor
+                    - admin
+                    - owner
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedInvitation"
+        4XX: &a51
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a51
+  /v1/organizations/{orgId}/invitations/{invitationId}/revoke:
+    post:
+      operationId: revokeOrganizationInvitation
+      summary: Revoke a pending invitation
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                    const: true
+                required:
+                  - revoked
+                additionalProperties: false
+        4XX: &a52
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a52
+  /v1/organizations/{orgId}/members:
+    get:
+      operationId: listMembers
+      summary: Members of the organization and their roles
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MemberRecord"
+                required:
+                  - items
+                additionalProperties: false
+        4XX: &a53
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a53
+  /v1/organizations/{orgId}/members/{userId}:
+    delete:
+      operationId: removeMember
+      summary: Remove a member, or leave the organization yourself (the last owner cannot leave)
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removed:
+                    type: boolean
+                    const: true
+                required:
+                  - removed
+                additionalProperties: false
+        4XX: &a54
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a54
+    patch:
+      operationId: changeMemberRole
+      summary: Change a member role (admins; never above your own role; owners only by owners)
+      tags:
+        - members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/$defs/MemberRoleUpdate"
+              $defs:
+                MemberRoleUpdate:
+                  type: object
+                  properties:
+                    role:
+                      $ref: "#/$defs/OrganizationRole"
+                  required:
+                    - role
+                OrganizationRole:
+                  type: string
+                  enum:
+                    - viewer
+                    - editor
+                    - admin
+                    - owner
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberRecord"
+        4XX: &a55
+          description: Error (RFC 9457 problem details)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        5XX: *a55
   /v1/organizations/{orgId}/offerings:
     post:
       operationId: createOffering
@@ -5787,13 +6157,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferingRecord"
-        4XX: &a49
+        4XX: &a56
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a49
+        5XX: *a56
   /v1/organizations/{orgId}/offerings/{offeringId}:
     patch:
       operationId: updateOffering
@@ -5947,13 +6317,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferingRecord"
-        4XX: &a50
+        4XX: &a57
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a50
+        5XX: *a57
   /v1/organizations/{orgId}/offerings/{offeringId}/status:
     post:
       operationId: setOfferingStatus
@@ -6004,13 +6374,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OfferingRecord"
-        4XX: &a51
+        4XX: &a58
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a51
+        5XX: *a58
   /v1/organizations/{orgId}/requirements:
     get:
       operationId: listRequirements
@@ -6042,13 +6412,13 @@ paths:
                 required:
                   - items
                 additionalProperties: false
-        4XX: &a52
+        4XX: &a59
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a52
+        5XX: *a59
     post:
       operationId: createRequirement
       summary: Create a private requirement draft
@@ -6203,13 +6573,13 @@ paths:
                   - requirement
                   - issues
                 additionalProperties: false
-        4XX: &a53
+        4XX: &a60
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a53
+        5XX: *a60
   /v1/organizations/{orgId}/requirements/{requirementId}:
     get:
       operationId: getRequirement
@@ -6251,13 +6621,13 @@ paths:
                   - requirement
                   - confidentialTerms
                 additionalProperties: false
-        4XX: &a54
+        4XX: &a61
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a54
+        5XX: *a61
     patch:
       operationId: updateRequirement
       summary: Update a private requirement (optimistic concurrency)
@@ -6401,13 +6771,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Requirement"
-        4XX: &a55
+        4XX: &a62
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a55
+        5XX: *a62
   /v1/organizations/{orgId}/requirements/{requirementId}/publication/confirm:
     post:
       operationId: confirmPublication
@@ -6463,13 +6833,13 @@ paths:
                   - published
                   - disclosure
                 additionalProperties: false
-        4XX: &a56
+        4XX: &a63
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a56
+        5XX: *a63
   /v1/organizations/{orgId}/requirements/{requirementId}/publication/prepare:
     post:
       operationId: preparePublication
@@ -6515,13 +6885,13 @@ paths:
                   - confirmationToken
                   - expiresAt
                 additionalProperties: false
-        4XX: &a57
+        4XX: &a64
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a57
+        5XX: *a64
   /v1/organizations/{orgId}/verification-request:
     post:
       operationId: requestVerification
@@ -6545,13 +6915,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationRecord"
-        4XX: &a58
+        4XX: &a65
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a58
+        5XX: *a65
   /v1/organizations/{orgId}/videos:
     post:
       operationId: registerExternalVideo
@@ -6615,13 +6985,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetRecord"
-        4XX: &a59
+        4XX: &a66
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a59
+        5XX: *a66
   /v1/organizations/{orgId}/workspace:
     get:
       operationId: getWorkspace
@@ -6645,13 +7015,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workspace"
-        4XX: &a60
+        4XX: &a67
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a60
+        5XX: *a67
   /v1/requirements/interpret:
     post:
       operationId: interpretRequirement
@@ -6688,13 +7058,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Interpretation"
-        4XX: &a61
+        4XX: &a68
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a61
+        5XX: *a68
   /v1/requirements/validate:
     post:
       operationId: validateRequirement
@@ -6814,13 +7184,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RequirementValidation"
-        4XX: &a62
+        4XX: &a69
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a62
+        5XX: *a69
   /v1/suppliers:
     get:
       operationId: searchSuppliers
@@ -6863,13 +7233,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SupplierSearchResponse"
-        4XX: &a63
+        4XX: &a70
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a63
+        5XX: *a70
   /v1/suppliers/{supplier}:
     get:
       operationId: getSupplier
@@ -6891,13 +7261,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Supplier"
-        4XX: &a64
+        4XX: &a71
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a64
+        5XX: *a71
   /v1/technologies:
     get:
       operationId: searchTechnologies
@@ -6939,10 +7309,10 @@ paths:
                 required:
                   - items
                 additionalProperties: false
-        4XX: &a65
+        4XX: &a72
           description: Error (RFC 9457 problem details)
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        5XX: *a65
+        5XX: *a72

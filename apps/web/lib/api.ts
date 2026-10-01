@@ -17,7 +17,7 @@ export class ApiError extends Error {
 }
 
 interface CallOptions<T extends z.ZodType> {
-  readonly method?: 'GET' | 'POST' | 'PATCH' | 'PUT';
+  readonly method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   readonly body?: unknown;
   readonly raw?: { readonly bytes: ArrayBuffer; readonly contentType: string };
   readonly schema: T;

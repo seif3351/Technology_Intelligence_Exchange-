@@ -13,6 +13,7 @@ import { adminRoutes } from './routes/admin';
 import { buyerRoutes } from './routes/buyer';
 import { catalogRoutes } from './routes/catalog';
 import { identityRoutes } from './routes/identity';
+import { memberRoutes } from './routes/members';
 import { systemRoutes } from './routes/system';
 import { workspaceRoutes } from './routes/workspace';
 
@@ -34,6 +35,7 @@ export const allRoutes = (runtime: Runtime) => [
   ...identityRoutes(runtime),
   ...catalogRoutes(runtime.app),
   ...workspaceRoutes(runtime.app),
+  ...memberRoutes(runtime.app),
   ...buyerRoutes(runtime.app),
   ...adminRoutes(runtime.app),
 ];

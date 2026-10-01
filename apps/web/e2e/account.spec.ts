@@ -6,6 +6,8 @@ test.describe('account recovery', () => {
     const email = 'owner@drivemesh.example';
     await page.goto('/login');
     await page.getByRole('link', { name: 'Forgot your password?' }).click();
+    // The login page has an Email field too: wait for the navigation before typing.
+    await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
     await page.getByLabel('Email').fill(email);
     await page.getByRole('button', { name: 'Send reset link' }).click();
     await expect(page.getByRole('status')).toContainText('If an account exists');

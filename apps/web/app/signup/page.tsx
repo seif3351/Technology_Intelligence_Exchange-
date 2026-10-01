@@ -1,6 +1,7 @@
 import { InvitationPreview, RegistrationPolicy } from '@atx/contracts';
 import Link from 'next/link';
-import { api } from '@/lib/api';
+import { api, currentUser } from '@/lib/api';
+import { AcceptInvitation } from './accept-invitation';
 import { SignupForm } from './signup-form';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,19 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       </div>
     );
   }
+  const me = invitation?.organizationName ? await currentUser() : null;
+  if (invitation?.organizationName && token && me) {
+    return (
+      <div className="stack narrower">
+        <h1>Join {invitation.organizationName}</h1>
+        <p>
+          You were invited as <strong>{invitation.role}</strong>. The invitation is for {invitation.email}; it
+          can only be accepted by the account with that email address.
+        </p>
+        <AcceptInvitation token={token} />
+      </div>
+    );
+  }
   return (
     <div className="stack narrower">
       <h1>Create your account</h1>
@@ -52,7 +66,11 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       ) : null}
       <SignupForm invite={token} email={invitation?.email ?? null} termsVersion={policy.termsVersion} />
       <p className="small muted">
-        Already registered? <Link href="/login">Sign in</Link>.
+        Already registered?{' '}
+        <Link href={token ? `/login?next=${encodeURIComponent(`/signup?invite=${token}`)}` : '/login'}>
+          Sign in
+        </Link>
+        {invitation?.organizationName ? ' to accept the invitation with your existing account' : ''}.
       </p>
     </div>
   );

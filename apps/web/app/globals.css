@@ -307,3 +307,7 @@ input.inline-check {
   border-bottom: 1px solid var(--line);
   font-size: 14px;
 }
+
+.inline-links a {
+  margin-right: 12px;
+}

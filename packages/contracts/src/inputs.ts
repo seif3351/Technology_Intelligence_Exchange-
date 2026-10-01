@@ -284,6 +284,22 @@ export const InvitationRecord = z
     createdAt: z.string(),
   })
   .meta({ id: 'InvitationRecord' });
+export const OrganizationRoleEnum = z
+  .enum(['viewer', 'editor', 'admin', 'owner'])
+  .meta({ id: 'OrganizationRole' });
+export const OrganizationInvitationCreate = z
+  .object({ email: z.email().max(254), role: OrganizationRoleEnum })
+  .meta({ id: 'OrganizationInvitationCreate' });
+export const MemberRoleUpdate = z.object({ role: OrganizationRoleEnum }).meta({ id: 'MemberRoleUpdate' });
+export const MemberRecord = z
+  .object({
+    userId: z.string(),
+    displayName: z.string(),
+    email: z.string(),
+    role: OrganizationRoleEnum,
+    since: z.string(),
+  })
+  .meta({ id: 'MemberRecord' });
 export const PlatformInvitationCreate = z
   .object({ email: z.email().max(254) })
   .meta({ id: 'PlatformInvitationCreate' });

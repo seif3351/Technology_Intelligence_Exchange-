@@ -35,7 +35,8 @@ export default async function AccountPage() {
               {m.organizationName}{' '}
               <span className="small muted">
                 ({m.organizationKind}, {m.role})
-              </span>
+              </span>{' '}
+              — <Link href={`/members?org=${m.organizationId}`}>members</Link>
             </li>
           ))}
         </ul>
