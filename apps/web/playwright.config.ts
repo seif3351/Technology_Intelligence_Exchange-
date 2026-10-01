@@ -30,7 +30,8 @@ export default defineConfig({
     {
       command: 'pnpm --filter @atx/api start',
       url: 'http://localhost:4000/readyz',
-      reuseExistingServer: true,
+      // Never on CI: a server started elsewhere may lack this configuration (e.g. the e2e mail inbox).
+      reuseExistingServer: !process.env['CI'],
       timeout: 120_000,
       env: {
         FEATURE_ENGAGEMENT_ACTIONS: 'true',
@@ -48,7 +49,8 @@ export default defineConfig({
           ? 'pnpm --filter @atx/web dev'
           : 'pnpm --filter @atx/web build && pnpm --filter @atx/web start',
       url: 'http://localhost:3000',
-      reuseExistingServer: true,
+      // Never on CI: a server started elsewhere may lack this configuration (e.g. the e2e mail inbox).
+      reuseExistingServer: !process.env['CI'],
       timeout: 300_000,
     },
   ],
