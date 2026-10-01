@@ -188,9 +188,10 @@ export const createMcpHttpApp = (runtime: Runtime, options: McpAppOptions) => {
         return bearerAuthChallengeResponse(error, { resourceMetadataUrl });
       }
     } else if (runtime.env.MCP_REQUIRE_AUTH) {
+      // Least privilege: hosts start with read access and step up through per-tool scope challenges.
       return bearerAuthChallengeResponse(
         new OAuthError(OAuthErrorCode.InvalidToken, 'Authentication required'),
-        { resourceMetadataUrl },
+        { resourceMetadataUrl, requiredScopes: ['catalog:read'] },
       );
     }
     return handler.fetch(request, authInfo ? { authInfo } : {});

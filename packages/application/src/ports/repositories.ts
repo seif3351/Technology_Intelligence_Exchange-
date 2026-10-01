@@ -12,6 +12,9 @@ import type {
   Evidence,
   EvidenceId,
   Invitation,
+  OAuthAuthorizationCode,
+  OAuthClient,
+  OAuthRefreshToken,
   InvitationId,
   Membership,
   Offering,
@@ -203,12 +206,27 @@ export interface InvitationRepository {
   listForOrganization(scope: TenantScope): Promise<Invitation[]>;
 }
 
+export interface OAuthRepository {
+  insertClient(client: OAuthClient): Promise<void>;
+  findClient(clientId: string): Promise<OAuthClient | null>;
+  insertCode(code: OAuthAuthorizationCode): Promise<void>;
+  findCode(codeHash: string): Promise<OAuthAuthorizationCode | null>;
+  /** Marks an unused code as used; false if it was used before (replay). */
+  markCodeUsed(codeHash: string, at: Date): Promise<boolean>;
+  insertRefreshToken(token: OAuthRefreshToken): Promise<void>;
+  findRefreshToken(tokenHash: string): Promise<OAuthRefreshToken | null>;
+  /** Marks an unused refresh token as used (rotation); false if it was used before (reuse). */
+  markRefreshTokenUsed(tokenHash: string, at: Date): Promise<boolean>;
+}
+
 export interface AccessGrantRepository {
   insert(grant: AccessGrant): Promise<void>;
   findById(id: AccessGrantId): Promise<AccessGrant | null>;
   listForUser(userId: UserId, kind: AccessGrant['kind']): Promise<AccessGrant[]>;
   /** Revokes only the user's own, not yet revoked grant; false otherwise. */
   revoke(id: AccessGrantId, userId: UserId, at: Date): Promise<boolean>;
+  /** Revokes a grant regardless of who asks (OAuth reuse detection, client revocation). */
+  revokeById(id: AccessGrantId, at: Date): Promise<void>;
   /** Records use, at most every few minutes (keeps the hot path cheap). */
   touch(id: AccessGrantId, at: Date): Promise<void>;
 }
@@ -229,6 +247,7 @@ export interface Repositories {
   readonly invitations: InvitationRepository;
   readonly userTokens: UserTokenRepository;
   readonly accessGrants: AccessGrantRepository;
+  readonly oauth: OAuthRepository;
   readonly offerings: OfferingRepository;
   readonly claims: ClaimRepository;
   readonly capabilities: CapabilityRepository;

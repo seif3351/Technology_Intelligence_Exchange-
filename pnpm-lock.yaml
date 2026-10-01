@@ -26,6 +26,9 @@ importers:
       '@atx/infrastructure':
         specifier: workspace:*
         version: link:packages/infrastructure
+      '@atx/mcp-server':
+        specifier: workspace:*
+        version: link:apps/mcp-server
       '@atx/runtime':
         specifier: workspace:*
         version: link:packages/runtime
@@ -38,6 +41,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.11.0)
+      '@modelcontextprotocol/client':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.4

@@ -1,14 +1,20 @@
+import { OAuthConnection } from '@atx/contracts';
+import { z } from 'zod';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ActionForm } from '@/components/action-form';
 import { resendVerification, signOutEverywhere } from '@/lib/actions/account';
-import { currentUser } from '@/lib/api';
+import { revokeConnection } from '@/lib/actions/oauth';
+import { api, currentUser } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AccountPage() {
   const me = await currentUser();
   if (!me) redirect('/login?next=/account');
+  const { items: connections } = await api('/v1/oauth/connections', {
+    schema: z.object({ items: z.array(OAuthConnection) }),
+  });
   return (
     <div className="stack narrow">
       <h1>Your account</h1>
@@ -41,6 +47,38 @@ export default async function AccountPage() {
           ))}
         </ul>
         <Link href="/onboarding">Set up another organization</Link>
+      </div>
+      <div className="card stack">
+        <h2>Connected AI applications</h2>
+        {connections.length === 0 ? (
+          <p className="small muted">
+            None yet. AI hosts that support OAuth (for example Claude) connect by adding the ATX MCP server
+            URL; see <Link href="/docs/mcp">AI agents (MCP)</Link>.
+          </p>
+        ) : (
+          <table>
+            <tbody>
+              {connections.map((connection) => (
+                <tr key={connection.id}>
+                  <td className="untrusted">{connection.clientName}</td>
+                  <td className="small">{connection.scopes.join(' ')}</td>
+                  <td className="small">
+                    {connection.status}
+                    {connection.lastUsedAt ? `, last used ${connection.lastUsedAt.slice(0, 10)}` : ''}
+                  </td>
+                  <td>
+                    {connection.status === 'active' ? (
+                      <form action={revokeConnection}>
+                        <input type="hidden" name="grantId" value={connection.id} />
+                        <button type="submit">Disconnect</button>
+                      </form>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       <div className="card stack">
         <h2>Security</h2>

@@ -2,18 +2,7 @@
 
 import { useActionState } from 'react';
 import { type AgentTokenState, issueAgentToken } from '@/lib/actions/agents';
-
-const SCOPES = [
-  { id: 'catalog:read', label: 'Read the public catalog' },
-  { id: 'requirements:read', label: "Read your organization's private requirements" },
-  { id: 'requirements:write', label: 'Save private requirement drafts' },
-  { id: 'engagements:write', label: 'Prepare demo/RFI requests (each still needs your approval)' },
-  {
-    id: 'supplier:write',
-    label:
-      'Upload content and draft claims in your supplier workspace (publishing still needs your approval)',
-  },
-];
+import { SCOPE_DESCRIPTIONS } from '@/lib/scopes';
 
 export function AgentTokenForm() {
   const [state, action, pending] = useActionState<AgentTokenState, FormData>(issueAgentToken, {});
@@ -34,7 +23,7 @@ export function AgentTokenForm() {
           </select>
         </div>
       </div>
-      {SCOPES.map((scope) => (
+      {SCOPE_DESCRIPTIONS.map((scope) => (
         <label key={scope.id} className="row plain">
           <input
             type="checkbox"

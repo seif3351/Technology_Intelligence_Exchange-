@@ -25,8 +25,8 @@ export default async function McpDocsPage() {
           <strong>Server URL:</strong> <code>{webConfig.mcpUrl}</code>
         </div>
         <div className="small muted">
-          Public catalog tools work without authentication. Private requirements and requests require an
-          access token.
+          Public catalog tools work without authentication. Hosts that support MCP OAuth (e.g. Claude custom
+          connectors) only need this URL: you sign in and approve the requested permissions on this site.
         </div>
       </div>
       <h2>Skill</h2>
@@ -37,9 +37,11 @@ export default async function McpDocsPage() {
       </p>
       <h2>Authorization</h2>
       <p>
-        The MCP server is an OAuth 2.1 resource server. Hosts that support MCP authorization discover the
-        authorization server from <code>/.well-known/oauth-protected-resource</code>. For hosts that accept a
-        bearer token, generate a scoped, revocable token below (valid up to 90 days).
+        <strong>OAuth (recommended):</strong> hosts discover the authorization server from{' '}
+        <code>/.well-known/oauth-protected-resource</code>, register themselves and send you to a consent page
+        here. Connected applications are listed (and can be disconnected) on your{' '}
+        <a href="/account">account page</a>. <strong>Agent tokens:</strong> for hosts that only accept a
+        static bearer header, generate a scoped, revocable token below (valid up to 90 days).
       </p>
       {me ? <AgentTokenForm /> : <p className="notice">Sign in to generate an agent token.</p>}
       {tokens.length > 0 ? (

@@ -14,6 +14,7 @@ import { buyerRoutes } from './routes/buyer';
 import { catalogRoutes } from './routes/catalog';
 import { identityRoutes } from './routes/identity';
 import { memberRoutes } from './routes/members';
+import { oauthRoutes } from './routes/oauth';
 import { systemRoutes } from './routes/system';
 import { workspaceRoutes } from './routes/workspace';
 
@@ -36,6 +37,7 @@ export const allRoutes = (runtime: Runtime) => [
   ...catalogRoutes(runtime.app),
   ...workspaceRoutes(runtime.app),
   ...memberRoutes(runtime.app),
+  ...oauthRoutes(runtime.app, { max: runtime.env.AUTH_RATE_LIMIT_PER_MINUTE * 3, timeWindow: '1 minute' }),
   ...buyerRoutes(runtime.app),
   ...adminRoutes(runtime.app),
 ];
@@ -57,12 +59,25 @@ export const buildServer = async (runtime: Runtime): Promise<FastifyInstance> =>
   await app.register(helmet, {
     contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
   });
+  const corsOrigins = listSetting(runtime.env.CORS_ORIGINS);
   await app.register(cors, {
-    origin: listSetting(runtime.env.CORS_ORIGINS),
-    credentials: false,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    // OAuth discovery, registration and token endpoints are public and cookie-less, so browser-based
+    // MCP hosts on any origin may call them; everything else is limited to the configured origins.
+    delegator: (request, callback) =>
+      callback(null, {
+        origin: /^\/(oauth\/|\.well-known\/)/.test(request.url ?? '') ? '*' : corsOrigins,
+        credentials: false,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      }),
   });
   await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
+
+  // OAuth token/revocation requests are form-encoded (RFC 6749).
+  app.addContentTypeParser(
+    'application/x-www-form-urlencoded',
+    { parseAs: 'string' },
+    (_request, body, done) => done(null, Object.fromEntries(new URLSearchParams(String(body)))),
+  );
 
   // Raw binary uploads for asset ingestion only.
   app.addContentTypeParser(

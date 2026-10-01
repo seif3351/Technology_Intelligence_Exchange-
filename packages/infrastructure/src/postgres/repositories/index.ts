@@ -11,6 +11,7 @@ import {
   createOfferingRepository,
 } from './catalog';
 import { createInvitationRepository } from './invitations';
+import { createOAuthRepository } from './oauth';
 import { createOrganizationRepository, createUserRepository } from './organizations';
 import { createUserTokenRepository } from './user-tokens';
 
@@ -20,6 +21,7 @@ export const createRepositories = (db: Queryable): Repositories => ({
   invitations: createInvitationRepository(db),
   userTokens: createUserTokenRepository(db),
   accessGrants: createAccessGrantRepository(db),
+  oauth: createOAuthRepository(db),
   offerings: createOfferingRepository(db),
   claims: createClaimRepository(db),
   capabilities: createCapabilityRepository(db),

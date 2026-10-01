@@ -3,7 +3,8 @@
 Remote MCP server for AI agent hosts. Protocol revision **2026-07-28** (stateless; `server/discover`; per-request envelope) via `@modelcontextprotocol/server` 2.2; 2025-era clients are served by the SDK's stateless fallback.
 
 - Endpoint: `MCP_PUBLIC_URL` (default `http://localhost:4100/mcp`); run with `pnpm dev:mcp`.
-- Authorization: OAuth 2.1 resource server. Metadata at `/.well-known/oauth-protected-resource/mcp`; invalid/missing tokens → 401 with `WWW-Authenticate: Bearer resource_metadata=…`; missing scopes → 403 `insufficient_scope` (step-up). Public catalog tools work anonymously unless `MCP_REQUIRE_AUTH=true`.
+- Authorization: OAuth 2.1 resource server backed by the built-in authorization server (ADR-0017): `/.well-known/oauth-authorization-server`, dynamic client registration `/oauth/register`, consent at `/oauth/authorize` (web), `/oauth/token`, `/oauth/revoke`. Hosts such as Claude custom connectors need only the server URL.
+- Resource server: Metadata at `/.well-known/oauth-protected-resource/mcp`; invalid/missing tokens → 401 with `WWW-Authenticate: Bearer resource_metadata=…`; missing scopes → 403 `insufficient_scope` (step-up). Public catalog tools work anonymously unless `MCP_REQUIRE_AUTH=true`.
 - Scopes: `catalog:read`, `requirements:read`, `requirements:write`, `engagements:write`, `supplier:write`. Typical agent tokens: supplier `catalog:read supplier:write`; OEM `catalog:read requirements:read requirements:write engagements:write`.
 - Agent tokens: created on `/docs/mcp` (name, scopes, 7/30/90 days), listed with last use and revocable individually (ADR-0016).
 - Development token: `pnpm auth:token buyer@aurelia-motors.example "catalog:read requirements:read requirements:write"` (OEM) or `pnpm auth:token owner@vectorforge.example "catalog:read supplier:write"` (supplier), or generate one in the web app at `/docs/mcp`.

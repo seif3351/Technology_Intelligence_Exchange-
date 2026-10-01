@@ -15,6 +15,7 @@ export * from './services/ingestion';
 export * from './services/invitations';
 export * from './services/matching';
 export * from './services/members';
+export * from './services/oauth';
 export * from './services/publication';
 export * from './services/requirements';
 export * from './services/supplier';

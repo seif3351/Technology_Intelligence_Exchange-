@@ -303,6 +303,38 @@ export const MemberRecord = z
     since: z.string(),
   })
   .meta({ id: 'MemberRecord' });
+/** OAuth 2.1 authorization request parameters (RFC 6749 names), passed through by the consent page. */
+export const OAuthAuthorizationRequest = z
+  .object({
+    response_type: z.string().max(20),
+    client_id: z.string().max(200),
+    redirect_uri: z.string().max(2000),
+    code_challenge: z.string().max(200),
+    code_challenge_method: z.string().max(10),
+    scope: z.string().max(500).optional(),
+    state: z.string().max(1000).optional(),
+    resource: z.string().max(2000).optional(),
+  })
+  .meta({ id: 'OAuthAuthorizationRequest' });
+export const OAuthAuthorizationPreview = z
+  .object({
+    clientName: z.string().describe('Self-asserted by the application; not verified by ATX.'),
+    clientUri: z.string().nullable(),
+    redirectOrigin: z.string(),
+    scopes: z.array(z.string()),
+    resource: z.string(),
+  })
+  .meta({ id: 'OAuthAuthorizationPreview' });
+export const OAuthConnection = z
+  .object({
+    id: z.string(),
+    clientName: z.string(),
+    scopes: z.array(z.string()),
+    status: z.enum(['active', 'revoked', 'expired']),
+    createdAt: z.string(),
+    lastUsedAt: z.string().nullable(),
+  })
+  .meta({ id: 'OAuthConnection' });
 export const PlatformInvitationCreate = z
   .object({ email: z.email().max(254) })
   .meta({ id: 'PlatformInvitationCreate' });

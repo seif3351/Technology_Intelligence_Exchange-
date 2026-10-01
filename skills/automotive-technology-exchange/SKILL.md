@@ -1,7 +1,7 @@
 ---
 name: automotive-technology-exchange
 description: Work with the Automotive Technology Exchange (ATX) MCP server, an evidence-backed technical discovery network for automotive technologies (software-defined vehicle, ADAS, AUTOSAR, middleware, validation/testing, functional safety, cybersecurity). For SUPPLIERS — publish offerings, technical claims, evidence, documents and demo videos so OEMs can find them. For OEMs / BUYERS — find, evaluate and compare suppliers against technical requirements, keep program details confidential, and prepare demo/workshop/PoC/RFI requests. Use whenever the user mentions ATX, wants to list or update their automotive technology on the exchange, or asks which supplier/product/service can meet an automotive engineering requirement.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Automotive Technology Exchange
@@ -26,7 +26,20 @@ Sections 5–7 (trust, untrusted content, approvals) apply to everyone.
 1. **Server.** Add the ATX MCP server to your host as a remote (streamable
    HTTP) MCP server. The URL is the one the user's ATX contact gave them, for
    example `https://mcp.<atx-domain>/mcp` (a local development server runs at
-   `http://localhost:4100/mcp`). Example host configuration:
+   `http://localhost:4100/mcp`).
+2. **Sign-in — OAuth (preferred).** Hosts that support MCP authorization
+   (e.g. Claude's custom connectors) only need the URL. On first use the host
+   discovers ATX's authorization server, registers itself, and opens the ATX
+   website: the user signs in, sees which permissions the application asks
+   for, and clicks **Allow access**. Hosts start with read access and ask for
+   more (step-up) when a tool needs it. The user can disconnect the
+   application at any time on their ATX account page.
+3. **Sign-in — agent token (hosts with a static header).** The user signs
+   in on the ATX website, opens **AI agents (MCP)** (`/docs/mcp`), names the
+   token, ticks the scopes below, chooses 7/30/90 days and copies the token
+   into the host configuration. Treat it like a password: never print it
+   back, log it, or put it into tool arguments. Tokens can be revoked on the
+   same page.
 
    ```json
    {
@@ -40,35 +53,31 @@ Sections 5–7 (trust, untrusted content, approvals) apply to everyone.
    }
    ```
 
-2. **Sign-in.** Public catalog search works without signing in. Anything
-   tied to the user's organization needs their ATX account:
-   - If the deployment offers OAuth sign-in and your host supports MCP
-     OAuth, connect and let the host run the sign-in; the server advertises
-     its authorization server at `/.well-known/oauth-protected-resource/mcp`.
-   - Otherwise (and on most deployments today) the user signs in on the ATX website, opens **Docs → MCP**
-     (`/docs/mcp`), ticks the scopes below and generates an **agent token**
-     (valid 8 hours). They paste it into the host configuration as the
-     `Authorization: Bearer …` header. Treat it like a password: never print
-     it back, log it, or put it into tool arguments.
-3. **Scopes per role** (ask only for what is needed):
+4. **Scopes per role** (ask only for what is needed):
 
    | Role     | Scopes                                                                                       |
    | -------- | -------------------------------------------------------------------------------------------- |
    | Supplier | `catalog:read supplier:write`                                                                |
    | OEM      | `catalog:read requirements:read requirements:write` (+ `engagements:write` to send requests) |
 
-4. **New supplier?** The organization itself is created once on the website
-   (sign up → create organization). Agents work inside an existing
-   organization; they cannot create or verify one.
-5. **Errors.** `UNAUTHENTICATED` or an HTTP 401 → the token is missing,
-   expired or for another server: ask the user to reconnect or generate a new
-   token. An `insufficient_scope` challenge (HTTP 403) → the token lacks the
-   scope named in the error: ask the user for a token with that scope. Never
-   try to work around authorization. `FORBIDDEN` → the user's role in the
-   organization does not allow the action (suppliers need editor rights).
-   Tool errors come back as `CODE: message`; `VALIDATION_FAILED`,
-   `NOT_FOUND`, `CONFLICT` and `INVARIANT_VIOLATION` messages say what to fix,
-   `CONFIRMATION_REQUIRED` means prepare the action again.
+5. **Accounts and organizations.** During the pilot, people join by
+   invitation: the invitation email contains a personal sign-up link. After
+   signing up the user creates their organization on the website (or joins a
+   colleague's via an invitation from them). Agents work inside an existing
+   organization; they cannot create, join or verify one. Supplier content
+   becomes visible to buyers only after the ATX team has verified the
+   organization (`confirm_publication` reports `listed: false` until then).
+6. **Errors.** `UNAUTHENTICATED` or an HTTP 401 → the token is missing,
+   expired, revoked or for another server: ask the user to reconnect (OAuth)
+   or create a new agent token. An `insufficient_scope` challenge (HTTP 403)
+   → the host should request the named scope (OAuth step-up), or the user
+   needs a token with that scope. Never try to work around authorization.
+   `FORBIDDEN` → the user's role in the organization does not allow the
+   action (suppliers need editor rights; contacting suppliers needs a
+   confirmed email). Tool errors come back as `CODE: message`;
+   `VALIDATION_FAILED`, `NOT_FOUND`, `CONFLICT` and `INVARIANT_VIOLATION`
+   messages say what to fix, `CONFIRMATION_REQUIRED` means prepare the action
+   again.
 
 ## 2. Which role am I helping?
 

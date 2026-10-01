@@ -11,6 +11,7 @@ export * from './ids';
 export * from './invitation';
 export * from './matching';
 export * from './membership';
+export * from './oauth';
 export * from './offering';
 export * from './ontology';
 export * from './organization';

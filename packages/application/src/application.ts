@@ -10,6 +10,7 @@ import { IngestionService } from './services/ingestion';
 import { InvitationService } from './services/invitations';
 import { MatchingService } from './services/matching';
 import { MembershipService } from './services/members';
+import { OAuthService } from './services/oauth';
 import { PublicationService } from './services/publication';
 import { RequirementService } from './services/requirements';
 import { SupplierService } from './services/supplier';
@@ -33,6 +34,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     agentTokens: new AgentTokenService(deps),
     invitations: new InvitationService(deps),
     members: new MembershipService(deps),
+    oauth: new OAuthService(deps),
   };
 };
 

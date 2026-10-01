@@ -34,6 +34,8 @@ export interface PlatformSettings {
   readonly mcpResourceUrl: string;
   /** The HTTP API's resource identifier (token audience for web sessions). */
   readonly apiResourceUrl: string;
+  /** Issuer identifier of the built-in OAuth authorization server. */
+  readonly oauthIssuer: string;
 }
 
 /** Everything the use cases need, passed explicitly (no service locator). */

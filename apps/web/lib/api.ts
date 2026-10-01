@@ -57,11 +57,13 @@ export const api = async <T extends z.ZodType>(
       detail?: string;
       title?: string;
       errors?: { path?: string; message: string }[];
+      error?: string; // RFC 6749 OAuth error responses
+      error_description?: string;
     };
     throw new ApiError(
       response.status,
-      problem.code ?? 'ERROR',
-      problem.detail ?? problem.title ?? `Request failed (${response.status})`,
+      problem.code ?? problem.error ?? 'ERROR',
+      problem.detail ?? problem.title ?? problem.error_description ?? `Request failed (${response.status})`,
       problem.errors ?? [],
     );
   }
