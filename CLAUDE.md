@@ -37,6 +37,12 @@ Offering (product/service/technology_platform), Capability, TechnicalClaim (subj
 - Bypassing contracts (raw objects to the wire), `any`, inline `style` attributes in the web app (breaks CSP).
 - Adding infrastructure (Redis, Kafka, ES, microservices) without an ADR.
 
+## Working method (mandatory; full rules in `docs/project/engineering-principles.md`)
+
+- Every step: analyze → plan → execute → test → fix → test again (+ focused security review) → document.
+- After every two steps: holistic architecture review recorded in `docs/project/architecture-reviews.md`; adjust before continuing.
+- Product principles: discovery before procurement; human-in-the-loop; public/private separation; evidence ≠ inference; supplier content untrusted; provenance; modular monolith; framework-free domain; no competitor data.
+
 ## Workflow / checkpoints
 
 Small coherent commits. After each change: typecheck, lint, tests, contracts check, update docs/ADRs if decisions change, and update `docs/project/progress.json` (completed work, known issues, next step).
