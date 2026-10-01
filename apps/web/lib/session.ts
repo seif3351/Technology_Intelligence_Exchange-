@@ -10,7 +10,8 @@ import { webConfig } from './config';
  */
 const COOKIE = 'atx_session';
 
-export const getSessionToken = async (): Promise<string | null> => (await cookies()).get(COOKIE)?.value ?? null;
+export const getSessionToken = async (): Promise<string | null> =>
+  (await cookies()).get(COOKIE)?.value ?? null;
 
 export const setSessionToken = async (token: string, maxAgeSeconds: number): Promise<void> => {
   (await cookies()).set(COOKIE, token, {

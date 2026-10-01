@@ -60,7 +60,13 @@ export const AssetRecord = z
   .meta({ id: 'AssetRecord' });
 
 export const CapabilityRecord = z
-  .object({ id: z.string(), conceptId: z.string(), name: z.string(), description: z.string(), status: z.string() })
+  .object({
+    id: z.string(),
+    conceptId: z.string(),
+    name: z.string(),
+    description: z.string(),
+    status: z.string(),
+  })
   .meta({ id: 'CapabilityRecord' });
 
 export const Workspace = z
@@ -77,7 +83,15 @@ export const Workspace = z
 export const Me = z
   .object({
     user: z.object({ id: z.string(), displayName: z.string(), platformRole: z.string() }),
-    memberships: z.array(z.object({ organizationId: z.string(), organizationName: z.string(), organizationSlug: z.string(), organizationKind: z.string(), role: z.string() })),
+    memberships: z.array(
+      z.object({
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+        organizationKind: z.string(),
+        role: z.string(),
+      }),
+    ),
     scopes: z.array(z.string()),
   })
   .meta({ id: 'Me' });

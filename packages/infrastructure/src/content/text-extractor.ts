@@ -24,7 +24,14 @@ export const htmlToText = (html: string): string =>
 export const vttToText = (vtt: string): string =>
   vtt
     .split(/\r?\n/)
-    .filter((line) => line.trim() !== '' && !/^WEBVTT/.test(line) && !/-->/.test(line) && !/^\d+$/.test(line.trim()) && !/^NOTE\b/.test(line))
+    .filter(
+      (line) =>
+        line.trim() !== '' &&
+        !/^WEBVTT/.test(line) &&
+        !/-->/.test(line) &&
+        !/^\d+$/.test(line.trim()) &&
+        !/^NOTE\b/.test(line),
+    )
     .map((line) => line.replace(/<[^>]+>/g, ''))
     .join('\n');
 

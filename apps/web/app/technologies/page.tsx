@@ -7,13 +7,24 @@ export const dynamic = 'force-dynamic';
 
 export default async function TechnologiesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
-  const { items } = await api(`/v1/technologies?limit=50${q ? `&query=${encodeURIComponent(q)}` : ''}`, { schema: z.object({ items: z.array(Technology) }), anonymous: true });
+  const { items } = await api(`/v1/technologies?limit=50${q ? `&query=${encodeURIComponent(q)}` : ''}`, {
+    schema: z.object({ items: z.array(Technology) }),
+    anonymous: true,
+  });
   return (
     <div className="stack">
       <h1>Technology ontology</h1>
-      <p className="muted">Concepts, aliases and relations used for matching. The ontology is data-driven and intentionally incomplete.</p>
+      <p className="muted">
+        Concepts, aliases and relations used for matching. The ontology is data-driven and intentionally
+        incomplete.
+      </p>
       <form action="/technologies" className="search-box">
-        <input name="q" defaultValue={q ?? ''} placeholder="e.g. Orin, SOME/IP, ISO 26262" aria-label="Technology" />
+        <input
+          name="q"
+          defaultValue={q ?? ''}
+          placeholder="e.g. Orin, SOME/IP, ISO 26262"
+          aria-label="Technology"
+        />
         <button type="submit">Search</button>
       </form>
       <table>
@@ -38,7 +49,12 @@ export default async function TechnologiesPage({ searchParams }: { searchParams:
               <td className="small">
                 {t.broader.length ? <div>is a: {t.broader.map((c) => c.label).join(', ')}</div> : null}
                 {t.narrower.length ? <div>narrower: {t.narrower.map((c) => c.label).join(', ')}</div> : null}
-                {t.related.length ? <div>related: {t.related.map((c) => `${c.label} (${c.relation.replace('inverse_', '')})`).join(', ')}</div> : null}
+                {t.related.length ? (
+                  <div>
+                    related:{' '}
+                    {t.related.map((c) => `${c.label} (${c.relation.replace('inverse_', '')})`).join(', ')}
+                  </div>
+                ) : null}
               </td>
               <td>
                 <Link href={`/search?q=${encodeURIComponent(t.label)}`}>{t.publishedOfferingCount}</Link>

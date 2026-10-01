@@ -2,7 +2,8 @@ import type { RetrievalQuery, SearchIndex } from '@atx/application';
 import type { RankedList } from '@atx/search';
 import type { Queryable } from './db';
 
-const vectorLiteral = (vector: readonly number[]): string => `[${vector.map((v) => (Number.isFinite(v) ? v : 0)).join(',')}]`;
+const vectorLiteral = (vector: readonly number[]): string =>
+  `[${vector.map((v) => (Number.isFinite(v) ? v : 0)).join(',')}]`;
 /** Cosine distance above which a semantic neighbour is considered noise. */
 const MAX_COSINE_DISTANCE = 0.85;
 
@@ -43,7 +44,10 @@ export const createPostgresSearchIndex = (db: Queryable): SearchIndex => ({
     await db.query('DELETE FROM offering_search_documents WHERE offering_id = $1', [offeringId]);
   },
   async currentHash(offeringId) {
-    const { rows } = await db.query('SELECT content_hash FROM offering_search_documents WHERE offering_id = $1', [offeringId]);
+    const { rows } = await db.query(
+      'SELECT content_hash FROM offering_search_documents WHERE offering_id = $1',
+      [offeringId],
+    );
     return (rows[0]?.['content_hash'] as string | undefined) ?? null;
   },
 });
@@ -61,7 +65,11 @@ const keywordList = async (db: Queryable, text: string, limit: number): Promise<
   return rows.map((row) => row['offering_id'] as string);
 };
 
-const semanticList = async (db: Queryable, embedding: NonNullable<RetrievalQuery['embedding']>, limit: number): Promise<string[]> => {
+const semanticList = async (
+  db: Queryable,
+  embedding: NonNullable<RetrievalQuery['embedding']>,
+  limit: number,
+): Promise<string[]> => {
   const { rows } = await db.query(
     `SELECT offering_id FROM offering_search_documents
       WHERE embedding_model = $2 AND embedding IS NOT NULL AND vector_dims(embedding) = vector_dims($1::vector)
@@ -74,7 +82,11 @@ const semanticList = async (db: Queryable, embedding: NonNullable<RetrievalQuery
 };
 
 /** Offerings with published claims (offering- or organization-level) on the given concepts, most concepts first. */
-const structuredList = async (db: Queryable, conceptIds: readonly string[], limit: number): Promise<string[]> => {
+const structuredList = async (
+  db: Queryable,
+  conceptIds: readonly string[],
+  limit: number,
+): Promise<string[]> => {
   const { rows } = await db.query(
     `SELECT o.id, count(DISTINCT c.concept_id) AS matched
        FROM offerings o

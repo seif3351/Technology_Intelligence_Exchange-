@@ -22,17 +22,29 @@ export const loadViews = (directory = VIEWS_DIR): Map<string, string> => {
  * (no network access by default); media may load from the API origin (signed
  * asset URLs) and explicitly configured video hosts.
  */
-export const registerViews = (server: McpServer, views: ReadonlyMap<string, string>, mediaOrigins: readonly string[]): void => {
+export const registerViews = (
+  server: McpServer,
+  views: ReadonlyMap<string, string>,
+  mediaOrigins: readonly string[],
+): void => {
   for (const [uri, html] of views) {
-    registerAppResource(server, uri.replace('ui://atx/', 'ATX '), uri, { description: 'Automotive Technology Exchange view' }, async () => ({
-      contents: [
-        {
-          uri,
-          mimeType: RESOURCE_MIME_TYPE,
-          text: html,
-          _meta: { ui: { csp: { resourceDomains: [...mediaOrigins], connectDomains: [] }, prefersBorder: true } },
-        },
-      ],
-    }));
+    registerAppResource(
+      server,
+      uri.replace('ui://atx/', 'ATX '),
+      uri,
+      { description: 'Automotive Technology Exchange view' },
+      async () => ({
+        contents: [
+          {
+            uri,
+            mimeType: RESOURCE_MIME_TYPE,
+            text: html,
+            _meta: {
+              ui: { csp: { resourceDomains: [...mediaOrigins], connectDomains: [] }, prefersBorder: true },
+            },
+          },
+        ],
+      }),
+    );
   }
 };

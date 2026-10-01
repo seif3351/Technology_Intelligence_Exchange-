@@ -21,8 +21,19 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
    */
   const issueSession = async (userId: string) => {
     const scopes = [...SCOPES];
-    const accessToken = await tokens.issuer.issue({ subject: userId, audience: env.API_PUBLIC_URL, scopes, ttlSeconds: SESSION_TTL_SECONDS });
-    return { accessToken, tokenType: 'Bearer' as const, expiresIn: SESSION_TTL_SECONDS, audience: env.API_PUBLIC_URL, scopes };
+    const accessToken = await tokens.issuer.issue({
+      subject: userId,
+      audience: env.API_PUBLIC_URL,
+      scopes,
+      ttlSeconds: SESSION_TTL_SECONDS,
+    });
+    return {
+      accessToken,
+      tokenType: 'Bearer' as const,
+      expiresIn: SESSION_TTL_SECONDS,
+      audience: env.API_PUBLIC_URL,
+      scopes,
+    };
   };
   return [
     defineRoute({
@@ -48,7 +59,8 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
       body: LoginRequest,
       response: TokenResponse,
       rateLimit: AUTH_RATE_LIMIT,
-      handler: async ({ body }) => issueSession((await app.identity.authenticate(body.email, body.password)).id),
+      handler: async ({ body }) =>
+        issueSession((await app.identity.authenticate(body.email, body.password)).id),
     }),
     defineRoute({
       method: 'GET',
@@ -75,8 +87,20 @@ export const identityRoutes = (runtime: Runtime): AnyRouteSpec[] => {
         // A token can never carry more than the issuing session already has.
         const scopes = body.scopes.filter((scope) => user.scopes.has(scope as Scope));
         const ttlSeconds = body.ttlHours * 3600;
-        const accessToken = await tokens.issuer.issue({ subject: user.userId, audience: env.MCP_PUBLIC_URL, scopes, clientId: 'personal-agent-token', ttlSeconds });
-        return { accessToken, tokenType: 'Bearer' as const, expiresIn: ttlSeconds, audience: env.MCP_PUBLIC_URL, scopes };
+        const accessToken = await tokens.issuer.issue({
+          subject: user.userId,
+          audience: env.MCP_PUBLIC_URL,
+          scopes,
+          clientId: 'personal-agent-token',
+          ttlSeconds,
+        });
+        return {
+          accessToken,
+          tokenType: 'Bearer' as const,
+          expiresIn: ttlSeconds,
+          audience: env.MCP_PUBLIC_URL,
+          scopes,
+        };
       },
     }),
     defineRoute({

@@ -1,6 +1,10 @@
 pnpm-lock.yaml
-dist
-.next
+**/dist
+**/.next
 coverage
+.var
 docs/api/openapi.yaml
 docs/api/json-schema
+apps/web/next-env.d.ts
+**/test-results
+**/playwright-report

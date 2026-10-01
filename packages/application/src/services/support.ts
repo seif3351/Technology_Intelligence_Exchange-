@@ -6,7 +6,12 @@ export const auditActor = (ctx: RequestContext): AuditActor => {
   const { principal } = ctx;
   switch (principal.kind) {
     case 'user':
-      return { type: 'user', userId: principal.userId, clientId: principal.clientId, channel: principal.channel };
+      return {
+        type: 'user',
+        userId: principal.userId,
+        clientId: principal.clientId,
+        channel: principal.channel,
+      };
     case 'anonymous':
       return { type: 'anonymous', channel: principal.channel };
     case 'system':
@@ -23,7 +28,12 @@ export interface AuditInput {
   readonly metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
-export const recordAudit = (log: AuditLog, ctx: RequestContext, now: Date, input: AuditInput): Promise<void> =>
+export const recordAudit = (
+  log: AuditLog,
+  ctx: RequestContext,
+  now: Date,
+  input: AuditInput,
+): Promise<void> =>
   log.record({
     id: newId(),
     occurredAt: now,
@@ -45,13 +55,15 @@ export const clampLimit = (limit: number | undefined, fallback = 10): number =>
   Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(limit ?? fallback)));
 
 /** Opaque offset cursor. Ordering is deterministic, so offsets are stable for unchanged data. */
-export const encodeCursor = (offset: number): string => Buffer.from(JSON.stringify({ o: offset })).toString('base64url');
+export const encodeCursor = (offset: number): string =>
+  Buffer.from(JSON.stringify({ o: offset })).toString('base64url');
 
 export const decodeCursor = (cursor: string | null | undefined): number => {
   if (!cursor) return 0;
   try {
     const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as { o?: unknown };
-    if (typeof parsed.o === 'number' && Number.isInteger(parsed.o) && parsed.o >= 0 && parsed.o < 10_000) return parsed.o;
+    if (typeof parsed.o === 'number' && Number.isInteger(parsed.o) && parsed.o >= 0 && parsed.o < 10_000)
+      return parsed.o;
   } catch {
     // fall through
   }

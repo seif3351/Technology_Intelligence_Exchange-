@@ -2,19 +2,32 @@ import { expect, test } from '@playwright/test';
 import { signIn } from './helpers';
 
 test.describe('buyer and supplier workflows', () => {
-  test('buyer sees private requirement with confidential terms and evidence-based matches', async ({ page }) => {
+  test('buyer sees private requirement with confidential terms and evidence-based matches', async ({
+    page,
+  }) => {
     await signIn(page, 'buyer@aurelia-motors.example');
     await page.getByRole('link', { name: 'Requirements' }).click();
     await page.getByRole('link', { name: /ADAS integration test automation/ }).click();
     await expect(page.getByText('Confidential terms (only visible to your organization)')).toBeVisible();
     await expect(page.getByText('VP-2031', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('match-card').first()).toContainText('Northstar AI Integration Test Platform');
+    await expect(page.getByTestId('match-card').first()).toContainText(
+      'Northstar AI Integration Test Platform',
+    );
   });
 
-  test('demo request requires reviewing exactly what is shared, then reaches the supplier inbox', async ({ page, browser }) => {
+  test('demo request requires reviewing exactly what is shared, then reaches the supplier inbox', async ({
+    page,
+    browser,
+  }) => {
     await signIn(page, 'buyer@aurelia-motors.example');
-    await page.goto(`/search?q=${encodeURIComponent('AI-based integration test automation for ADAS on QNX')}`);
-    await page.getByTestId('match-card').filter({ hasText: 'Northstar AI Integration Test Platform' }).getByRole('link', { name: 'Northstar AI Integration Test Platform' }).click();
+    await page.goto(
+      `/search?q=${encodeURIComponent('AI-based integration test automation for ADAS on QNX')}`,
+    );
+    await page
+      .getByTestId('match-card')
+      .filter({ hasText: 'Northstar AI Integration Test Platform' })
+      .getByRole('link', { name: 'Northstar AI Integration Test Platform' })
+      .click();
     await page.getByRole('link', { name: 'Request demo / workshop' }).click();
     const message = `Please show the integration test platform on QNX benches (${Date.now()}).`;
     await page.getByLabel('Message to the supplier').fill(message);
@@ -48,7 +61,9 @@ test.describe('buyer and supplier workflows', () => {
 
   test('a supplier cannot open a buyer requirement', async ({ page }) => {
     await signIn(page, 'owner@vectorforge.example');
-    const response = await page.goto('/buyer/requirements/00000000-0000-4000-8000-000000000000?org=00000000-0000-4000-8000-000000000001');
+    const response = await page.goto(
+      '/buyer/requirements/00000000-0000-4000-8000-000000000000?org=00000000-0000-4000-8000-000000000001',
+    );
     expect(response?.status()).toBe(404);
   });
 

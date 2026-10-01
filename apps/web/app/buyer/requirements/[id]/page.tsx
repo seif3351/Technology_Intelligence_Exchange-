@@ -7,7 +7,13 @@ import { ApiError, api, currentUser } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RequirementPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ org?: string }> }) {
+export default async function RequirementPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ org?: string }>;
+}) {
   const { id } = await params;
   const me = await currentUser();
   if (!me) redirect('/login?next=/buyer/requirements');
@@ -23,7 +29,11 @@ export default async function RequirementPage({ params, searchParams }: { params
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) notFound();
     throw error;
   }
-  const matches = await api('/v1/matches', { method: 'POST', body: { requirementId: id, organizationId: orgId, limit: 5 }, schema: MatchResponse });
+  const matches = await api('/v1/matches', {
+    method: 'POST',
+    body: { requirementId: id, organizationId: orgId, limit: 5 },
+    schema: MatchResponse,
+  });
   const r = data.requirement;
   return (
     <div className="stack">
@@ -35,7 +45,10 @@ export default async function RequirementPage({ params, searchParams }: { params
         <div className="stack">
           <p className="muted">{r.description}</p>
           <h2>Matching offerings</h2>
-          <p className="small muted">Matching uses only the structured constraints below; the title, description and confidential terms are never sent to the search index or AI providers.</p>
+          <p className="small muted">
+            Matching uses only the structured constraints below; the title, description and confidential terms
+            are never sent to the search index or AI providers.
+          </p>
           {matches.matches.map((m) => (
             <MatchCard key={m.offering.id} match={m} />
           ))}

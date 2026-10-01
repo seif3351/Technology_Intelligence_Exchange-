@@ -4,17 +4,24 @@ import type { Queryable } from '../db';
 import { toAuditEvent, toEngagement, toRequirement } from '../mappers';
 
 const assertScope = (scope: TenantScope, organizationId: string): void => {
-  if (scope.organizationId !== organizationId) throw invariant('Tenant scope does not match the entity organization');
+  if (scope.organizationId !== organizationId)
+    throw invariant('Tenant scope does not match the entity organization');
 };
 
 /** Every query is constrained by the scope's organization id — there is no unscoped read path. */
 export const createRequirementRepository = (db: Queryable): RequirementRepository => ({
   async findById(scope, id) {
-    const { rows } = await db.query('SELECT * FROM requirements WHERE id = $1 AND organization_id = $2', [id, scope.organizationId]);
+    const { rows } = await db.query('SELECT * FROM requirements WHERE id = $1 AND organization_id = $2', [
+      id,
+      scope.organizationId,
+    ]);
     return rows[0] ? toRequirement(rows[0]) : null;
   },
   async listForTenant(scope) {
-    const { rows } = await db.query('SELECT * FROM requirements WHERE organization_id = $1 ORDER BY updated_at DESC, id', [scope.organizationId]);
+    const { rows } = await db.query(
+      'SELECT * FROM requirements WHERE organization_id = $1 ORDER BY updated_at DESC, id',
+      [scope.organizationId],
+    );
     return rows.map(toRequirement);
   },
   async insert(scope, r) {
@@ -22,8 +29,20 @@ export const createRequirementRepository = (db: Queryable): RequirementRepositor
     await db.query(
       `INSERT INTO requirements (id, organization_id, title, description, constraints, confidential_terms, visibility, status,
          created_by, version, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [r.id, r.organizationId, r.title, r.description, JSON.stringify(r.constraints), r.confidentialTerms, r.visibility, r.status,
-        r.createdBy, r.version, r.createdAt, r.updatedAt],
+      [
+        r.id,
+        r.organizationId,
+        r.title,
+        r.description,
+        JSON.stringify(r.constraints),
+        r.confidentialTerms,
+        r.visibility,
+        r.status,
+        r.createdBy,
+        r.version,
+        r.createdAt,
+        r.updatedAt,
+      ],
     );
   },
   async update(scope, r, expectedVersion) {
@@ -31,8 +50,19 @@ export const createRequirementRepository = (db: Queryable): RequirementRepositor
     const result = await db.query(
       `UPDATE requirements SET title=$4, description=$5, constraints=$6, confidential_terms=$7, visibility=$8, status=$9,
          version=$10, updated_at=$11 WHERE id=$1 AND organization_id=$2 AND version=$3`,
-      [r.id, r.organizationId, expectedVersion, r.title, r.description, JSON.stringify(r.constraints), r.confidentialTerms,
-        r.visibility, r.status, r.version, r.updatedAt],
+      [
+        r.id,
+        r.organizationId,
+        expectedVersion,
+        r.title,
+        r.description,
+        JSON.stringify(r.constraints),
+        r.confidentialTerms,
+        r.visibility,
+        r.status,
+        r.version,
+        r.updatedAt,
+      ],
     );
     if (result.rowCount !== 1) throw conflict('Requirement was modified concurrently; reload and retry');
   },
@@ -50,7 +80,10 @@ export const createRequirementRepository = (db: Queryable): RequirementRepositor
         GROUP BY concept_id ORDER BY n DESC, concept_id LIMIT $1`,
       [limit],
     );
-    return rows.map((row) => ({ conceptId: row['concept_id'] as ConceptId, requirementCount: Number(row['n']) }));
+    return rows.map((row) => ({
+      conceptId: row['concept_id'] as ConceptId,
+      requirementCount: Number(row['n']),
+    }));
   },
 });
 
@@ -87,13 +120,30 @@ export const createEngagementRepository = (db: Queryable): EngagementRepository 
          disclosure, status, idempotency_key, requested_by, confirmed_at, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        ON CONFLICT (buyer_organization_id, idempotency_key) DO NOTHING`,
-      [e.id, e.type, e.buyerOrganizationId, e.supplierOrganizationId, e.offeringId, e.requirementId, JSON.stringify(e.disclosure),
-        e.status, e.idempotencyKey, e.requestedBy, e.confirmedAt, e.createdAt, e.updatedAt],
+      [
+        e.id,
+        e.type,
+        e.buyerOrganizationId,
+        e.supplierOrganizationId,
+        e.offeringId,
+        e.requirementId,
+        JSON.stringify(e.disclosure),
+        e.status,
+        e.idempotencyKey,
+        e.requestedBy,
+        e.confirmedAt,
+        e.createdAt,
+        e.updatedAt,
+      ],
     );
     if (result.rowCount !== 1) throw conflict('A request with this idempotency key already exists');
   },
   async updateStatus(e) {
-    await db.query('UPDATE engagement_requests SET status = $2, updated_at = $3 WHERE id = $1', [e.id, e.status, e.updatedAt]);
+    await db.query('UPDATE engagement_requests SET status = $2, updated_at = $3 WHERE id = $1', [
+      e.id,
+      e.status,
+      e.updatedAt,
+    ]);
   },
 });
 
@@ -102,8 +152,18 @@ export const createAuditLog = (db: Queryable): AuditLog => ({
     await db.query(
       `INSERT INTO audit_events (id, occurred_at, actor, organization_id, action, resource_type, resource_id, outcome, request_id, metadata)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [event.id, event.occurredAt, JSON.stringify(event.actor), event.organizationId, event.action, event.resourceType,
-        event.resourceId, event.outcome, event.requestId, JSON.stringify(event.metadata)],
+      [
+        event.id,
+        event.occurredAt,
+        JSON.stringify(event.actor),
+        event.organizationId,
+        event.action,
+        event.resourceType,
+        event.resourceId,
+        event.outcome,
+        event.requestId,
+        JSON.stringify(event.metadata),
+      ],
     );
   },
   async list({ organizationId, action, limit, before }) {

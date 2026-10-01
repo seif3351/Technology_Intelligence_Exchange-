@@ -87,7 +87,10 @@ export const normalizeOfferingInput = (input: OfferingInput): OfferingInput => {
     input.type === 'service' ? input.details.type === 'service' : input.details.type === input.type;
   if (!detailsTypeMatches) problems.push('details.type must match offering type');
   if (problems.length > 0) {
-    throw validationError('Invalid offering', problems.map((message) => ({ message })));
+    throw validationError(
+      'Invalid offering',
+      problems.map((message) => ({ message })),
+    );
   }
   return {
     ...input,

@@ -36,7 +36,11 @@ const actions: ViewActions = {
   callTool: async (name, args) => {
     const result = await app.callServerTool({ name, arguments: args });
     const text = result.content?.find((block) => block.type === 'text');
-    return { structuredContent: result.structuredContent, isError: result.isError, text: text && 'text' in text ? String(text.text) : undefined };
+    return {
+      structuredContent: result.structuredContent,
+      isError: result.isError,
+      text: text && 'text' in text ? String(text.text) : undefined,
+    };
   },
 };
 
@@ -53,7 +57,9 @@ const render = (data: Record<string, unknown>): HTMLElement => {
     case 'evidence-viewer':
       return renderEvidence(data as never, actions);
     case 'requirement-builder':
-      return 'requirement' in data ? renderRequirementDraft(data as never, actions) : renderInterpretation(data as never, actions);
+      return 'requirement' in data
+        ? renderRequirementDraft(data as never, actions)
+        : renderInterpretation(data as never, actions);
     case 'request-form':
       return renderRequestForm(data as never, lastInput, actions);
     default:

@@ -17,8 +17,14 @@ export function AgentTokenForm() {
       <h3>Generate an agent token</h3>
       {SCOPES.map((scope) => (
         <label key={scope.id} className="row plain">
-          <input type="checkbox" name="scope" value={scope.id} defaultChecked={scope.id === 'catalog:read'} className="inline-check" /> {scope.label}{' '}
-          <code className="small">{scope.id}</code>
+          <input
+            type="checkbox"
+            name="scope"
+            value={scope.id}
+            defaultChecked={scope.id === 'catalog:read'}
+            className="inline-check"
+          />{' '}
+          {scope.label} <code className="small">{scope.id}</code>
         </label>
       ))}
       <button type="submit" disabled={pending}>

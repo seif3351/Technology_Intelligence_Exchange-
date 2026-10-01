@@ -42,7 +42,10 @@ Mark a constraint "preference" only when the text signals it is optional (ideall
  * only ADD constraints for valid catalog concepts; deterministic results are
  * kept. Any failure returns the deterministic interpretation.
  */
-export const createAiRequirementExtractor = (llm: StructuredLlm, onFailure?: (error: unknown) => void): RequirementExtractor => ({
+export const createAiRequirementExtractor = (
+  llm: StructuredLlm,
+  onFailure?: (error: unknown) => void,
+): RequirementExtractor => ({
   async extract(text, ontology) {
     const baseline = interpretRequirementText(text, ontology);
     try {
@@ -67,10 +70,19 @@ const catalog = (ontology: Ontology): string =>
     .map((concept) => `${concept.id} | ${concept.label} | ${concept.facetId}`)
     .join('\n');
 
-const merge = (baseline: InterpretedRequirement, ai: z.infer<typeof AiConstraints>, ontology: Ontology): InterpretedRequirement => {
+const merge = (
+  baseline: InterpretedRequirement,
+  ai: z.infer<typeof AiConstraints>,
+  ontology: Ontology,
+): InterpretedRequirement => {
   const constraints: RequirementConstraint[] = [...baseline.constraints];
   const notes = [...baseline.notes];
-  const has = (conceptId: string) => constraints.some((c) => c.kind === 'concept' && (c.conceptId === conceptId || ontology.broader(c.conceptId).has(asId(conceptId))));
+  const has = (conceptId: string) =>
+    constraints.some(
+      (c) =>
+        c.kind === 'concept' &&
+        (c.conceptId === conceptId || ontology.broader(c.conceptId).has(asId(conceptId))),
+    );
   for (const item of ai.constraints) {
     if (!ontology.hasConcept(item.conceptId) || has(item.conceptId)) continue;
     const constraint: ConceptConstraint = {
@@ -83,14 +95,31 @@ const merge = (baseline: InterpretedRequirement, ai: z.infer<typeof AiConstraint
       origin: 'extracted_ai',
     };
     constraints.push(constraint);
-    notes.push(`AI-assisted interpretation added "${ontology.getConcept(item.conceptId)?.label ?? item.conceptId}"`);
+    notes.push(
+      `AI-assisted interpretation added "${ontology.getConcept(item.conceptId)?.label ?? item.conceptId}"`,
+    );
   }
   if (ai.minimumMaturity && !constraints.some((c) => c.kind === 'maturity')) {
-    constraints.push({ kind: 'maturity', id: `c${constraints.length + 1}`, minimum: ai.minimumMaturity, priority: 'hard', origin: 'extracted_ai' });
+    constraints.push({
+      kind: 'maturity',
+      id: `c${constraints.length + 1}`,
+      minimum: ai.minimumMaturity,
+      priority: 'hard',
+      origin: 'extracted_ai',
+    });
   }
   if (ai.productionReferencesRequired && !constraints.some((c) => c.kind === 'production_reference')) {
-    constraints.push({ kind: 'production_reference', id: `c${constraints.length + 1}`, priority: 'hard', origin: 'extracted_ai' });
+    constraints.push({
+      kind: 'production_reference',
+      id: `c${constraints.length + 1}`,
+      priority: 'hard',
+      origin: 'extracted_ai',
+    });
   }
-  const unrecognized = new Set([...baseline.unrecognizedTerms, ...ai.unrecognizedTerms.map((t) => t.slice(0, 60))].filter((t) => !ontology.resolveTerm(t)));
+  const unrecognized = new Set(
+    [...baseline.unrecognizedTerms, ...ai.unrecognizedTerms.map((t) => t.slice(0, 60))].filter(
+      (t) => !ontology.resolveTerm(t),
+    ),
+  );
   return { constraints, unrecognizedTerms: [...unrecognized].slice(0, 20), notes };
 };

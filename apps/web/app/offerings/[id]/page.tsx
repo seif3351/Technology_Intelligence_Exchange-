@@ -18,7 +18,8 @@ export default async function OfferingPage({ params }: { params: Promise<{ id: s
     throw error;
   }
   const me = await currentUser();
-  const isBuyer = me?.memberships.some((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') ?? false;
+  const isBuyer =
+    me?.memberships.some((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') ?? false;
   return (
     <div className="stack">
       <div className="row">
@@ -27,7 +28,8 @@ export default async function OfferingPage({ params }: { params: Promise<{ id: s
         <DemoBadge isDemo={offering.isDemo} />
       </div>
       <div className="row muted">
-        {offeringTypeLabel(offering.type)} by <Link href={`/suppliers/${offering.organization.slug}`}>{offering.organization.name}</Link>
+        {offeringTypeLabel(offering.type)} by{' '}
+        <Link href={`/suppliers/${offering.organization.slug}`}>{offering.organization.name}</Link>
         <VerificationBadge state={offering.organization.verificationState} />
       </div>
       <div className="grid2">
@@ -86,17 +88,27 @@ export default async function OfferingPage({ params }: { params: Promise<{ id: s
                 ) : (
                   <span className="untrusted">{item.title}</span>
                 )}
-                {item.customerDisclosure === 'anonymized' ? <span className="muted"> (customer anonymized)</span> : null}
+                {item.customerDisclosure === 'anonymized' ? (
+                  <span className="muted"> (customer anonymized)</span>
+                ) : null}
               </div>
             ))}
           </div>
           <div className="panel small">
             <h3>How to read provenance</h3>
             <div className="stack">
-              <div><TrustBadge tier="platform_verified" /> platform reviewed linked evidence</div>
-              <div><TrustBadge tier="supplier_verified_with_evidence" /> supplier statement with documents</div>
-              <div><TrustBadge tier="supplier_verified" /> supplier statement only</div>
-              <div><TrustBadge tier="public_source" /> public documentation, not supplier-confirmed</div>
+              <div>
+                <TrustBadge tier="platform_verified" /> platform reviewed linked evidence
+              </div>
+              <div>
+                <TrustBadge tier="supplier_verified_with_evidence" /> supplier statement with documents
+              </div>
+              <div>
+                <TrustBadge tier="supplier_verified" /> supplier statement only
+              </div>
+              <div>
+                <TrustBadge tier="public_source" /> public documentation, not supplier-confirmed
+              </div>
             </div>
           </div>
         </aside>

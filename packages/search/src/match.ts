@@ -103,7 +103,10 @@ const assessConstraint = (
 
 const ASIL_RANK = new Map<string, number>(ASIL_LEVELS.map((level, index) => [level, index]));
 
-const qualifiersSatisfied = (constraint: ConceptConstraint, claim: TechnicalClaim): 'yes' | 'no' | 'unknown' => {
+const qualifiersSatisfied = (
+  constraint: ConceptConstraint,
+  claim: TechnicalClaim,
+): 'yes' | 'no' | 'unknown' => {
   const requiredAsil = constraint.qualifiers['asil'];
   if (requiredAsil === undefined) return 'yes';
   const claimed = claim.qualifiers['asil'];
@@ -151,7 +154,10 @@ const assessConceptConstraint = (
     const refs = partial.map(toRefs);
     const reasons = partial.map((claim) => {
       const claimLabel = ontology.getConcept(claim.conceptId)?.label ?? claim.conceptId;
-      if (claim.conceptId !== constraint.conceptId && !ontology.satisfies(claim.conceptId, constraint.conceptId)) {
+      if (
+        claim.conceptId !== constraint.conceptId &&
+        !ontology.satisfies(claim.conceptId, constraint.conceptId)
+      ) {
         return `claims "${claimLabel}" in general, not specifically "${label}"`;
       }
       if (qualifiersSatisfied(constraint, claim) !== 'yes') {
@@ -215,7 +221,9 @@ const deriveConfidence = (
   hardStatus: HardConstraintStatus,
 ): MatchResult['confidence'] => {
   const met = assessments.filter((assessment) => assessment.status === 'met');
-  const weak = met.filter((assessment) => assessment.strongestTrustTier && WEAK_TIERS.includes(assessment.strongestTrustTier));
+  const weak = met.filter(
+    (assessment) => assessment.strongestTrustTier && WEAK_TIERS.includes(assessment.strongestTrustTier),
+  );
   const evidenced = met.filter(
     (assessment) =>
       assessment.strongestTrustTier === 'platform_verified' ||
@@ -272,10 +280,14 @@ const deriveGaps = (assessments: readonly ConstraintAssessment[], offeringName: 
     }
   });
 
-const summarize = (assessments: readonly ConstraintAssessment[], hardStatus: HardConstraintStatus): string => {
+const summarize = (
+  assessments: readonly ConstraintAssessment[],
+  hardStatus: HardConstraintStatus,
+): string => {
   const hard = assessments.filter((assessment) => assessment.priority === 'hard');
   const count = (status: string) => hard.filter((assessment) => assessment.status === status).length;
-  if (hardStatus === 'none_specified') return 'No hard constraints were specified; ranked by relevance and evidence.';
+  if (hardStatus === 'none_specified')
+    return 'No hard constraints were specified; ranked by relevance and evidence.';
   const parts = [`meets ${count('met')} of ${hard.length} hard constraints`];
   if (count('partial') > 0) parts.push(`${count('partial')} only partially supported`);
   if (count('unknown') > 0) parts.push(`${count('unknown')} unknown`);

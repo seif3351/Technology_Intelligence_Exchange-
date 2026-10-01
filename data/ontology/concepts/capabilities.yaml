@@ -64,7 +64,16 @@
 - id: log-analysis
   facet: capability
   label: Log analysis
-  aliases: [log analytics, trace analysis, integration log analysis, log file analysis, logs, integration logs, log files]
+  aliases:
+    [
+      log analytics,
+      trace analysis,
+      integration log analysis,
+      log file analysis,
+      logs,
+      integration logs,
+      log files,
+    ]
   description: Automated analysis of logs and traces from test benches and vehicles.
 - id: ci-cd
   facet: capability
@@ -94,7 +103,8 @@
 - id: security-monitoring
   facet: capability
   label: Security monitoring
-  aliases: [VSOC, vehicle security operations center, intrusion detection, IDS, IDPS, cybersecurity monitoring]
+  aliases:
+    [VSOC, vehicle security operations center, intrusion detection, IDS, IDPS, cybersecurity monitoring]
   description: Detection and response to cybersecurity events in vehicles and fleets.
 - id: penetration-testing
   facet: capability

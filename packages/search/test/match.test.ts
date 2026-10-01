@@ -28,7 +28,8 @@ const claim = (
     subject: { type: 'offering', id: offeringId },
     predicate,
     conceptId: asId(conceptId),
-    qualifiers: options.qualifiers ?? (predicate === 'CERTIFIED' ? { certificationBody: 'Example Cert Body' } : {}),
+    qualifiers:
+      options.qualifiers ?? (predicate === 'CERTIFIED' ? { certificationBody: 'Example Cert Body' } : {}),
     statement: `${predicate} ${conceptId}`,
     provenance: {
       category: options.category ?? 'SUPPLIER_VERIFIED',
@@ -46,7 +47,9 @@ const claim = (
     },
     now,
   });
-  return options.publish === false ? draft : { ...publishClaim(draft, asId('u'), now), provenance: draft.provenance };
+  return options.publish === false
+    ? draft
+    : { ...publishClaim(draft, asId('u'), now), provenance: draft.provenance };
 };
 
 const offering = (overrides: Partial<Offering> = {}): Offering => ({
@@ -118,7 +121,12 @@ describe('evaluateCandidate', () => {
       now,
     );
     expect(narrow.assessments[0]?.status).toBe('met');
-    const broad = evaluateCandidate(candidate([claim('autosar', 'SUPPORTS')]), [constraint('autosar-adaptive')], ontology, now);
+    const broad = evaluateCandidate(
+      candidate([claim('autosar', 'SUPPORTS')]),
+      [constraint('autosar-adaptive')],
+      ontology,
+      now,
+    );
     expect(broad.assessments[0]?.status).toBe('partial');
   });
 
@@ -131,22 +139,36 @@ describe('evaluateCandidate', () => {
 
   it('ignores draft claims', async () => {
     const ontology = await loadTestOntology();
-    const result = evaluateCandidate(candidate([claim('qnx', 'SUPPORTS', { publish: false })]), [constraint('qnx')], ontology, now);
+    const result = evaluateCandidate(
+      candidate([claim('qnx', 'SUPPORTS', { publish: false })]),
+      [constraint('qnx')],
+      ontology,
+      now,
+    );
     expect(result.assessments[0]?.status).toBe('unknown');
   });
 
   it('marks maturity below minimum as unmet and ranks it below unknowns', async () => {
     const ontology = await loadTestOntology();
     const prototype = evaluateCandidate(
-      candidate([claim('qnx', 'SUPPORTS')], { offering: offering({ maturity: 'prototype' }), textRelevance: 1 }),
-      [constraint('qnx'), { kind: 'maturity', id: 'm', minimum: 'production', priority: 'hard', origin: 'user' }],
+      candidate([claim('qnx', 'SUPPORTS')], {
+        offering: offering({ maturity: 'prototype' }),
+        textRelevance: 1,
+      }),
+      [
+        constraint('qnx'),
+        { kind: 'maturity', id: 'm', minimum: 'production', priority: 'hard', origin: 'user' },
+      ],
       ontology,
       now,
     );
     expect(prototype.hardConstraintStatus).toBe('some_unmet');
     const unknown = evaluateCandidate(
       candidate([], { textRelevance: 0 }),
-      [constraint('qnx'), { kind: 'maturity', id: 'm', minimum: 'production', priority: 'hard', origin: 'user' }],
+      [
+        constraint('qnx'),
+        { kind: 'maturity', id: 'm', minimum: 'production', priority: 'hard', origin: 'user' },
+      ],
       ontology,
       now,
     );

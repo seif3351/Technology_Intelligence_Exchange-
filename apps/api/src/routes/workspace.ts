@@ -98,7 +98,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgOffering,
     body: OfferingUpdate,
     response: OfferingRecord,
-    handler: async ({ params, body, ctx }) => app.supplier.updateOffering(ctx, params.orgId, params.offeringId, body),
+    handler: async ({ params, body, ctx }) =>
+      app.supplier.updateOffering(ctx, params.orgId, params.offeringId, body),
   }),
   defineRoute({
     method: 'POST',
@@ -110,7 +111,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgOffering,
     body: OfferingStatusChange,
     response: OfferingRecord,
-    handler: async ({ params, body, ctx }) => app.supplier.setOfferingStatus(ctx, params.orgId, params.offeringId, body.status, body.expectedVersion),
+    handler: async ({ params, body, ctx }) =>
+      app.supplier.setOfferingStatus(ctx, params.orgId, params.offeringId, body.status, body.expectedVersion),
   }),
   defineRoute({
     method: 'POST',
@@ -120,7 +122,11 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     tags: ['workspace'],
     auth: 'required',
     params: org,
-    body: z.object({ conceptId: z.string().max(120), name: z.string().min(2).max(160), description: z.string().max(2000).default('') }),
+    body: z.object({
+      conceptId: z.string().max(120),
+      name: z.string().min(2).max(160),
+      description: z.string().max(2000).default(''),
+    }),
     response: CapabilityRecord,
     status: 201,
     handler: async ({ params, body, ctx }) => app.supplier.createCapability(ctx, params.orgId, body),
@@ -148,7 +154,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgClaim,
     body: ClaimRevise,
     response: ClaimView,
-    handler: async ({ params, body, ctx }) => app.supplier.reviseClaim(ctx, params.orgId, params.claimId, body),
+    handler: async ({ params, body, ctx }) =>
+      app.supplier.reviseClaim(ctx, params.orgId, params.claimId, body),
   }),
   defineRoute({
     method: 'POST',
@@ -160,7 +167,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgClaim,
     body: VersionOnly,
     response: ClaimView,
-    handler: async ({ params, body, ctx }) => app.supplier.publishClaim(ctx, params.orgId, params.claimId, body.expectedVersion),
+    handler: async ({ params, body, ctx }) =>
+      app.supplier.publishClaim(ctx, params.orgId, params.claimId, body.expectedVersion),
   }),
   defineRoute({
     method: 'POST',
@@ -172,7 +180,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgClaim,
     body: VersionOnly,
     response: ClaimView,
-    handler: async ({ params, body, ctx }) => app.supplier.retractClaim(ctx, params.orgId, params.claimId, body.expectedVersion),
+    handler: async ({ params, body, ctx }) =>
+      app.supplier.retractClaim(ctx, params.orgId, params.claimId, body.expectedVersion),
   }),
   defineRoute({
     method: 'POST',
@@ -204,7 +213,8 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     method: 'PUT',
     url: '/v1/organizations/:orgId/assets',
     operationId: 'uploadAsset',
-    summary: 'Upload a document/transcript/image (raw body). Processing (scan, extraction, AI draft) is asynchronous.',
+    summary:
+      'Upload a document/transcript/image (raw body). Processing (scan, extraction, AI draft) is asynchronous.',
     tags: ['workspace'],
     auth: 'required',
     params: org,

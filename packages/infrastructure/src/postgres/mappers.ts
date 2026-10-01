@@ -24,7 +24,8 @@ const strOrNull = (row: Row, key: string): string | null => (row[key] as string 
 const date = (row: Row, key: string): Date => row[key] as Date;
 const dateOrNull = (row: Row, key: string): Date | null => (row[key] as Date | null) ?? null;
 const num = (row: Row, key: string): number => Number(row[key]);
-const numOrNull = (row: Row, key: string): number | null => (row[key] === null || row[key] === undefined ? null : Number(row[key]));
+const numOrNull = (row: Row, key: string): number | null =>
+  row[key] === null || row[key] === undefined ? null : Number(row[key]);
 
 export const toUser = (row: Row): User => ({
   id: asId(str(row, 'id')),

@@ -26,7 +26,10 @@ interface CallOptions<T extends z.ZodType> {
 }
 
 /** Server-side API call. Responses are validated against the shared contracts. */
-export const api = async <T extends z.ZodType>(path: string, options: CallOptions<T>): Promise<z.infer<T>> => {
+export const api = async <T extends z.ZodType>(
+  path: string,
+  options: CallOptions<T>,
+): Promise<z.infer<T>> => {
   const token = options.anonymous ? null : await getSessionToken();
   const headers: Record<string, string> = { accept: 'application/json' };
   if (token) headers['authorization'] = `Bearer ${token}`;
@@ -41,11 +44,26 @@ export const api = async <T extends z.ZodType>(path: string, options: CallOption
     headers['content-type'] = 'application/json';
     body = JSON.stringify(options.body);
   }
-  const response = await fetch(new URL(path, webConfig.apiUrl), { method: options.method ?? 'GET', headers, body, cache: 'no-store' });
+  const response = await fetch(new URL(path, webConfig.apiUrl), {
+    method: options.method ?? 'GET',
+    headers,
+    body,
+    cache: 'no-store',
+  });
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const problem = (payload ?? {}) as { code?: string; detail?: string; title?: string; errors?: { path?: string; message: string }[] };
-    throw new ApiError(response.status, problem.code ?? 'ERROR', problem.detail ?? problem.title ?? `Request failed (${response.status})`, problem.errors ?? []);
+    const problem = (payload ?? {}) as {
+      code?: string;
+      detail?: string;
+      title?: string;
+      errors?: { path?: string; message: string }[];
+    };
+    throw new ApiError(
+      response.status,
+      problem.code ?? 'ERROR',
+      problem.detail ?? problem.title ?? `Request failed (${response.status})`,
+      problem.errors ?? [],
+    );
   }
   return options.schema.parse(payload);
 };

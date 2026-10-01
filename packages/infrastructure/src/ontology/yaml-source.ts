@@ -27,7 +27,8 @@ interface RawFacet {
 type RawConcept = Record<string, unknown>;
 
 const asString = (value: unknown, where: string): string => {
-  if (typeof value !== 'string' || value.trim() === '') throw new Error(`${where}: expected non-empty string`);
+  if (typeof value !== 'string' || value.trim() === '')
+    throw new Error(`${where}: expected non-empty string`);
   return value.trim();
 };
 

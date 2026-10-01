@@ -27,7 +27,11 @@ import { type AnyRouteSpec, defineRoute } from '../http/route';
 const conceptList = z
   .union([z.string(), z.array(z.string())])
   .optional()
-  .transform((value) => (value === undefined ? [] : (Array.isArray(value) ? value : value.split(',')).map((v) => v.trim()).filter(Boolean)));
+  .transform((value) =>
+    value === undefined
+      ? []
+      : (Array.isArray(value) ? value : value.split(',')).map((v) => v.trim()).filter(Boolean),
+  );
 
 export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
   defineRoute({
@@ -37,7 +41,11 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
     summary: 'Search the automotive technology ontology',
     tags: ['catalog'],
     auth: 'none',
-    query: z.object({ query: z.string().max(200).optional(), facet: z.string().max(60).optional(), limit: Limit }),
+    query: z.object({
+      query: z.string().max(200).optional(),
+      facet: z.string().max(60).optional(),
+      limit: Limit,
+    }),
     response: z.object({ items: z.array(Technology) }),
     handler: async ({ query, ctx }) => ({ items: await app.catalog.searchTechnologies(ctx, query) }),
   }),
@@ -50,7 +58,9 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
     auth: 'none',
     response: z.object({
       facets: z.array(z.object({ id: z.string(), label: z.string(), description: z.string() })),
-      concepts: z.array(z.object({ id: z.string(), facetId: z.string(), label: z.string(), aliases: z.array(z.string()) })),
+      concepts: z.array(
+        z.object({ id: z.string(), facetId: z.string(), label: z.string(), aliases: z.array(z.string()) }),
+      ),
     }),
     handler: async () => app.catalog.getOntology(),
   }),
@@ -83,7 +93,12 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
     summary: 'Search supplier organizations',
     tags: ['catalog'],
     auth: 'none',
-    query: z.object({ query: z.string().max(200).optional(), conceptIds: conceptList, limit: Limit, cursor: z.string().max(200).optional() }),
+    query: z.object({
+      query: z.string().max(200).optional(),
+      conceptIds: conceptList,
+      limit: Limit,
+      cursor: z.string().max(200).optional(),
+    }),
     response: SupplierSearchResponse,
     handler: async ({ query, ctx }) => app.catalog.searchSuppliers(ctx, query),
   }),
@@ -133,7 +148,9 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
       app.matching.findMatches(ctx, {
         text: body.text ?? null,
         constraints: toDomainConstraints(body.constraints) ?? null,
-        requirement: body.requirementId ? { organizationId: requireOrg(body.organizationId), requirementId: body.requirementId } : null,
+        requirement: body.requirementId
+          ? { organizationId: requireOrg(body.organizationId), requirementId: body.requirementId }
+          : null,
         confidentialTerms: body.confidentialTerms ?? [],
         requireAllHardConstraintsMet: body.requireAllHardConstraintsMet,
         limit: body.limit,
@@ -150,7 +167,11 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
     body: CompareRequest,
     response: CompareResponse,
     handler: async ({ body, ctx }) =>
-      app.matching.compare(ctx, { offeringIds: body.offeringIds, text: body.text ?? null, constraints: toDomainConstraints(body.constraints) ?? null }),
+      app.matching.compare(ctx, {
+        offeringIds: body.offeringIds,
+        text: body.text ?? null,
+        constraints: toDomainConstraints(body.constraints) ?? null,
+      }),
   }),
   defineRoute({
     method: 'POST',
@@ -165,7 +186,9 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
       const result = await app.matching.findMatches(ctx, {
         text: body.text ?? null,
         constraints: toDomainConstraints(body.constraints) ?? null,
-        requirement: body.requirementId ? { organizationId: requireOrg(body.organizationId), requirementId: body.requirementId } : null,
+        requirement: body.requirementId
+          ? { organizationId: requireOrg(body.organizationId), requirementId: body.requirementId }
+          : null,
         offeringIds: [body.offeringId],
         limit: 1,
       });
@@ -178,10 +201,14 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
     method: 'POST',
     url: '/v1/requirements/interpret',
     operationId: 'interpretRequirement',
-    summary: 'Interpret requirement text into hard constraints, preferences and unknown terms (nothing is stored)',
+    summary:
+      'Interpret requirement text into hard constraints, preferences and unknown terms (nothing is stored)',
     tags: ['matching'],
     auth: 'optional',
-    body: z.object({ text: z.string().min(3).max(4000), confidentialTerms: z.array(z.string().max(120)).max(30).optional() }),
+    body: z.object({
+      text: z.string().min(3).max(4000),
+      confidentialTerms: z.array(z.string().max(120)).max(30).optional(),
+    }),
     response: Interpretation,
     handler: async ({ body, ctx }) => app.matching.interpret(ctx, body.text, body.confidentialTerms ?? []),
   }),

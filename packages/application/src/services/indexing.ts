@@ -38,7 +38,9 @@ export class IndexingService {
       .filter(Boolean)
       .join('\n')
       .slice(0, 20_000);
-    const contentHash = createHash('sha256').update(`${this.deps.embeddings?.model ?? 'none'}\n${text}`).digest('hex');
+    const contentHash = createHash('sha256')
+      .update(`${this.deps.embeddings?.model ?? 'none'}\n${text}`)
+      .digest('hex');
     if ((await this.deps.searchIndex.currentHash(offering.id)) === contentHash) return 'unchanged';
 
     let embedding: { model: string; vector: number[] } | null = null;

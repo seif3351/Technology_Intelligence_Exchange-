@@ -6,7 +6,6 @@ const meter = metrics.getMeter('atx');
 const histograms = new Map<string, ReturnType<typeof meter.createHistogram>>();
 const counters = new Map<string, ReturnType<typeof meter.createCounter>>();
 
-
 /** OpenTelemetry-backed implementation of the application Telemetry port. */
 export const openTelemetry: Telemetry = {
   span(name, attributes, work) {

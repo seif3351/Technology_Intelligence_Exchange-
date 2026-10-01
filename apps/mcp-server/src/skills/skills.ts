@@ -71,19 +71,32 @@ const skillEntry = (skill: LoadedSkill) => ({
 export const registerSkills = (server: McpServer, skills: readonly LoadedSkill[]): void => {
   for (const skill of skills) {
     for (const file of skill.files) {
-      server.registerResource(`${skill.name}/${file.uri.split('/').slice(3).join('/')}`, file.uri, { mimeType: file.mimeType, description: `Skill file of ${skill.name}` }, async (uri) => ({
-        contents: [{ uri: uri.href, mimeType: file.mimeType, text: file.content }],
-      }));
+      server.registerResource(
+        `${skill.name}/${file.uri.split('/').slice(3).join('/')}`,
+        file.uri,
+        { mimeType: file.mimeType, description: `Skill file of ${skill.name}` },
+        async (uri) => ({
+          contents: [{ uri: uri.href, mimeType: file.mimeType, text: file.content }],
+        }),
+      );
     }
   }
-  server.server.setRequestHandler('skills/list', { params: z.object({ cursor: z.string().optional() }).loose() }, async () => ({
-    resultType: 'complete',
-    skills: skills.map(skillEntry),
-    ...CACHE,
-  }));
-  server.server.setRequestHandler('skills/get', { params: z.object({ uri: z.string() }).loose() }, async (params) => {
-    const skill = skills.find((candidate) => candidate.uri === params.uri);
-    if (!skill) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown skill: ${params.uri}`);
-    return { resultType: 'complete', skill: skillEntry(skill), ...CACHE };
-  });
+  server.server.setRequestHandler(
+    'skills/list',
+    { params: z.object({ cursor: z.string().optional() }).loose() },
+    async () => ({
+      resultType: 'complete',
+      skills: skills.map(skillEntry),
+      ...CACHE,
+    }),
+  );
+  server.server.setRequestHandler(
+    'skills/get',
+    { params: z.object({ uri: z.string() }).loose() },
+    async (params) => {
+      const skill = skills.find((candidate) => candidate.uri === params.uri);
+      if (!skill) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown skill: ${params.uri}`);
+      return { resultType: 'complete', skill: skillEntry(skill), ...CACHE };
+    },
+  );
 };

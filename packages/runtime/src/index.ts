@@ -1,5 +1,11 @@
 import path from 'node:path';
-import { type Application, type EmbeddingProvider, type RequirementExtractor, type SupplierProfileDraftGenerator, createApplication } from '@atx/application';
+import {
+  type Application,
+  type EmbeddingProvider,
+  type RequirementExtractor,
+  type SupplierProfileDraftGenerator,
+  createApplication,
+} from '@atx/application';
 import {
   createAiProfileDraftGenerator,
   createAiRequirementExtractor,
@@ -67,12 +73,23 @@ const createIssuer = async (env: Env) => {
 
 export const createRuntime = async (env: Env, service: string): Promise<Runtime> => {
   const logger = createLogger({ service, level: env.LOG_LEVEL });
-  startTelemetry({ serviceName: service, namespace: env.OTEL_SERVICE_NAMESPACE, otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT });
-  const pool = createPool({ connectionString: env.DATABASE_URL, maxConnections: env.DATABASE_MAX_CONNECTIONS });
+  startTelemetry({
+    serviceName: service,
+    namespace: env.OTEL_SERVICE_NAMESPACE,
+    otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  });
+  const pool = createPool({
+    connectionString: env.DATABASE_URL,
+    maxConnections: env.DATABASE_MAX_CONNECTIONS,
+  });
 
   const issuer = await createIssuer(env);
   const builtInJwks = issuer.jwks();
-  const apiVerifier = createAccessTokenVerifier({ issuer: authIssuer(env), audience: env.API_PUBLIC_URL, jwks: builtInJwks });
+  const apiVerifier = createAccessTokenVerifier({
+    issuer: authIssuer(env),
+    audience: env.API_PUBLIC_URL,
+    jwks: builtInJwks,
+  });
   const mcpVerifier = createAccessTokenVerifier({
     issuer: env.MCP_AUTH_ISSUER ?? authIssuer(env),
     audience: env.MCP_PUBLIC_URL,
@@ -81,12 +98,20 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
 
   const storage =
     env.STORAGE_DRIVER === 's3'
-      ? createS3Storage({ bucket: env.S3_BUCKET ?? '', region: env.S3_REGION, endpoint: env.S3_ENDPOINT ?? null, forcePathStyle: env.S3_FORCE_PATH_STYLE })
+      ? createS3Storage({
+          bucket: env.S3_BUCKET ?? '',
+          region: env.S3_REGION,
+          endpoint: env.S3_ENDPOINT ?? null,
+          forcePathStyle: env.S3_FORCE_PATH_STYLE,
+        })
       : createFilesystemStorage(path.resolve(env.STORAGE_DIR));
-  const scanner = env.CLAMAV_HOST ? chainScanners(basicContentScanner, createClamdScanner(env.CLAMAV_HOST, env.CLAMAV_PORT)) : basicContentScanner;
+  const scanner = env.CLAMAV_HOST
+    ? chainScanners(basicContentScanner, createClamdScanner(env.CLAMAV_HOST, env.CLAMAV_PORT))
+    : basicContentScanner;
   const assetUrls = createAssetUrlSigner(env.ASSET_URL_SECRET, env.API_PUBLIC_URL);
 
-  const aiFailure = (error: unknown) => logger.warn({ err: error }, 'AI provider failed; using deterministic fallback');
+  const aiFailure = (error: unknown) =>
+    logger.warn({ err: error }, 'AI provider failed; using deterministic fallback');
   let requirementExtractor: RequirementExtractor = deterministicRequirementExtractor;
   let profileDraftGenerator: SupplierProfileDraftGenerator = deterministicProfileDraftGenerator;
   if (env.AI_PROVIDER === 'anthropic' && env.ANTHROPIC_API_KEY) {
@@ -98,7 +123,11 @@ export const createRuntime = async (env: Env, service: string): Promise<Runtime>
     env.EMBEDDINGS_PROVIDER === 'hashing'
       ? createHashingEmbeddingProvider()
       : env.EMBEDDINGS_PROVIDER === 'http' && env.EMBEDDINGS_URL
-        ? createHttpEmbeddingProvider({ baseUrl: env.EMBEDDINGS_URL, apiKey: env.EMBEDDINGS_API_KEY ?? null, model: env.EMBEDDINGS_MODEL })
+        ? createHttpEmbeddingProvider({
+            baseUrl: env.EMBEDDINGS_URL,
+            apiKey: env.EMBEDDINGS_API_KEY ?? null,
+            model: env.EMBEDDINGS_MODEL,
+          })
         : null;
 
   const app = createApplication(

@@ -38,8 +38,13 @@ describe('interpretRequirementText', () => {
 
   it('marks terms after preference cues as preferences', async () => {
     const ontology = await loadTestOntology();
-    const result = interpretRequirementText('We need HIL testing on QNX, ideally with SecOC experience.', ontology);
-    expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'qnx')?.priority).toBe('hard');
+    const result = interpretRequirementText(
+      'We need HIL testing on QNX, ideally with SecOC experience.',
+      ontology,
+    );
+    expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'qnx')?.priority).toBe(
+      'hard',
+    );
     expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'secoc')?.priority).toBe(
       'preference',
     );
@@ -48,9 +53,11 @@ describe('interpretRequirementText', () => {
   it('captures ASIL qualifiers and certification level', async () => {
     const ontology = await loadTestOntology();
     const result = interpretRequirementText('Middleware must be ISO 26262 certified up to ASIL-B.', ontology);
-    expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'iso-26262')).toMatchObject({
-      level: 'certified',
-    });
+    expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'iso-26262')).toMatchObject(
+      {
+        level: 'certified',
+      },
+    );
     expect(result.constraints.find((c) => c.kind === 'concept' && c.conceptId === 'asil')).toMatchObject({
       qualifiers: { asil: 'B' },
     });
@@ -58,7 +65,10 @@ describe('interpretRequirementText', () => {
 
   it('drops broader concepts implied by narrower ones and reports unknown terms', async () => {
     const ontology = await loadTestOntology();
-    const result = interpretRequirementText('AUTOSAR and AUTOSAR Adaptive on the ZX9000 controller', ontology);
+    const result = interpretRequirementText(
+      'AUTOSAR and AUTOSAR Adaptive on the ZX9000 controller',
+      ontology,
+    );
     expect(conceptIds(result.constraints)).toEqual(['autosar-adaptive']);
     expect(result.unrecognizedTerms).toContain('ZX9000');
   });

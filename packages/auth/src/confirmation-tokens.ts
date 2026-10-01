@@ -29,13 +29,30 @@ export const createConfirmationTokens = (secret: string, issuer: string): Confir
     },
     async verify(token): Promise<ConfirmationClaims> {
       try {
-        const { payload } = await jwtVerify(token, key, { issuer, audience: AUDIENCE, algorithms: ['HS256'] });
-        if (!payload.sub || typeof payload['org'] !== 'string' || typeof payload['act'] !== 'string' || typeof payload['dig'] !== 'string') {
+        const { payload } = await jwtVerify(token, key, {
+          issuer,
+          audience: AUDIENCE,
+          algorithms: ['HS256'],
+        });
+        if (
+          !payload.sub ||
+          typeof payload['org'] !== 'string' ||
+          typeof payload['act'] !== 'string' ||
+          typeof payload['dig'] !== 'string'
+        ) {
           throw new Error('malformed');
         }
-        return { userId: asId(payload.sub), organizationId: asId(payload['org']), action: payload['act'], digest: payload['dig'] };
+        return {
+          userId: asId(payload.sub),
+          organizationId: asId(payload['org']),
+          action: payload['act'],
+          digest: payload['dig'],
+        };
       } catch {
-        throw new AppError('CONFIRMATION_REQUIRED', 'Confirmation token is invalid or expired; prepare the action again');
+        throw new AppError(
+          'CONFIRMATION_REQUIRED',
+          'Confirmation token is invalid or expired; prepare the action again',
+        );
       }
     },
   };

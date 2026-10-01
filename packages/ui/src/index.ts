@@ -5,14 +5,18 @@
  */
 export type Tone = 'good' | 'info' | 'warn' | 'bad' | 'neutral';
 
-export const ASSESSMENT_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly tone: Tone; readonly symbol: string }>> = {
+export const ASSESSMENT_PRESENTATION: Readonly<
+  Record<string, { readonly label: string; readonly tone: Tone; readonly symbol: string }>
+> = {
   met: { label: 'Met', tone: 'good', symbol: '✓' },
   partial: { label: 'Partial', tone: 'warn', symbol: '◐' },
   unknown: { label: 'Unknown', tone: 'neutral', symbol: '?' },
   unmet: { label: 'Not met', tone: 'bad', symbol: '✗' },
 };
 
-export const HARD_STATUS_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly tone: Tone }>> = {
+export const HARD_STATUS_PRESENTATION: Readonly<
+  Record<string, { readonly label: string; readonly tone: Tone }>
+> = {
   all_met: { label: 'All hard constraints met', tone: 'good' },
   some_unknown: { label: 'Some hard constraints unknown', tone: 'warn' },
   some_unmet: { label: 'Hard constraint not met', tone: 'bad' },
@@ -28,7 +32,9 @@ export const TRUST_PRESENTATION: Readonly<Record<string, { readonly short: strin
   ai_inferred: { short: 'AI-inferred (unconfirmed)', tone: 'warn' },
 };
 
-export const VERIFICATION_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly tone: Tone }>> = {
+export const VERIFICATION_PRESENTATION: Readonly<
+  Record<string, { readonly label: string; readonly tone: Tone }>
+> = {
   verified: { label: 'Verified supplier', tone: 'good' },
   pending: { label: 'Verification pending', tone: 'warn' },
   unverified: { label: 'Unverified supplier', tone: 'warn' },
@@ -55,4 +61,5 @@ export const formatDuration = (seconds: number | null | undefined): string => {
   return `${minutes}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 };
 
-export const presentationOf = <T>(table: Readonly<Record<string, T>>, key: string, fallback: T): T => table[key] ?? fallback;
+export const presentationOf = <T>(table: Readonly<Record<string, T>>, key: string, fallback: T): T =>
+  table[key] ?? fallback;

@@ -4,7 +4,16 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { ActionForm } from '@/components/action-form';
 import { MaturityBadge, TrustBadge, VerificationBadge } from '@/components/badges';
-import { addClaim, changeClaim, createOffering, registerVideo, requestVerification, respondToEngagement, setOfferingStatus, uploadDocument } from '@/lib/actions/workspace';
+import {
+  addClaim,
+  changeClaim,
+  createOffering,
+  registerVideo,
+  requestVerification,
+  respondToEngagement,
+  setOfferingStatus,
+  uploadDocument,
+} from '@/lib/actions/workspace';
 import { api, currentUser } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +22,15 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
   const me = await currentUser();
   if (!me) redirect('/login?next=/workspace');
   const supplierOrgs = me.memberships.filter((m) => m.organizationKind !== 'buyer');
-  if (supplierOrgs.length === 0) return <p className="notice">You are not a member of a supplier organization.</p>;
+  if (supplierOrgs.length === 0)
+    return <p className="notice">You are not a member of a supplier organization.</p>;
   const { org } = await searchParams;
   const membership = supplierOrgs.find((m) => m.organizationId === org) ?? supplierOrgs[0]!;
   const orgId = membership.organizationId;
   const workspace = await api(`/v1/organizations/${orgId}/workspace`, { schema: Workspace });
-  const { items: incoming } = await api(`/v1/organizations/${orgId}/engagements?direction=incoming`, { schema: z.object({ items: z.array(Engagement) }) });
+  const { items: incoming } = await api(`/v1/organizations/${orgId}/engagements?direction=incoming`, {
+    schema: z.object({ items: z.array(Engagement) }),
+  });
   const drafts = workspace.claims.filter((c) => c.status === 'draft');
   const published = workspace.claims.filter((c) => c.status === 'published');
   const offeringName = new Map(workspace.offerings.map((o) => [o.id, o.name]));
@@ -51,13 +63,19 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
       {incoming.map((e) => (
         <div key={e.id} className="card stack" data-testid="incoming-request">
           <div className="row">
-            <strong>{e.type.toUpperCase()}</strong> from {e.disclosure.buyerOrganizationName} <span className="badge">{e.status}</span>
+            <strong>{e.type.toUpperCase()}</strong> from {e.disclosure.buyerOrganizationName}{' '}
+            <span className="badge">{e.status}</span>
           </div>
           <div className="small">
             {e.disclosure.contactName} &lt;{e.disclosure.contactEmail}&gt;
           </div>
           <p className="untrusted">{e.disclosure.message}</p>
-          {e.disclosure.requirement ? <div className="small muted">Shared technical constraints: {e.disclosure.requirement.constraints.length} (reference {e.disclosure.requirement.reference})</div> : null}
+          {e.disclosure.requirement ? (
+            <div className="small muted">
+              Shared technical constraints: {e.disclosure.requirement.constraints.length} (reference{' '}
+              {e.disclosure.requirement.reference})
+            </div>
+          ) : null}
           {e.status === 'submitted' ? (
             <div className="row">
               {['acknowledged', 'declined'].map((status) => (
@@ -74,7 +92,10 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
       ))}
 
       <h2>Claims awaiting your review ({drafts.length})</h2>
-      <p className="small muted">AI-drafted claims are extracted from your uploaded documents. They are never published automatically: check the wording and the strength of each claim.</p>
+      <p className="small muted">
+        AI-drafted claims are extracted from your uploaded documents. They are never published automatically:
+        check the wording and the strength of each claim.
+      </p>
       <table>
         <thead>
           <tr>
@@ -133,11 +154,19 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
               <td>{o.status}</td>
               <td>{published.filter((c) => c.subject.id === o.id).length}</td>
               <td>
-                <ActionForm action={setOfferingStatus} submitLabel={o.status === 'published' ? 'Unpublish' : 'Publish'} className="row">
+                <ActionForm
+                  action={setOfferingStatus}
+                  submitLabel={o.status === 'published' ? 'Unpublish' : 'Publish'}
+                  className="row"
+                >
                   <input type="hidden" name="orgId" value={orgId} />
                   <input type="hidden" name="offeringId" value={o.id} />
                   <input type="hidden" name="version" value={String(o.version)} />
-                  <input type="hidden" name="status" value={o.status === 'published' ? 'draft' : 'published'} />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={o.status === 'published' ? 'draft' : 'published'}
+                  />
                 </ActionForm>
               </td>
             </tr>
@@ -148,7 +177,10 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
       <div className="grid2">
         <section className="card">
           <h3>Upload technical documentation</h3>
-          <p className="small muted">PDF, text, Markdown or HTML up to 50 MB. Files are scanned, text is extracted and claims are drafted for your review.</p>
+          <p className="small muted">
+            PDF, text, Markdown or HTML up to 50 MB. Files are scanned, text is extracted and claims are
+            drafted for your review.
+          </p>
           <ActionForm action={uploadDocument} submitLabel="Upload">
             <input type="hidden" name="orgId" value={orgId} />
             <OfferingSelect offerings={workspace.offerings} optional />
@@ -156,7 +188,12 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
               <label htmlFor="doc-title">Title</label>
               <input id="doc-title" name="title" />
             </div>
-            <input type="file" name="file" accept=".pdf,.txt,.md,.html,application/pdf,text/plain,text/markdown,text/html" required />
+            <input
+              type="file"
+              name="file"
+              accept=".pdf,.txt,.md,.html,application/pdf,text/plain,text/markdown,text/html"
+              required
+            />
           </ActionForm>
         </section>
         <section className="card">
@@ -164,7 +201,13 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
           <ActionForm action={createOffering} submitLabel="Create draft">
             <input type="hidden" name="orgId" value={orgId} />
             <input name="name" placeholder="Name" required aria-label="Name" />
-            <input name="slug" placeholder="url-slug" required aria-label="Slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+            <input
+              name="slug"
+              placeholder="url-slug"
+              required
+              aria-label="Slug"
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
+            />
             <select name="type" aria-label="Type" defaultValue="product">
               <option value="product">Product</option>
               <option value="service">Service</option>
@@ -177,7 +220,12 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
                 </option>
               ))}
             </select>
-            <textarea name="summary" placeholder="One-sentence technical summary" required aria-label="Summary" />
+            <textarea
+              name="summary"
+              placeholder="One-sentence technical summary"
+              required
+              aria-label="Summary"
+            />
             <input type="hidden" name="description" value="" />
           </ActionForm>
         </section>
@@ -196,9 +244,19 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
                 </option>
               ))}
             </select>
-            <input name="conceptId" placeholder="Concept id, e.g. qnx (see Technologies)" required aria-label="Concept id" />
+            <input
+              name="conceptId"
+              placeholder="Concept id, e.g. qnx (see Technologies)"
+              required
+              aria-label="Concept id"
+            />
             <input name="asil" placeholder="ASIL (optional: QM, A–D)" aria-label="ASIL" />
-            <textarea name="statement" placeholder="Statement exactly as you can support it" required aria-label="Statement" />
+            <textarea
+              name="statement"
+              placeholder="Statement exactly as you can support it"
+              required
+              aria-label="Statement"
+            />
             <input name="sourceUrl" placeholder="https:// source (optional)" aria-label="Source URL" />
           </ActionForm>
         </section>
@@ -209,8 +267,18 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
             <OfferingSelect offerings={workspace.offerings} />
             <input name="title" placeholder="Title" required aria-label="Video title" />
             <input name="url" placeholder="https://… (hosted video)" required aria-label="Video URL" />
-            <input name="durationSeconds" type="number" min={0} placeholder="Duration (s)" aria-label="Duration" />
-            <textarea name="description" placeholder="What does the demo show?" aria-label="Video description" />
+            <input
+              name="durationSeconds"
+              type="number"
+              min={0}
+              placeholder="Duration (s)"
+              aria-label="Duration"
+            />
+            <textarea
+              name="description"
+              placeholder="What does the demo show?"
+              aria-label="Video description"
+            />
           </ActionForm>
         </section>
       </div>
@@ -223,7 +291,11 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
               <td>{a.title}</td>
               <td className="small">{a.contentType}</td>
               <td>
-                <span className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}>{a.processingState}</span>
+                <span
+                  className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}
+                >
+                  {a.processingState}
+                </span>
               </td>
               <td className="small muted">{a.failureReason ?? a.extractionState}</td>
             </tr>
@@ -234,7 +306,13 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
   );
 }
 
-function OfferingSelect({ offerings, optional = false }: { offerings: readonly { id: string; name: string }[]; optional?: boolean }) {
+function OfferingSelect({
+  offerings,
+  optional = false,
+}: {
+  offerings: readonly { id: string; name: string }[];
+  optional?: boolean;
+}) {
   return (
     <select name="offeringId" aria-label="Offering" required={!optional} defaultValue="">
       <option value="" disabled={!optional}>

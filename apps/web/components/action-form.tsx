@@ -19,8 +19,16 @@ export function ActionForm({
   return (
     <form action={run} className={className}>
       {children}
-      {state.error ? <p className="error" role="alert">{state.error}</p> : null}
-      {state.message ? <p className="success" role="status">{state.message}</p> : null}
+      {state.error ? (
+        <p className="error" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      {state.message ? (
+        <p className="success" role="status">
+          {state.message}
+        </p>
+      ) : null}
       <div>
         <button type="submit" className="primary" disabled={pending}>
           {pending ? 'Working…' : submitLabel}

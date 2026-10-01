@@ -42,7 +42,10 @@ export class IngestionService {
     const bytes = await this.deps.storage.get(asset.storageKey!);
     const scan = await this.deps.scanner.scan(bytes, asset.contentType);
     if (!scan.clean) {
-      asset = await this.save({ ...transitionAsset(asset, 'quarantined', this.deps.clock.now(), scan.reason), extractionState: 'not_started' });
+      asset = await this.save({
+        ...transitionAsset(asset, 'quarantined', this.deps.clock.now(), scan.reason),
+        extractionState: 'not_started',
+      });
       await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {
         action: 'asset.quarantined',
         resourceType: 'asset',
@@ -53,14 +56,24 @@ export class IngestionService {
       });
       return asset;
     }
-    asset = await this.save({ ...transitionAsset(asset, 'processing', this.deps.clock.now()), sha256: createHash('sha256').update(bytes).digest('hex') });
+    asset = await this.save({
+      ...transitionAsset(asset, 'processing', this.deps.clock.now()),
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    });
 
     const extraction = await this.deps.textExtractor.extract(bytes, asset.contentType);
     if (extraction.kind === 'unsupported') {
-      return this.save({ ...transitionAsset(asset, 'ready', this.deps.clock.now()), extractionState: 'not_supported' });
+      return this.save({
+        ...transitionAsset(asset, 'ready', this.deps.clock.now()),
+        extractionState: 'not_supported',
+      });
     }
     const text = sanitizeUntrustedText(extraction.text, MAX_EXTRACTED_CHARS);
-    await this.deps.storage.put(`${asset.storageKey}.extracted.txt`, new TextEncoder().encode(text), 'text/plain');
+    await this.deps.storage.put(
+      `${asset.storageKey}.extracted.txt`,
+      new TextEncoder().encode(text),
+      'text/plain',
+    );
 
     const drafted = await this.draftClaims(asset, text, scope);
     await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {
@@ -68,15 +81,31 @@ export class IngestionService {
       resourceType: 'asset',
       resourceId: asset.id,
       organizationId: asset.organizationId,
-      metadata: { draftedClaims: drafted.count, method: drafted.method, injectionSignals: detectInjectionSignals(text).length },
+      metadata: {
+        draftedClaims: drafted.count,
+        method: drafted.method,
+        injectionSignals: detectInjectionSignals(text).length,
+      },
     });
-    return this.save({ ...transitionAsset(asset, 'ready', this.deps.clock.now()), extractionState: 'completed' });
+    return this.save({
+      ...transitionAsset(asset, 'ready', this.deps.clock.now()),
+      extractionState: 'completed',
+    });
   }
 
   async markFailed(assetId: AssetId, reason: string): Promise<void> {
     const asset = await this.deps.repos.assets.findById(assetId);
-    if (!asset || asset.processingState === 'ready' || asset.processingState === 'quarantined' || asset.processingState === 'failed') return;
-    await this.save({ ...transitionAsset(asset, 'failed', this.deps.clock.now(), reason.slice(0, 300)), extractionState: 'failed' });
+    if (
+      !asset ||
+      asset.processingState === 'ready' ||
+      asset.processingState === 'quarantined' ||
+      asset.processingState === 'failed'
+    )
+      return;
+    await this.save({
+      ...transitionAsset(asset, 'failed', this.deps.clock.now(), reason.slice(0, 300)),
+      extractionState: 'failed',
+    });
   }
 
   private async draftClaims(asset: Asset, text: string, scope: TenantScope) {
@@ -92,7 +121,9 @@ export class IngestionService {
           createClaim({
             id: newId(),
             organizationId: asset.organizationId,
-            subject: asset.offeringId ? { type: 'offering', id: asset.offeringId } : { type: 'organization', id: asset.organizationId },
+            subject: asset.offeringId
+              ? { type: 'offering', id: asset.offeringId }
+              : { type: 'organization', id: asset.organizationId },
             predicate: proposal.predicate,
             conceptId: proposal.conceptId,
             qualifiers: proposal.qualifiers,

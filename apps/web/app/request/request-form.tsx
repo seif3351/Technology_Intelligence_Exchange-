@@ -34,14 +34,21 @@ export function RequestForm({ offeringId, buyerOrganizationId, defaultName, requ
           </div>
           <div>Message: {shared.message}</div>
           {shared.disclosedSummary ? <div>Summary: {shared.disclosedSummary}</div> : null}
-          <div>Technical constraints: {shared.constraints.map((c) => c.description).join('; ') || 'none'}</div>
+          <div>
+            Technical constraints: {shared.constraints.map((c) => c.description).join('; ') || 'none'}
+          </div>
         </div>
         <div className="panel">
           <h3>Will NOT be shared</h3>
-          <ul>{prepared.preview.preview.willNotBeShared.map((item) => <li key={item}>{item}</li>)}</ul>
+          <ul>
+            {prepared.preview.preview.willNotBeShared.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </div>
         <label className="row plain">
-          <input type="checkbox" name="approve" value="yes" required className="inline-check" /> I approve sending exactly this information to the supplier.
+          <input type="checkbox" name="approve" value="yes" required className="inline-check" /> I approve
+          sending exactly this information to the supplier.
         </label>
         {confirmed.error ? <p className="error">{confirmed.error}</p> : null}
         <button type="submit" className="primary" disabled={confirming}>
@@ -66,8 +73,17 @@ export function RequestForm({ offeringId, buyerOrganizationId, defaultName, requ
       </div>
       <div>
         <label htmlFor="message">Message to the supplier</label>
-        <textarea id="message" name="message" required minLength={10} defaultValue={prepared.draft?.['message']} />
-        <p className="small muted">Do not include project names, programs or customers. Confidential terms of a linked requirement are blocked automatically.</p>
+        <textarea
+          id="message"
+          name="message"
+          required
+          minLength={10}
+          defaultValue={prepared.draft?.['message']}
+        />
+        <p className="small muted">
+          Do not include project names, programs or customers. Confidential terms of a linked requirement are
+          blocked automatically.
+        </p>
       </div>
       <div className="row">
         <div className="grow">
@@ -90,7 +106,9 @@ export function RequestForm({ offeringId, buyerOrganizationId, defaultName, requ
               </option>
             ))}
           </select>
-          <p className="small muted">Only structured constraints are shared — never the title, description or confidential terms.</p>
+          <p className="small muted">
+            Only structured constraints are shared — never the title, description or confidential terms.
+          </p>
         </div>
       ) : null}
       {prepared.error ? <p className="error">{prepared.error}</p> : null}

@@ -21,7 +21,13 @@ export const toConstraints = (inputs: readonly z.infer<typeof McpConstraintInput
   toDomainConstraints(
     inputs?.map((input) =>
       input.kind === 'concept'
-        ? { kind: 'concept' as const, conceptId: input.conceptId, level: input.level, priority: input.priority, qualifiers: asilQualifier(input.asil) }
+        ? {
+            kind: 'concept' as const,
+            conceptId: input.conceptId,
+            level: input.level,
+            priority: input.priority,
+            qualifiers: asilQualifier(input.asil),
+          }
         : input,
     ),
   ) ?? null;
@@ -31,7 +37,8 @@ export const resolveOrganization = (env: ToolEnvironment, explicit: string | und
   if (explicit) return explicit;
   const principal = env.ctx.principal;
   if (principal.kind !== 'user') throw unauthenticated('Authentication is required for private requirements');
-  if (principal.memberships.length === 1 && principal.memberships[0]) return principal.memberships[0].organizationId;
+  if (principal.memberships.length === 1 && principal.memberships[0])
+    return principal.memberships[0].organizationId;
   throw validationError('organization_id is required because you belong to several organizations');
 };
 
@@ -46,11 +53,14 @@ interface RequirementSourceArgs {
 export const matchQuery = (args: RequirementSourceArgs, env: ToolEnvironment): MatchQuery => ({
   text: args.text ?? null,
   constraints: toConstraints(args.constraints),
-  requirement: args.requirement_id ? { requirementId: args.requirement_id, organizationId: resolveOrganization(env, args.organization_id) } : null,
+  requirement: args.requirement_id
+    ? { requirementId: args.requirement_id, organizationId: resolveOrganization(env, args.organization_id) }
+    : null,
   confidentialTerms: args.confidential_terms ?? [],
 });
 
-const requirementScopes = (args: Record<string, unknown>) => (args['requirement_id'] ? ['requirements:read'] : []);
+const requirementScopes = (args: Record<string, unknown>) =>
+  args['requirement_id'] ? ['requirements:read'] : [];
 
 export const discoveryTools = [
   {
@@ -75,7 +85,13 @@ export const discoveryTools = [
           publishedOfferingCount: item.publishedOfferingCount,
         })),
       };
-      return { structured, text: items.map((i) => `${i.id} — ${i.label} (${i.facet}); ${i.publishedOfferingCount} published offerings`).join('\n') || 'No matching technologies.' };
+      return {
+        structured,
+        text:
+          items
+            .map((i) => `${i.id} — ${i.label} (${i.facet}); ${i.publishedOfferingCount} published offerings`)
+            .join('\n') || 'No matching technologies.',
+      };
     },
   } satisfies ToolDefinition<'search_technologies'>,
   {
@@ -94,20 +110,40 @@ export const discoveryTools = [
         limit: args.limit,
         cursor: args.cursor ?? null,
       });
-      const items = result.items.map((item) => ({ ...present.offering(item.offering, env.links), matchedConcepts: item.matchedConcepts.map((c) => c.label) }));
+      const items = result.items.map((item) => ({
+        ...present.offering(item.offering, env.links),
+        matchedConcepts: item.matchedConcepts.map((c) => c.label),
+      }));
       return {
-        structured: { items, nextCursor: result.nextCursor, degraded: [...result.degraded], notice: present.UNTRUSTED_NOTICE },
-        text: items.map((o, i) => `${i + 1}. ${o.name} — ${o.supplier.name} (${o.maturity})${o.isDemo ? ' [DEMO]' : ''}\n   ${o.url}`).join('\n') || 'No offerings found.',
+        structured: {
+          items,
+          nextCursor: result.nextCursor,
+          degraded: [...result.degraded],
+          notice: present.UNTRUSTED_NOTICE,
+        },
+        text:
+          items
+            .map(
+              (o, i) =>
+                `${i + 1}. ${o.name} — ${o.supplier.name} (${o.maturity})${o.isDemo ? ' [DEMO]' : ''}\n   ${o.url}`,
+            )
+            .join('\n') || 'No offerings found.',
       };
     },
   } satisfies ToolDefinition<'search_offerings'>,
   {
     name: 'search_suppliers',
     title: 'Search suppliers',
-    description: 'Find supplier organizations by keywords and/or technology concepts they have published claims about. Returns verification state (unverified/pending/verified).',
+    description:
+      'Find supplier organizations by keywords and/or technology concepts they have published claims about. Returns verification state (unverified/pending/verified).',
     annotations: READ_ONLY,
     run: async (args, env) => {
-      const result = await env.runtime.app.catalog.searchSuppliers(env.ctx, { query: args.query ?? null, conceptIds: args.concept_ids, limit: args.limit, cursor: args.cursor ?? null });
+      const result = await env.runtime.app.catalog.searchSuppliers(env.ctx, {
+        query: args.query ?? null,
+        conceptIds: args.concept_ids,
+        limit: args.limit,
+        cursor: args.cursor ?? null,
+      });
       const items = result.items.map((s) => ({
         id: s.id,
         name: s.name,
@@ -120,7 +156,10 @@ export const discoveryTools = [
       }));
       return {
         structured: { items, nextCursor: result.nextCursor, notice: present.UNTRUSTED_NOTICE },
-        text: items.map((s) => `${s.name} (${s.verificationState})${s.isDemo ? ' [DEMO]' : ''} — ${s.url}`).join('\n') || 'No suppliers found.',
+        text:
+          items
+            .map((s) => `${s.name} (${s.verificationState})${s.isDemo ? ' [DEMO]' : ''} — ${s.url}`)
+            .join('\n') || 'No suppliers found.',
       };
     },
   } satisfies ToolDefinition<'search_suppliers'>,
@@ -133,14 +172,17 @@ export const discoveryTools = [
     annotations: READ_ONLY,
     uiResource: UI.requirementBuilder,
     run: async (args, env) => {
-      const interpretation = present.interpretation(await env.runtime.app.matching.interpret(env.ctx, args.text, args.confidential_terms ?? []));
+      const interpretation = present.interpretation(
+        await env.runtime.app.matching.interpret(env.ctx, args.text, args.confidential_terms ?? []),
+      );
       return { structured: { interpretation }, text: present.interpretationText(interpretation) };
     },
   } satisfies ToolDefinition<'analyze_requirement'>,
   {
     name: 'validate_requirement',
     title: 'Validate a requirement draft',
-    description: 'Check a requirement draft for unknown concepts, missing hard constraints and confidential-term exposure. Stateless; nothing is stored.',
+    description:
+      'Check a requirement draft for unknown concepts, missing hard constraints and confidential-term exposure. Stateless; nothing is stored.',
     annotations: READ_ONLY,
     run: async (args, env) => {
       const result = await env.runtime.app.requirements.validate(env.ctx, {
@@ -156,7 +198,9 @@ export const discoveryTools = [
           constraints: result.constraints.map(present.constraint),
           unknownTerms: [...result.unrecognizedTerms],
         },
-        text: [`valid: ${result.valid}`, ...result.issues.map((i) => `${i.severity}: ${i.message}`)].join('\n'),
+        text: [`valid: ${result.valid}`, ...result.issues.map((i) => `${i.severity}: ${i.message}`)].join(
+          '\n',
+        ),
       };
     },
   } satisfies ToolDefinition<'validate_requirement'>,
@@ -188,7 +232,9 @@ export const discoveryTools = [
           degraded: [...result.degraded],
           notice: present.UNTRUSTED_NOTICE,
         },
-        text: [present.interpretationText(interpretation), '', ...matches.map(present.matchText)].join('\n') || 'No candidates found.',
+        text:
+          [present.interpretationText(interpretation), '', ...matches.map(present.matchText)].join('\n') ||
+          'No candidates found.',
       };
     },
   } satisfies ToolDefinition<'find_matching_offerings'>,
@@ -200,7 +246,10 @@ export const discoveryTools = [
     annotations: READ_ONLY,
     requiredScopes: requirementScopes,
     run: async (args, env) => {
-      const result = await env.runtime.app.matching.findMatches(env.ctx, { ...matchQuery(args, env), limit: 50 });
+      const result = await env.runtime.app.matching.findMatches(env.ctx, {
+        ...matchQuery(args, env),
+        limit: 50,
+      });
       const bySupplier = new Map<string, { best: (typeof result.matches)[number]; others: string[] }>();
       for (const m of result.matches) {
         const entry = bySupplier.get(m.offering.organization.id);
@@ -219,8 +268,18 @@ export const discoveryTools = [
         otherOfferingIds: others,
       }));
       return {
-        structured: { interpretation: present.interpretation(result.interpretation), suppliers, notice: present.UNTRUSTED_NOTICE },
-        text: suppliers.map((s, i) => `${i + 1}. ${s.supplier.name} (${s.supplier.verificationState}) — best: ${s.bestMatch.offering.name}: ${s.bestMatch.summary}`).join('\n') || 'No suppliers found.',
+        structured: {
+          interpretation: present.interpretation(result.interpretation),
+          suppliers,
+          notice: present.UNTRUSTED_NOTICE,
+        },
+        text:
+          suppliers
+            .map(
+              (s, i) =>
+                `${i + 1}. ${s.supplier.name} (${s.supplier.verificationState}) — best: ${s.bestMatch.offering.name}: ${s.bestMatch.summary}`,
+            )
+            .join('\n') || 'No suppliers found.',
       };
     },
   } satisfies ToolDefinition<'search_matching_suppliers'>,

@@ -42,7 +42,12 @@ export interface ToolDefinition<K extends McpToolName> {
 /** Any one tool definition (a union over all tool names, so lists stay type-safe). */
 export type AnyToolDefinition = { [K in McpToolName]: ToolDefinition<K> }[McpToolName];
 
-export const READ_ONLY: ToolAnnotations = { readOnlyHint: true, idempotentHint: true, openWorldHint: false, destructiveHint: false };
+export const READ_ONLY: ToolAnnotations = {
+  readOnlyHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+  destructiveHint: false,
+};
 
 const uiSupported = (sdkCtx: ServerContext): boolean => {
   const envelope = sdkCtx.mcpReq.envelope as Record<string, unknown> | undefined;
@@ -62,16 +67,25 @@ const toolError = (error: unknown): CallToolResult => {
             ? ' Call prepare_engagement_request again and get explicit user approval of the new preview.'
             : '';
     const details = error.details.map((d) => `${d.path ? `${d.path}: ` : ''}${d.message}`).join('; ');
-    return { isError: true, content: [{ type: 'text', text: `${error.code}: ${error.message}${details ? ` (${details})` : ''}.${hint}` }] };
+    return {
+      isError: true,
+      content: [
+        { type: 'text', text: `${error.code}: ${error.message}${details ? ` (${details})` : ''}.${hint}` },
+      ],
+    };
   }
-  return { isError: true, content: [{ type: 'text', text: 'INTERNAL: the request could not be completed. Try again later.' }] };
+  return {
+    isError: true,
+    content: [{ type: 'text', text: 'INTERNAL: the request could not be completed. Try again later.' }],
+  };
 };
 
 const scopeChallenge =
   (requiredScopes: AnyToolDefinition['requiredScopes']): ScopeChallengeHandler =>
   ({ request, authInfo }) => {
     if (!requiredScopes || !authInfo) return undefined; // unauthenticated callers get an in-band UNAUTHENTICATED error
-    const args = ((request.params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {}) as Record<string, unknown>;
+    const args = ((request.params as { arguments?: Record<string, unknown> } | undefined)?.arguments ??
+      {}) as Record<string, unknown>;
     const missing = requiredScopes(args).filter((scope) => !authInfo.scopes.includes(scope));
     if (missing.length === 0) return undefined;
     const scopes = [...new Set([...authInfo.scopes, ...missing])] as [string, ...string[]];
@@ -81,7 +95,9 @@ const scopeChallenge =
 export const registerTool = (
   server: McpServer,
   definition: AnyToolDefinition,
-  environment: Omit<ToolEnvironment, 'uiSupported' | 'ctx'> & { readonly principal: RequestContext['principal'] },
+  environment: Omit<ToolEnvironment, 'uiSupported' | 'ctx'> & {
+    readonly principal: RequestContext['principal'];
+  },
 ): void => {
   const contract = McpTools[definition.name];
   const handler = async (args: unknown, sdkCtx: ServerContext): Promise<CallToolResult> => {
@@ -95,21 +111,39 @@ export const registerTool = (
     };
     let outcome = 'success';
     try {
-      const { structured, text } = await telemetry.span(`mcp.tool ${definition.name}`, { 'mcp.tool.name': definition.name }, () =>
-        // The SDK validated `args` against this tool's own input schema.
-        (definition.run as (input: unknown, env: ToolEnvironment) => Promise<{ structured: unknown; text: string }>)(args, env),
+      const { structured, text } = await telemetry.span(
+        `mcp.tool ${definition.name}`,
+        { 'mcp.tool.name': definition.name },
+        () =>
+          // The SDK validated `args` against this tool's own input schema.
+          (
+            definition.run as (
+              input: unknown,
+              env: ToolEnvironment,
+            ) => Promise<{ structured: unknown; text: string }>
+          )(args, env),
       );
       return {
-        content: [{ type: 'text', text: env.uiSupported && definition.uiResource ? truncate(text, 600) : text }],
+        content: [
+          { type: 'text', text: env.uiSupported && definition.uiResource ? truncate(text, 600) : text },
+        ],
         structuredContent: structured as Record<string, unknown>,
       };
     } catch (error) {
       outcome = isAppError(error) ? error.code : 'internal_error';
-      if (!isAppError(error)) environment.runtime.logger.error({ err: error, tool: definition.name }, 'mcp tool failed');
+      if (!isAppError(error))
+        environment.runtime.logger.error({ err: error, tool: definition.name }, 'mcp tool failed');
       return toolError(error);
     } finally {
-      telemetry.recordDuration('atx.mcp.tool.duration', Date.now() - started, { tool: definition.name, outcome });
-      telemetry.increment('atx.mcp.tool.calls', { tool: definition.name, outcome, authenticated: environment.principal.kind === 'user' });
+      telemetry.recordDuration('atx.mcp.tool.duration', Date.now() - started, {
+        tool: definition.name,
+        outcome,
+      });
+      telemetry.increment('atx.mcp.tool.calls', {
+        tool: definition.name,
+        outcome,
+        authenticated: environment.principal.kind === 'user',
+      });
     }
   };
 
@@ -122,10 +156,16 @@ export const registerTool = (
     ...(definition.requiredScopes ? { scopeChallenge: scopeChallenge(definition.requiredScopes) } : {}),
   };
   if (definition.uiResource) {
-    registerAppTool(server, definition.name, { ...config, _meta: { ui: { resourceUri: definition.uiResource } } }, handler as never);
+    registerAppTool(
+      server,
+      definition.name,
+      { ...config, _meta: { ui: { resourceUri: definition.uiResource } } },
+      handler as never,
+    );
   } else {
     server.registerTool(definition.name, config, handler as never);
   }
 };
 
-const truncate = (text: string, max: number): string => (text.length <= max ? text : `${text.slice(0, max - 1)}…`);
+const truncate = (text: string, max: number): string =>
+  text.length <= max ? text : `${text.slice(0, max - 1)}…`;

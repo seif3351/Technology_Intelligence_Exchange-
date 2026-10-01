@@ -103,7 +103,8 @@ export const MAX_CONSTRAINTS = 40;
 
 export const validateConstraints = (constraints: readonly RequirementConstraint[]): void => {
   const problems: string[] = [];
-  if (constraints.length > MAX_CONSTRAINTS) problems.push(`at most ${MAX_CONSTRAINTS} constraints are allowed`);
+  if (constraints.length > MAX_CONSTRAINTS)
+    problems.push(`at most ${MAX_CONSTRAINTS} constraints are allowed`);
   const seen = new Set<string>();
   for (const constraint of constraints) {
     const key = constraint.kind === 'concept' ? `concept:${constraint.conceptId}` : constraint.kind;
@@ -111,7 +112,10 @@ export const validateConstraints = (constraints: readonly RequirementConstraint[
     seen.add(key);
   }
   if (problems.length > 0) {
-    throw validationError('Invalid requirement constraints', problems.map((message) => ({ message })));
+    throw validationError(
+      'Invalid requirement constraints',
+      problems.map((message) => ({ message })),
+    );
   }
 };
 

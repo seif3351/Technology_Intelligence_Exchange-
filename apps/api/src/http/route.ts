@@ -23,7 +23,12 @@ export type Loose<T> = T extends string
           : { readonly [K in keyof T]: Loose<T[K]> }
         : T;
 
-export interface RouteSpec<B extends z.ZodType, Q extends z.ZodType, P extends z.ZodType, R extends z.ZodType> {
+export interface RouteSpec<
+  B extends z.ZodType,
+  Q extends z.ZodType,
+  P extends z.ZodType,
+  R extends z.ZodType,
+> {
   readonly method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly url: string;
   readonly operationId: string;
@@ -60,13 +65,20 @@ const parse = <T extends z.ZodType>(schema: T | undefined, value: unknown, where
   if (!result.success) {
     throw validationError(
       `Invalid ${where}`,
-      result.error.issues.slice(0, 20).map((issue) => ({ path: [where, ...issue.path.map(String)].join('.'), message: issue.message })),
+      result.error.issues
+        .slice(0, 20)
+        .map((issue) => ({ path: [where, ...issue.path.map(String)].join('.'), message: issue.message })),
     );
   }
   return result.data;
 };
 
-export const defineRoute = <B extends z.ZodType, Q extends z.ZodType, P extends z.ZodType, R extends z.ZodType>(
+export const defineRoute = <
+  B extends z.ZodType,
+  Q extends z.ZodType,
+  P extends z.ZodType,
+  R extends z.ZodType,
+>(
   spec: RouteSpec<B, Q, P, R>,
 ): RouteSpec<B, Q, P, R> => spec;
 

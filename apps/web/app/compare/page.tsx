@@ -5,21 +5,38 @@ import { api, describeError } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ComparePage({ searchParams }: { searchParams: Promise<{ ids?: string | string[]; q?: string }> }) {
+export default async function ComparePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ids?: string | string[]; q?: string }>;
+}) {
   const { ids, q } = await searchParams;
   const offeringIds = (Array.isArray(ids) ? ids : ids ? [ids] : []).slice(0, 5);
-  if (offeringIds.length < 2) return <p className="notice">Select 2–5 offerings on the search page to compare them.</p>;
+  if (offeringIds.length < 2)
+    return <p className="notice">Select 2–5 offerings on the search page to compare them.</p>;
   let result;
   try {
-    result = await api('/v1/matches/compare', { method: 'POST', body: { offeringIds, ...(q ? { text: q.slice(0, 4000) } : {}) }, schema: CompareResponse });
+    result = await api('/v1/matches/compare', {
+      method: 'POST',
+      body: { offeringIds, ...(q ? { text: q.slice(0, 4000) } : {}) },
+      schema: CompareResponse,
+    });
   } catch (error) {
     return <p className="error">{describeError(error)}</p>;
   }
-  const tiers = new Map(result.matches.flatMap((m) => m.assessments.map((a) => [`${m.offering.id}:${a.constraintId}`, a] as const)));
+  const tiers = new Map(
+    result.matches.flatMap((m) =>
+      m.assessments.map((a) => [`${m.offering.id}:${a.constraintId}`, a] as const),
+    ),
+  );
   return (
     <div className="stack">
       <h1>Side-by-side comparison</h1>
-      {q ? <p className="muted">Against: {q}</p> : <p className="muted">Across all concepts the selected offerings claim.</p>}
+      {q ? (
+        <p className="muted">Against: {q}</p>
+      ) : (
+        <p className="muted">Across all concepts the selected offerings claim.</p>
+      )}
       <table data-testid="comparison">
         <thead>
           <tr>
@@ -42,7 +59,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                 const assessment = tiers.get(`${cell.offeringId}:${row.constraintId}`);
                 return (
                   <td key={cell.offeringId}>
-                    <StatusBadge status={cell.status} title={assessment?.explanation} /> <TrustBadge tier={cell.strongestTrustTier} label={assessment?.strongestTrustLabel} />
+                    <StatusBadge status={cell.status} title={assessment?.explanation} />{' '}
+                    <TrustBadge tier={cell.strongestTrustTier} label={assessment?.strongestTrustLabel} />
                   </td>
                 );
               })}

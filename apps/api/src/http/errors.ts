@@ -44,10 +44,23 @@ export const toProblem = (error: unknown, requestId: string): ProblemBody => {
       type: 'https://docs.atx.example/errors/bad_request',
       title: statusCode === 429 ? 'rate limited' : 'bad request',
       status: statusCode,
-      code: statusCode === 429 ? 'RATE_LIMITED' : statusCode === 413 ? 'PAYLOAD_TOO_LARGE' : statusCode === 415 ? 'UNSUPPORTED_MEDIA_TYPE' : 'BAD_REQUEST',
+      code:
+        statusCode === 429
+          ? 'RATE_LIMITED'
+          : statusCode === 413
+            ? 'PAYLOAD_TOO_LARGE'
+            : statusCode === 415
+              ? 'UNSUPPORTED_MEDIA_TYPE'
+              : 'BAD_REQUEST',
       detail: statusCode === 429 ? 'Too many requests' : (error as Error).message,
       requestId,
     };
   }
-  return { type: 'https://docs.atx.example/errors/internal', title: 'internal error', status: 500, code: 'INTERNAL', requestId };
+  return {
+    type: 'https://docs.atx.example/errors/internal',
+    title: 'internal error',
+    status: 500,
+    code: 'INTERNAL',
+    requestId,
+  };
 };

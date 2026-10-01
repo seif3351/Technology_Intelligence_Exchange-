@@ -11,11 +11,29 @@ export default async function AdminPage() {
   const me = await currentUser();
   if (!me || me.user.platformRole !== 'platform_admin') redirect('/login?next=/admin');
   const [queue, claims, moderation, audit, demand] = await Promise.all([
-    api('/v1/admin/verification-queue', { schema: z.object({ items: z.array(OrganizationRef.extend({ kind: z.string(), website: z.string().nullable(), requestedAt: z.string() })) }) }),
+    api('/v1/admin/verification-queue', {
+      schema: z.object({
+        items: z.array(
+          OrganizationRef.extend({
+            kind: z.string(),
+            website: z.string().nullable(),
+            requestedAt: z.string(),
+          }),
+        ),
+      }),
+    }),
     api('/v1/admin/claims/review-queue', { schema: z.object({ items: z.array(ClaimView) }) }),
-    api('/v1/admin/moderation', { schema: z.object({ items: z.array(ClaimView.extend({ signals: z.array(z.string()) })) }) }),
+    api('/v1/admin/moderation', {
+      schema: z.object({ items: z.array(ClaimView.extend({ signals: z.array(z.string()) })) }),
+    }),
     api('/v1/admin/audit?limit=40', { schema: z.object({ items: z.array(AuditEventRecord) }) }),
-    api('/v1/admin/demand-signals', { schema: z.object({ items: z.array(z.object({ concept: z.string(), conceptId: z.string(), requirementCount: z.number() })) }) }),
+    api('/v1/admin/demand-signals', {
+      schema: z.object({
+        items: z.array(
+          z.object({ concept: z.string(), conceptId: z.string(), requirementCount: z.number() }),
+        ),
+      }),
+    }),
   ]);
   return (
     <div className="stack">
@@ -101,7 +119,11 @@ export default async function AdminPage() {
         </tbody>
       </table>
       <h2>Anonymized demand</h2>
-      <p className="small">{demand.items.length === 0 ? 'No published demand signals yet.' : demand.items.map((d) => `${d.concept} (${d.requirementCount})`).join(', ')}</p>
+      <p className="small">
+        {demand.items.length === 0
+          ? 'No published demand signals yet.'
+          : demand.items.map((d) => `${d.concept} (${d.requirementCount})`).join(', ')}
+      </p>
       <h2>Audit log (latest 40)</h2>
       <table>
         <thead>

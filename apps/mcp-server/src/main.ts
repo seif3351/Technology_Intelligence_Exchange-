@@ -13,11 +13,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.
 const env = loadConfig();
 const runtime = await createRuntime(env, 'atx-mcp');
 const views = loadViews();
-if (views.size === 0) runtime.logger.warn('MCP App views not built; run `pnpm --filter @atx/mcp-server build:views`. Structured fallback still works.');
+if (views.size === 0)
+  runtime.logger.warn(
+    'MCP App views not built; run `pnpm --filter @atx/mcp-server build:views`. Structured fallback still works.',
+  );
 const app = createMcpHttpApp(runtime, { skills: loadSkills(path.join(ROOT, 'skills')), views });
 
-const server = createServer(toNodeHandler(app, { onerror: (error) => runtime.logger.error({ err: error }, 'mcp node adapter error') }));
-server.listen(env.MCP_PORT, '0.0.0.0', () => runtime.logger.info({ port: env.MCP_PORT, resource: env.MCP_PUBLIC_URL }, 'MCP server listening'));
+const server = createServer(
+  toNodeHandler(app, { onerror: (error) => runtime.logger.error({ err: error }, 'mcp node adapter error') }),
+);
+server.listen(env.MCP_PORT, '0.0.0.0', () =>
+  runtime.logger.info({ port: env.MCP_PORT, resource: env.MCP_PUBLIC_URL }, 'MCP server listening'),
+);
 
 const shutdown = async () => {
   server.close();

@@ -17,7 +17,16 @@ import { systemRoutes } from './routes/system';
 import { workspaceRoutes } from './routes/workspace';
 
 const REQUEST_ID = /^[A-Za-z0-9._-]{8,100}$/;
-const UPLOAD_TYPES = ['application/pdf', 'text/plain', 'text/markdown', 'text/html', 'text/vtt', 'image/png', 'image/jpeg', 'image/webp'];
+const UPLOAD_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/html',
+  'text/vtt',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+];
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 export const allRoutes = (runtime: Runtime) => [
@@ -43,12 +52,22 @@ export const buildServer = async (runtime: Runtime): Promise<FastifyInstance> =>
     },
   });
 
-  await app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } } });
-  await app.register(cors, { origin: listSetting(runtime.env.CORS_ORIGINS), credentials: false, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
+  await app.register(helmet, {
+    contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+  });
+  await app.register(cors, {
+    origin: listSetting(runtime.env.CORS_ORIGINS),
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
   await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
 
   // Raw binary uploads for asset ingestion only.
-  app.addContentTypeParser(UPLOAD_TYPES, { parseAs: 'buffer', bodyLimit: MAX_UPLOAD_BYTES }, (_request, body, done) => done(null, body));
+  app.addContentTypeParser(
+    UPLOAD_TYPES,
+    { parseAs: 'buffer', bodyLimit: MAX_UPLOAD_BYTES },
+    (_request, body, done) => done(null, body),
+  );
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('x-request-id', request.id);
@@ -57,11 +76,18 @@ export const buildServer = async (runtime: Runtime): Promise<FastifyInstance> =>
   app.setErrorHandler((error, request, reply) => {
     const problem = toProblem(error, request.id);
     if (problem.status >= 500) request.log.error({ err: error }, 'request failed');
-    else if (problem.status === 401 || problem.status === 403) request.log.warn({ code: problem.code, url: request.routeOptions.url }, 'authorization failure');
+    else if (problem.status === 401 || problem.status === 403)
+      request.log.warn({ code: problem.code, url: request.routeOptions.url }, 'authorization failure');
     return reply.status(problem.status).type('application/problem+json').send(problem);
   });
   app.setNotFoundHandler((request, reply) =>
-    reply.status(404).type('application/problem+json').send({ type: 'https://docs.atx.example/errors/not_found', title: 'not found', status: 404, code: 'NOT_FOUND', requestId: request.id }),
+    reply.status(404).type('application/problem+json').send({
+      type: 'https://docs.atx.example/errors/not_found',
+      title: 'not found',
+      status: 404,
+      code: 'NOT_FOUND',
+      requestId: request.id,
+    }),
   );
 
   const registry = new RouteRegistry();

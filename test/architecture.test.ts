@@ -38,7 +38,10 @@ const workspaces: Workspace[] = ['packages', 'apps'].flatMap((kind) =>
   readdirSync(path.join(ROOT, kind))
     .filter((dir) => statSync(path.join(ROOT, kind, dir, 'package.json'), { throwIfNoEntry: false }))
     .map((dir) => {
-      const pkg = JSON.parse(readFileSync(path.join(ROOT, kind, dir, 'package.json'), 'utf8')) as { name: string; dependencies?: Record<string, string> };
+      const pkg = JSON.parse(readFileSync(path.join(ROOT, kind, dir, 'package.json'), 'utf8')) as {
+        name: string;
+        dependencies?: Record<string, string>;
+      };
       return {
         name: pkg.name,
         dir: path.join(ROOT, kind, dir),
@@ -52,7 +55,9 @@ const packageNames = new Set(workspaces.filter((w) => w.kind === 'packages').map
 const allowed = (from: string, to: string): boolean => {
   const rules = ALLOWED[from];
   if (!rules) return false;
-  return rules.includes(to) || (rules.includes('*packages') && packageNames.has(to) && to !== '@atx/test-utils');
+  return (
+    rules.includes(to) || (rules.includes('*packages') && packageNames.has(to) && to !== '@atx/test-utils')
+  );
 };
 
 const sourceFiles = (dir: string): string[] =>
@@ -67,25 +72,37 @@ describe('architecture', () => {
     for (const workspace of workspaces) expect(ALLOWED[workspace.name], workspace.name).toBeDefined();
   });
 
-  it.each(workspaces.map((w) => [w.name, w] as const))('%s only depends on allowed workspaces', (_name, workspace) => {
-    const violations = workspace.dependencies.filter((dep) => !allowed(workspace.name, dep));
-    expect(violations).toEqual([]);
-  });
+  it.each(workspaces.map((w) => [w.name, w] as const))(
+    '%s only depends on allowed workspaces',
+    (_name, workspace) => {
+      const violations = workspace.dependencies.filter((dep) => !allowed(workspace.name, dep));
+      expect(violations).toEqual([]);
+    },
+  );
 
-  it.each(workspaces.map((w) => [w.name, w] as const))('%s source imports only declared @atx dependencies', (_name, workspace) => {
-    const srcDir = path.join(workspace.dir, workspace.name === '@atx/web' ? '' : 'src');
-    const imports = new Set<string>();
-    for (const file of sourceFiles(srcDir)) {
-      for (const match of readFileSync(file, 'utf8').matchAll(/from\s+'(@atx\/[a-z-]+)/g)) imports.add(match[1] as string);
-    }
-    const undeclared = [...imports].filter((name) => name !== workspace.name && !workspace.dependencies.includes(name));
-    expect(undeclared).toEqual([]);
-  });
+  it.each(workspaces.map((w) => [w.name, w] as const))(
+    '%s source imports only declared @atx dependencies',
+    (_name, workspace) => {
+      const srcDir = path.join(workspace.dir, workspace.name === '@atx/web' ? '' : 'src');
+      const imports = new Set<string>();
+      for (const file of sourceFiles(srcDir)) {
+        for (const match of readFileSync(file, 'utf8').matchAll(/from\s+'(@atx\/[a-z-]+)/g))
+          imports.add(match[1] as string);
+      }
+      const undeclared = [...imports].filter(
+        (name) => name !== workspace.name && !workspace.dependencies.includes(name),
+      );
+      expect(undeclared).toEqual([]);
+    },
+  );
 
   it('packages never depend on apps', () => {
     const appNames = new Set(workspaces.filter((w) => w.kind === 'apps').map((w) => w.name));
     for (const workspace of workspaces.filter((w) => w.kind === 'packages')) {
-      expect(workspace.dependencies.filter((dep) => appNames.has(dep)), workspace.name).toEqual([]);
+      expect(
+        workspace.dependencies.filter((dep) => appNames.has(dep)),
+        workspace.name,
+      ).toEqual([]);
     }
   });
 

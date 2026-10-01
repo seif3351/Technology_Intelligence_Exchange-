@@ -15,5 +15,8 @@
     "@atx/domain": "workspace:*",
     "@atx/search": "workspace:*",
     "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@atx/test-utils": "workspace:*"
   }
 }

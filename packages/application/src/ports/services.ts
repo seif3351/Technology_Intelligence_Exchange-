@@ -63,7 +63,10 @@ export interface EmbeddingProvider {
 
 /** Maps requirement text to structured constraints. Must never invent concepts outside the ontology. */
 export interface RequirementExtractor {
-  extract(text: string, ontology: Ontology): Promise<InterpretedRequirement & { readonly method: 'deterministic' | 'ai_assisted' }>;
+  extract(
+    text: string,
+    ontology: Ontology,
+  ): Promise<InterpretedRequirement & { readonly method: 'deterministic' | 'ai_assisted' }>;
 }
 
 export interface ProposedClaim {

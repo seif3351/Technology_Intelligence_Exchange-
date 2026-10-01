@@ -47,9 +47,7 @@ export const loadCatalogBundle = async (
   return {
     offerings: new Map(offerings.map((offering) => [offering.id, offering])),
     organizations: new Map(
-      organizations
-        .filter((org) => org.verificationState !== 'suspended')
-        .map((org) => [org.id, org]),
+      organizations.filter((org) => org.verificationState !== 'suspended').map((org) => [org.id, org]),
     ),
     claimsByOffering,
     productionReferenceOfferings: productionRefs,
@@ -82,7 +80,12 @@ export const summaryFromBundle = (
   const offering = bundle.offerings.get(offeringId);
   const organization = offering ? bundle.organizations.get(offering.organizationId) : undefined;
   if (!offering || !organization) return null;
-  return presentOfferingSummary(offering, organization, bundle.claimsByOffering.get(offeringId) ?? [], ontology);
+  return presentOfferingSummary(
+    offering,
+    organization,
+    bundle.claimsByOffering.get(offeringId) ?? [],
+    ontology,
+  );
 };
 
 /** Expands concept ids to their narrower concepts for structured retrieval. */

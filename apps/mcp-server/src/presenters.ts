@@ -7,7 +7,16 @@ import type {
   OfferingSummaryView,
   VideoView,
 } from '@atx/application';
-import type { McpAssessment, McpClaim, McpConstraint, McpEvidence, McpInterpretation, McpMatch, McpOffering, McpVideo } from '@atx/contracts';
+import type {
+  McpAssessment,
+  McpClaim,
+  McpConstraint,
+  McpEvidence,
+  McpInterpretation,
+  McpMatch,
+  McpOffering,
+  McpVideo,
+} from '@atx/contracts';
 import type { z } from 'zod';
 
 /**
@@ -35,7 +44,11 @@ export const offering = (view: OfferingSummaryView, links: Links): z.infer<typeo
   name: view.name,
   type: view.type,
   maturity: view.maturity,
-  supplier: { id: view.organization.id, name: view.organization.name, verificationState: view.organization.verificationState },
+  supplier: {
+    id: view.organization.id,
+    name: view.organization.name,
+    verificationState: view.organization.verificationState,
+  },
   summary: view.summary,
   untrusted: true,
   keyConcepts: view.keyConcepts.map((concept) => concept.label),
@@ -107,7 +120,11 @@ export const evidence = (view: EvidenceView): z.infer<typeof McpEvidence> => ({
   sourceReference: view.provenance.sourceReference,
 });
 
-export const video = (view: VideoView, offeringName: string | null, links: Links): z.infer<typeof McpVideo> => ({
+export const video = (
+  view: VideoView,
+  offeringName: string | null,
+  links: Links,
+): z.infer<typeof McpVideo> => ({
   id: view.id,
   title: view.title,
   description: view.description,
@@ -128,7 +145,9 @@ export const matchText = (m: z.infer<typeof McpMatch>): string => {
   const lines = [
     `${m.rank}. ${m.offering.name} — ${m.offering.supplier.name}${m.offering.isDemo ? ' [DEMO DATA]' : ''}`,
     `   ${m.summary} Confidence: ${m.confidence}. Score ${m.score} (${m.scoreBreakdown.map((s) => `${s.name}=${s.value}×${s.weight}`).join(', ')}).`,
-    ...m.assessments.map((a) => `   ${STATUS_MARK[a.status] ?? '?'} ${a.description}${a.basis ? ` — ${a.basis}` : ''}`),
+    ...m.assessments.map(
+      (a) => `   ${STATUS_MARK[a.status] ?? '?'} ${a.description}${a.basis ? ` — ${a.basis}` : ''}`,
+    ),
     `   ${m.offering.url}`,
   ];
   return lines.join('\n');

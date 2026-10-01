@@ -20,7 +20,11 @@ export const DEFAULT_ANTHROPIC_MODEL = 'claude-opus-5-5';
  * parse failure surfaces as LlmUnavailableError so callers degrade gracefully.
  */
 export const createAnthropicLlm = (options: AnthropicLlmOptions): StructuredLlm => {
-  const client = new Anthropic({ apiKey: options.apiKey, timeout: options.timeoutMs ?? 60_000, maxRetries: 2 });
+  const client = new Anthropic({
+    apiKey: options.apiKey,
+    timeout: options.timeoutMs ?? 60_000,
+    maxRetries: 2,
+  });
   const model = options.model ?? DEFAULT_ANTHROPIC_MODEL;
   return {
     name: `anthropic:${model}`,

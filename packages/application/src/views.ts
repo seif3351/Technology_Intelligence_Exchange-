@@ -74,7 +74,12 @@ export interface EvidenceView {
   readonly url: string | null;
   readonly assetId: string | null;
   readonly offeringId: string | null;
-  readonly provenance: { readonly category: string; readonly sourceType: string; readonly sourceReference: string | null; readonly sourceVersion: string | null };
+  readonly provenance: {
+    readonly category: string;
+    readonly sourceType: string;
+    readonly sourceReference: string | null;
+    readonly sourceVersion: string | null;
+  };
   readonly customerDisclosure: string | null;
 }
 
@@ -134,7 +139,12 @@ export interface SupplierView {
     readonly verifiedAt: string | null;
   };
   readonly offerings: readonly OfferingSummaryView[];
-  readonly capabilities: readonly { readonly id: string; readonly name: string; readonly description: string; readonly concept: ConceptRef }[];
+  readonly capabilities: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string;
+    readonly concept: ConceptRef;
+  }[];
   readonly organizationClaims: readonly ClaimView[];
   readonly evidence: readonly EvidenceView[];
 }
@@ -218,7 +228,8 @@ export const presentClaim = (claim: TechnicalClaim, ontology: Ontology): ClaimVi
     status: claim.status,
     reviewAt: iso(claim.reviewAt),
     expiresAt: iso(claim.expiresAt),
-    contentWarnings: detectInjectionSignals(claim.statement).length > 0 ? ['possible_instruction_like_content'] : [],
+    contentWarnings:
+      detectInjectionSignals(claim.statement).length > 0 ? ['possible_instruction_like_content'] : [],
     version: claim.version,
   };
 };
@@ -257,11 +268,16 @@ export const presentVideo = (asset: Asset, playbackUrl: string | null): VideoVie
 });
 
 /** The concepts an offering is best known for: published offering-level claims, strongest predicates first. */
-export const keyConcepts = (offeringClaims: readonly TechnicalClaim[], ontology: Ontology, max = 6): ConceptRef[] => {
+export const keyConcepts = (
+  offeringClaims: readonly TechnicalClaim[],
+  ontology: Ontology,
+  max = 6,
+): ConceptRef[] => {
   const seen = new Set<string>();
   const result: ConceptRef[] = [];
   for (const claim of offeringClaims) {
-    if (claim.subject.type !== 'offering' || claim.status !== 'published' || seen.has(claim.conceptId)) continue;
+    if (claim.subject.type !== 'offering' || claim.status !== 'published' || seen.has(claim.conceptId))
+      continue;
     seen.add(claim.conceptId);
     result.push(conceptRef(ontology, claim.conceptId));
     if (result.length >= max) break;
@@ -356,7 +372,9 @@ export const presentMatch = (
     status: assessment.status,
     concept: assessment.conceptId ? conceptRef(ontology, assessment.conceptId) : null,
     strongestTrustTier: assessment.strongestTrustTier,
-    strongestTrustLabel: assessment.strongestTrustTier ? describeTrustTier(assessment.strongestTrustTier) : null,
+    strongestTrustLabel: assessment.strongestTrustTier
+      ? describeTrustTier(assessment.strongestTrustTier)
+      : null,
     supportingClaims: assessment.supportingClaims.map((claim) => ({
       claimId: claim.claimId,
       predicate: claim.predicate,

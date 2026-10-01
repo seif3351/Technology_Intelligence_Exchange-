@@ -30,11 +30,17 @@ export class IdentityService {
     private readonly passwords: PasswordHasher,
   ) {}
 
-  async register(input: { readonly email: string; readonly password: string; readonly displayName: string }): Promise<User> {
+  async register(input: {
+    readonly email: string;
+    readonly password: string;
+    readonly displayName: string;
+  }): Promise<User> {
     const email = input.email.trim().toLowerCase();
     if (!EMAIL.test(email)) throw validationError('Invalid email address');
-    if (input.password.length < 12 || input.password.length > 200) throw validationError('Password must be 12-200 characters');
-    if (await this.deps.repos.users.findCredentialByEmail(email)) throw validationError('Registration failed');
+    if (input.password.length < 12 || input.password.length > 200)
+      throw validationError('Password must be 12-200 characters');
+    if (await this.deps.repos.users.findCredentialByEmail(email))
+      throw validationError('Registration failed');
     const user: User = {
       id: newId(),
       email,
@@ -62,7 +68,14 @@ export class IdentityService {
    * Resolves the principal for a verified user id. `grantedScopes` narrows the
    * scopes (e.g. what an OAuth client was granted); roles narrow them further.
    */
-  async principalFor(userId: UserId, options: { readonly channel: Channel; readonly clientId: string | null; readonly grantedScopes: readonly string[] | 'all' }): Promise<UserPrincipal> {
+  async principalFor(
+    userId: UserId,
+    options: {
+      readonly channel: Channel;
+      readonly clientId: string | null;
+      readonly grantedScopes: readonly string[] | 'all';
+    },
+  ): Promise<UserPrincipal> {
     const user = await this.deps.repos.users.findById(userId);
     if (!user) throw unauthenticated();
     const memberships = await this.deps.repos.users.listMemberships(user.id);
@@ -91,14 +104,24 @@ export class IdentityService {
 
 export const describePrincipal = async (deps: ApplicationDeps, ctx: RequestContext) => {
   const principal = requireUser(ctx.principal);
-  const organizations = await deps.repos.organizations.findManyByIds(principal.memberships.map((m) => m.organizationId));
+  const organizations = await deps.repos.organizations.findManyByIds(
+    principal.memberships.map((m) => m.organizationId),
+  );
   const byId = new Map(organizations.map((org) => [org.id, org]));
   return {
     user: { id: principal.userId, displayName: principal.displayName, platformRole: principal.platformRole },
     memberships: principal.memberships.flatMap((membership) => {
       const org = byId.get(membership.organizationId);
       return org
-        ? [{ organizationId: org.id, organizationName: org.name, organizationSlug: org.slug, organizationKind: org.kind, role: membership.role }]
+        ? [
+            {
+              organizationId: org.id,
+              organizationName: org.name,
+              organizationSlug: org.slug,
+              organizationKind: org.kind,
+              role: membership.role,
+            },
+          ]
         : [];
     }),
     scopes: [...principal.scopes].sort(),

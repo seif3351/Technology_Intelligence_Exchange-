@@ -73,7 +73,13 @@ export class EngagementService {
           disclosedSummary: disclosure.requirement?.disclosedSummary ?? null,
           constraints: disclosure.requirement?.constraints.map((c) => presentConstraint(c, ontology)) ?? [],
         },
-        willNotBeShared: ['requirement title', 'requirement description', 'confidential terms', 'other requirements', 'search history'],
+        willNotBeShared: [
+          'requirement title',
+          'requirement description',
+          'confidential terms',
+          'other requirements',
+          'search history',
+        ],
       },
       confirmationToken: token,
       expiresAt: expiresAt.toISOString(),
@@ -81,16 +87,25 @@ export class EngagementService {
     };
   }
 
-  async confirm(ctx: RequestContext, draft: EngagementDraft, confirmationToken: string, idempotencyKey: string) {
+  async confirm(
+    ctx: RequestContext,
+    draft: EngagementDraft,
+    confirmationToken: string,
+    idempotencyKey: string,
+  ) {
     this.assertEnabled();
-    if (!/^[A-Za-z0-9_-]{8,100}$/.test(idempotencyKey)) throw validationError('idempotencyKey must be 8-100 URL-safe characters');
+    if (!/^[A-Za-z0-9_-]{8,100}$/.test(idempotencyKey))
+      throw validationError('idempotencyKey must be 8-100 URL-safe characters');
     const user = requireUser(ctx.principal);
     const scope = authorizeTenant(ctx, asId(draft.buyerOrganizationId), 'editor');
 
     const existing = await this.deps.repos.engagements.findByIdempotencyKey(scope, idempotencyKey);
     if (existing) return { engagement: existing, replayed: true };
 
-    const { disclosure, supplierOrganizationId, offeringId, requirementId } = await this.buildDisclosure(ctx, draft);
+    const { disclosure, supplierOrganizationId, offeringId, requirementId } = await this.buildDisclosure(
+      ctx,
+      draft,
+    );
     const claims = await this.deps.confirmations.verify(confirmationToken);
     if (
       claims.userId !== user.userId ||
@@ -106,7 +121,10 @@ export class EngagementService {
         outcome: 'denied',
         metadata: { reason: 'confirmation_mismatch' },
       });
-      throw new AppError('CONFIRMATION_REQUIRED', 'Confirmation token does not match this request; prepare it again');
+      throw new AppError(
+        'CONFIRMATION_REQUIRED',
+        'Confirmation token does not match this request; prepare it again',
+      );
     }
 
     const now = this.deps.clock.now();
@@ -158,13 +176,24 @@ export class EngagementService {
     return items;
   }
 
-  async respond(ctx: RequestContext, supplierOrganizationId: string, engagementId: string, status: Extract<EngagementStatus, 'acknowledged' | 'declined' | 'closed'>) {
+  async respond(
+    ctx: RequestContext,
+    supplierOrganizationId: string,
+    engagementId: string,
+    status: Extract<EngagementStatus, 'acknowledged' | 'declined' | 'closed'>,
+  ) {
     const scope = authorizeTenant(ctx, asId(supplierOrganizationId), 'editor');
     const engagement = await this.deps.repos.engagements.findById(asId(engagementId));
-    if (!engagement || engagement.supplierOrganizationId !== scope.organizationId) throw notFound('Engagement');
+    if (!engagement || engagement.supplierOrganizationId !== scope.organizationId)
+      throw notFound('Engagement');
     const next = transitionEngagement(engagement, status, this.deps.clock.now());
     await this.deps.repos.engagements.updateStatus(next);
-    await recordAudit(this.deps.repos.audit, ctx, next.updatedAt, { action: `engagement.${status}`, resourceType: 'engagement', resourceId: next.id, organizationId: scope.organizationId });
+    await recordAudit(this.deps.repos.audit, ctx, next.updatedAt, {
+      action: `engagement.${status}`,
+      resourceType: 'engagement',
+      resourceId: next.id,
+      organizationId: scope.organizationId,
+    });
     return next;
   }
 
@@ -181,7 +210,8 @@ export class EngagementService {
     ]);
     if (!buyer) throw notFound('Organization');
     if (!offering || offering.status !== 'published') throw notFound('Offering');
-    if (offering.organizationId === scope.organizationId) throw validationError('Cannot send a request to your own organization');
+    if (offering.organizationId === scope.organizationId)
+      throw validationError('Cannot send a request to your own organization');
     const supplier = await this.deps.repos.organizations.findById(offering.organizationId);
     if (!supplier) throw notFound('Offering');
 
@@ -191,7 +221,11 @@ export class EngagementService {
       const stored = await this.deps.repos.requirements.findById(scope, asId(draft.requirementId));
       if (!stored) throw notFound('Requirement');
       confidentialTerms = stored.confidentialTerms;
-      requirement = toSupplierFacingRequirement(stored, draft.disclosedSummary ?? null, `REQ-${stored.id.slice(0, 8)}`);
+      requirement = toSupplierFacingRequirement(
+        stored,
+        draft.disclosedSummary ?? null,
+        `REQ-${stored.id.slice(0, 8)}`,
+      );
     } else if (draft.disclosedSummary) {
       throw validationError('disclosedSummary requires a requirementId');
     }

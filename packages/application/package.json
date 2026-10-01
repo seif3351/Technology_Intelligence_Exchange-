@@ -9,5 +9,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
-  "dependencies": {"@atx/domain": "workspace:*", "@atx/search": "workspace:*"}
+  "dependencies": {
+    "@atx/domain": "workspace:*",
+    "@atx/search": "workspace:*"
+  }
 }

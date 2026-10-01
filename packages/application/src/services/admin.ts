@@ -26,10 +26,20 @@ export class AdminService {
   async verificationQueue(ctx: RequestContext) {
     requirePlatformAdmin(ctx.principal);
     const pending = await this.deps.repos.organizations.listByVerificationState('pending', 100);
-    return pending.map((org) => ({ ...organizationRef(org), kind: org.kind, website: org.website, requestedAt: org.updatedAt.toISOString() }));
+    return pending.map((org) => ({
+      ...organizationRef(org),
+      kind: org.kind,
+      website: org.website,
+      requestedAt: org.updatedAt.toISOString(),
+    }));
   }
 
-  async setOrganizationVerification(ctx: RequestContext, organizationId: string, state: Extract<OrganizationVerificationState, 'verified' | 'rejected' | 'suspended'>, reason: string | null) {
+  async setOrganizationVerification(
+    ctx: RequestContext,
+    organizationId: string,
+    state: Extract<OrganizationVerificationState, 'verified' | 'rejected' | 'suspended'>,
+    reason: string | null,
+  ) {
     const admin = requirePlatformAdmin(ctx.principal);
     const now = this.deps.clock.now();
     return this.deps.transaction(async (repos) => {
@@ -55,7 +65,12 @@ export class AdminService {
     return claims.map((claim) => presentClaim(claim, ontology));
   }
 
-  async reviewClaim(ctx: RequestContext, claimId: string, outcome: 'platform_verified' | 'disputed' | 'rejected', notes: string | null) {
+  async reviewClaim(
+    ctx: RequestContext,
+    claimId: string,
+    outcome: 'platform_verified' | 'disputed' | 'rejected',
+    notes: string | null,
+  ) {
     const admin = requirePlatformAdmin(ctx.principal);
     const ontology = await this.deps.ontology.current();
     const now = this.deps.clock.now();
@@ -65,9 +80,19 @@ export class AdminService {
     const next = verifyClaim(claim, admin.userId, outcome, notes, now);
     await this.deps.transaction(async (repos) => {
       await repos.claims.update(scope, next, claim.version);
-      await recordAudit(repos.audit, ctx, now, { action: `claim.review.${outcome}`, resourceType: 'claim', resourceId: claim.id, organizationId: claim.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: `claim.review.${outcome}`,
+        resourceType: 'claim',
+        resourceId: claim.id,
+        organizationId: claim.organizationId,
+      });
     });
-    if (claim.subject.type === 'offering') await this.deps.jobs.enqueue('offering.reindex', { offeringId: claim.subject.id }, { dedupeKey: `reindex:${claim.subject.id}` });
+    if (claim.subject.type === 'offering')
+      await this.deps.jobs.enqueue(
+        'offering.reindex',
+        { offeringId: claim.subject.id },
+        { dedupeKey: `reindex:${claim.subject.id}` },
+      );
     return presentClaim(next, ontology);
   }
 
@@ -78,7 +103,10 @@ export class AdminService {
     const claims = await this.deps.repos.claims.listAwaitingPlatformReview(500);
     return claims
       .filter((claim) => detectInjectionSignals(claim.statement).length > 0)
-      .map((claim) => ({ ...presentClaim(claim, ontology), signals: detectInjectionSignals(claim.statement) }));
+      .map((claim) => ({
+        ...presentClaim(claim, ontology),
+        signals: detectInjectionSignals(claim.statement),
+      }));
   }
 
   async archiveOffering(ctx: RequestContext, offeringId: string, reason: string) {
@@ -98,11 +126,25 @@ export class AdminService {
         metadata: { reason: reason.slice(0, 200), moderator: admin.userId },
       });
     });
-    await this.deps.jobs.enqueue('offering.reindex', { offeringId: offering.id }, { dedupeKey: `reindex:${offering.id}` });
+    await this.deps.jobs.enqueue(
+      'offering.reindex',
+      { offeringId: offering.id },
+      { dedupeKey: `reindex:${offering.id}` },
+    );
     return next;
   }
 
-  async addConcept(ctx: RequestContext, input: { readonly id: string; readonly facetId: string; readonly label: string; readonly description: string; readonly aliases: readonly string[]; readonly broaderConceptIds: readonly string[] }) {
+  async addConcept(
+    ctx: RequestContext,
+    input: {
+      readonly id: string;
+      readonly facetId: string;
+      readonly label: string;
+      readonly description: string;
+      readonly aliases: readonly string[];
+      readonly broaderConceptIds: readonly string[];
+    },
+  ) {
     requirePlatformAdmin(ctx.principal);
     const ontology = await this.deps.ontology.current();
     if (!isSlug(input.id)) throw validationError('Concept id must be lowercase kebab-case');
@@ -113,11 +155,24 @@ export class AdminService {
       return id as ConceptId;
     });
     await this.deps.ontology.addConcept({ ...input, id: asId(input.id), broaderConceptIds: broader });
-    await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), { action: 'ontology.concept_added', resourceType: 'concept', resourceId: input.id, organizationId: null });
+    await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {
+      action: 'ontology.concept_added',
+      resourceType: 'concept',
+      resourceId: input.id,
+      organizationId: null,
+    });
     return { id: input.id };
   }
 
-  async auditLog(ctx: RequestContext, query: { readonly organizationId?: string | null; readonly action?: string | null; readonly limit?: number; readonly before?: string | null }) {
+  async auditLog(
+    ctx: RequestContext,
+    query: {
+      readonly organizationId?: string | null;
+      readonly action?: string | null;
+      readonly limit?: number;
+      readonly before?: string | null;
+    },
+  ) {
     requirePlatformAdmin(ctx.principal);
     return this.deps.repos.audit.list({
       organizationId: query.organizationId ? asId(query.organizationId) : null,
@@ -131,6 +186,10 @@ export class AdminService {
     requirePlatformAdmin(ctx.principal);
     const ontology = await this.deps.ontology.current();
     const signals = await this.deps.repos.requirements.listDemandSignals(50);
-    return signals.map((signal) => ({ concept: ontology.getConcept(signal.conceptId)?.label ?? signal.conceptId, conceptId: signal.conceptId, requirementCount: signal.requirementCount }));
+    return signals.map((signal) => ({
+      concept: ontology.getConcept(signal.conceptId)?.label ?? signal.conceptId,
+      conceptId: signal.conceptId,
+      requirementCount: signal.requirementCount,
+    }));
   }
 }

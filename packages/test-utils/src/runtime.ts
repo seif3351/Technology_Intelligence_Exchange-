@@ -6,7 +6,8 @@ import { migrate } from '@atx/infrastructure';
 import { type Runtime, createRuntime, seedDemoData, seedOntology, stableUuid } from '@atx/runtime';
 import { REPO_ROOT } from './ontology';
 
-export const TEST_DATABASE_URL = process.env['DATABASE_URL_TEST'] ?? 'postgres://atx:atx@localhost:5432/atx_test';
+export const TEST_DATABASE_URL =
+  process.env['DATABASE_URL_TEST'] ?? 'postgres://atx:atx@localhost:5432/atx_test';
 
 /**
  * Creates a runtime bound to a freshly reset test database with migrations,
@@ -54,9 +55,20 @@ export const DEMO = {
   requirement: asId<'RequirementId'>(stableUuid('requirement:aurelia:0')),
 } as const;
 
-export const anonymous: RequestContext = { principal: { kind: 'anonymous', channel: 'api' }, requestId: 'test-anon' };
+export const anonymous: RequestContext = {
+  principal: { kind: 'anonymous', channel: 'api' },
+  requestId: 'test-anon',
+};
 
-export const contextFor = async (runtime: Runtime, userId: string, scopes: readonly string[] | 'all' = 'all'): Promise<RequestContext & { principal: UserPrincipal }> => ({
-  principal: await runtime.app.identity.principalFor(asId(userId), { channel: 'api', clientId: null, grantedScopes: scopes }),
+export const contextFor = async (
+  runtime: Runtime,
+  userId: string,
+  scopes: readonly string[] | 'all' = 'all',
+): Promise<RequestContext & { principal: UserPrincipal }> => ({
+  principal: await runtime.app.identity.principalFor(asId(userId), {
+    channel: 'api',
+    clientId: null,
+    grantedScopes: scopes,
+  }),
   requestId: `test-${userId.slice(0, 8)}`,
 });

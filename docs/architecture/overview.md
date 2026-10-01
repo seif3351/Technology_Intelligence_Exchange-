@@ -1,0 +1,53 @@
+# Architecture overview
+
+Automotive Technology Exchange (ATX) is a **modular monolith** with ports & adapters. One application layer serves four interfaces: the web app, the HTTP API, the remote MCP server and the background worker.
+
+```
+apps/web ──HTTP (BFF)──▶ apps/api ─┐
+AI agents ──MCP────────▶ apps/mcp-server ─┼─▶ packages/runtime (composition root)
+apps/worker (jobs) ────────────────┘            │
+                                                ▼
+                      packages/application (use cases, ports, policies, read models)
+                         │                 │
+              packages/search        packages/domain
+              (matching engine)      (entities, invariants, provenance, ontology graph)
+
+adapters: packages/infrastructure (PostgreSQL, pgvector, jobs, storage, scanning, extraction)
+          packages/ai (Anthropic, embeddings, deterministic extractors)
+          packages/auth (JWT, scrypt, confirmation tokens, signed URLs)
+          packages/observability (pino, OpenTelemetry)
+contracts: packages/contracts (Zod schemas → OpenAPI 3.1, MCP tool JSON Schemas)
+```
+
+## Package responsibilities
+
+| Package          | Responsibility                                                                                                                                                  | May depend on               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `domain`         | Entities, value objects, invariants (claims, provenance, requirements, ontology graph, URL policy). No I/O.                                                     | —                           |
+| `search`         | Deterministic requirement interpretation, constraint evaluation, transparent scoring, RRF fusion, comparison matrix.                                            | domain                      |
+| `application`    | Use cases (catalog, matching, supplier workspace, requirements, engagements, admin, ingestion, indexing, identity), authorization policies, ports, read models. | domain, search              |
+| `contracts`      | Wire schemas for HTTP and MCP. Output schemas double as allow-lists.                                                                                            | domain                      |
+| `infrastructure` | PostgreSQL repositories, migrations, search index, job queue, ontology provider, object storage, scanner, text extraction.                                      | application, domain, search |
+| `ai`             | LLM/embedding adapters and AI-assisted extractors with deterministic fallbacks.                                                                                 | application, domain, search |
+| `auth`           | Token issuing/verification, password hashing, confirmation tokens, signed URLs.                                                                                 | application, domain         |
+| `observability`  | Logger with redaction, OpenTelemetry SDK and the `Telemetry` port implementation.                                                                               | application                 |
+| `runtime`        | Composition root: picks adapters from configuration; demo seeding.                                                                                              | packages                    |
+| `config`         | Validated environment configuration.                                                                                                                            | —                           |
+| `ui`             | Presentation vocabulary (labels/tones for statuses, trust tiers).                                                                                               | —                           |
+
+Rules are enforced by `test/architecture.test.ts` and ESLint.
+
+## Request flow (matching)
+
+1. Interface adapter validates input with a contract schema and resolves the principal (bearer token → `IdentityService.principalFor`).
+2. `MatchingService.findMatches` interprets text into constraints (deterministic, optionally AI-assisted), after removing confidential terms.
+3. Retrieval: full-text, semantic (pgvector) and structured (claims on ontology-expanded concepts) lists → reciprocal rank fusion.
+4. `loadCatalogBundle` loads offerings, organizations, claims and production evidence in a constant number of queries.
+5. `evaluateCandidate` assesses every constraint (met / partial / unknown / unmet) with the strongest evidence basis, computes the transparent score and gaps.
+6. Deterministic ranking (hard-constraint status, score, name, id), pagination, presentation as read models; adapters validate output against contracts.
+
+See [search-and-matching.md](search-and-matching.md), [c4-context.md](c4-context.md), [c4-container.md](c4-container.md) and the [ADRs](../adr/README.md).
+
+## Future: agent-to-agent
+
+Supplier agents can be added as another adapter: an `engagement.notify` handler (or a new job type) can forward the **disclosure snapshot** of a confirmed engagement to a supplier agent endpoint, and a new use case can ingest structured technical responses as claims with `providedBy.via = 'import'` and provenance. Because disclosures are allow-listed snapshots, human confirmation precedes any exchange, and matching is evidence-based, no core change is required.

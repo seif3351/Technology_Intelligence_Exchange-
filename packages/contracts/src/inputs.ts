@@ -12,7 +12,10 @@ import { Cursor, Limit, Slug, Uuid } from './common';
 
 export const ClaimPredicate = z.enum(CLAIM_PREDICATES).meta({ id: 'ClaimPredicate' });
 
-const ConceptId = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120);
+const ConceptId = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .max(120);
 
 export const ConstraintInput = z
   .discriminatedUnion('kind', [
@@ -23,8 +26,15 @@ export const ConstraintInput = z
       priority: z.enum(['hard', 'preference']).default('hard'),
       qualifiers: z.record(z.string().max(40), z.string().max(120)).default({}),
     }),
-    z.object({ kind: z.literal('maturity'), minimum: z.enum(MATURITY_LEVELS), priority: z.enum(['hard', 'preference']).default('hard') }),
-    z.object({ kind: z.literal('production_reference'), priority: z.enum(['hard', 'preference']).default('hard') }),
+    z.object({
+      kind: z.literal('maturity'),
+      minimum: z.enum(MATURITY_LEVELS),
+      priority: z.enum(['hard', 'preference']).default('hard'),
+    }),
+    z.object({
+      kind: z.literal('production_reference'),
+      priority: z.enum(['hard', 'preference']).default('hard'),
+    }),
   ])
   .meta({ id: 'ConstraintInput' });
 
@@ -36,7 +46,11 @@ export const MatchRequest = z
     constraints: z.array(ConstraintInput).max(40).optional(),
     requirementId: Uuid.optional().describe("Saved private requirement of the caller's organization."),
     organizationId: Uuid.optional().describe('Buyer organization owning requirementId.'),
-    confidentialTerms: z.array(z.string().max(120)).max(30).optional().describe('Terms that must never be processed, stored or echoed.'),
+    confidentialTerms: z
+      .array(z.string().max(120))
+      .max(30)
+      .optional()
+      .describe('Terms that must never be processed, stored or echoed.'),
     requireAllHardConstraintsMet: z.boolean().optional(),
     limit: Limit,
     cursor: Cursor,
@@ -82,7 +96,10 @@ export const RequirementCreate = z
   .meta({ id: 'RequirementCreate' });
 
 export const RequirementUpdate = RequirementCreate.partial()
-  .extend({ expectedVersion: z.number().int().min(1), status: z.enum(['draft', 'active', 'closed']).optional() })
+  .extend({
+    expectedVersion: z.number().int().min(1),
+    status: z.enum(['draft', 'active', 'closed']).optional(),
+  })
   .meta({ id: 'RequirementUpdate' });
 
 export const EngagementDraftInput = z
@@ -125,15 +142,25 @@ export const OfferingCreate = z
       }),
     ]),
     commercial: z
-      .object({ pricingModel: z.string().max(120).nullable().default(null), availability: z.array(z.string().max(40)).default([]), notes: z.string().max(500).nullable().default(null) })
+      .object({
+        pricingModel: z.string().max(120).nullable().default(null),
+        availability: z.array(z.string().max(40)).default([]),
+        notes: z.string().max(500).nullable().default(null),
+      })
       .default({ pricingModel: null, availability: [], notes: null }),
     regions: z.array(z.string().max(40)).max(20).default([]),
   })
   .meta({ id: 'OfferingCreate' });
 
-export const OfferingUpdate = OfferingCreate.omit({ slug: true, type: true }).partial().extend({ expectedVersion: z.number().int().min(1) }).meta({ id: 'OfferingUpdate' });
+export const OfferingUpdate = OfferingCreate.omit({ slug: true, type: true })
+  .partial()
+  .extend({ expectedVersion: z.number().int().min(1) })
+  .meta({ id: 'OfferingUpdate' });
 
-export const OfferingStatusChange = z.object({ status: z.enum(['published', 'draft', 'archived']), expectedVersion: z.number().int().min(1) });
+export const OfferingStatusChange = z.object({
+  status: z.enum(['published', 'draft', 'archived']),
+  expectedVersion: z.number().int().min(1),
+});
 
 export const ClaimCreate = z
   .object({
@@ -152,7 +179,10 @@ export const ClaimCreate = z
   })
   .meta({ id: 'ClaimCreate' });
 
-export const ClaimRevise = ClaimCreate.omit({ subject: true }).partial().extend({ expectedVersion: z.number().int().min(1) }).meta({ id: 'ClaimRevise' });
+export const ClaimRevise = ClaimCreate.omit({ subject: true })
+  .partial()
+  .extend({ expectedVersion: z.number().int().min(1) })
+  .meta({ id: 'ClaimRevise' });
 export const VersionOnly = z.object({ expectedVersion: z.number().int().min(1) });
 
 export const EvidenceCreate = z
@@ -185,7 +215,11 @@ export const OrganizationCreate = z
     kind: z.enum(['supplier', 'buyer', 'hybrid']),
     summary: z.string().min(10).max(400),
     website: z.string().max(2048).nullable().optional(),
-    headquartersCountry: z.string().regex(/^[A-Z]{2}$/).nullable().optional(),
+    headquartersCountry: z
+      .string()
+      .regex(/^[A-Z]{2}$/)
+      .nullable()
+      .optional(),
   })
   .meta({ id: 'OrganizationCreate' });
 
@@ -195,28 +229,52 @@ export const OrganizationUpdate = z
     summary: z.string().min(10).max(400).optional(),
     description: z.string().max(8000).optional(),
     website: z.string().max(2048).nullable().optional(),
-    headquartersCountry: z.string().regex(/^[A-Z]{2}$/).nullable().optional(),
+    headquartersCountry: z
+      .string()
+      .regex(/^[A-Z]{2}$/)
+      .nullable()
+      .optional(),
     regions: z.array(z.string().max(60)).max(20).optional(),
     employeeRange: z.string().max(40).nullable().optional(),
   })
   .meta({ id: 'OrganizationUpdate' });
 
-export const LoginRequest = z.object({ email: z.email().max(254), password: z.string().min(1).max(200) }).meta({ id: 'LoginRequest' });
+export const LoginRequest = z
+  .object({ email: z.email().max(254), password: z.string().min(1).max(200) })
+  .meta({ id: 'LoginRequest' });
 export const RegisterRequest = z
-  .object({ email: z.email().max(254), password: z.string().min(12).max(200), displayName: z.string().min(1).max(120) })
+  .object({
+    email: z.email().max(254),
+    password: z.string().min(12).max(200),
+    displayName: z.string().min(1).max(120),
+  })
   .meta({ id: 'RegisterRequest' });
 export const AgentTokenRequest = z
   .object({
-    scopes: z.array(z.enum(['catalog:read', 'requirements:read', 'requirements:write', 'engagements:write'])).min(1),
+    scopes: z
+      .array(z.enum(['catalog:read', 'requirements:read', 'requirements:write', 'engagements:write']))
+      .min(1),
     ttlHours: z.number().int().min(1).max(24).default(8),
   })
   .meta({ id: 'AgentTokenRequest' });
 export const TokenResponse = z
-  .object({ accessToken: z.string(), tokenType: z.literal('Bearer'), expiresIn: z.number().int(), audience: z.string(), scopes: z.array(z.string()) })
+  .object({
+    accessToken: z.string(),
+    tokenType: z.literal('Bearer'),
+    expiresIn: z.number().int(),
+    audience: z.string(),
+    scopes: z.array(z.string()),
+  })
   .meta({ id: 'TokenResponse' });
 
-export const AdminVerificationDecision = z.object({ state: z.enum(['verified', 'rejected', 'suspended']), reason: z.string().max(500).nullable().default(null) });
-export const AdminClaimReview = z.object({ outcome: z.enum(['platform_verified', 'disputed', 'rejected']), notes: z.string().max(1000).nullable().default(null) });
+export const AdminVerificationDecision = z.object({
+  state: z.enum(['verified', 'rejected', 'suspended']),
+  reason: z.string().max(500).nullable().default(null),
+});
+export const AdminClaimReview = z.object({
+  outcome: z.enum(['platform_verified', 'disputed', 'rejected']),
+  notes: z.string().max(1000).nullable().default(null),
+});
 export const AdminConceptCreate = z.object({
   id: ConceptId,
   facetId: z.string().max(60),

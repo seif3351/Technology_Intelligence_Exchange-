@@ -49,7 +49,9 @@ export const isSupplierOrganization = (org: Organization): boolean =>
 export const isBuyerOrganization = (org: Organization): boolean =>
   org.kind === 'buyer' || org.kind === 'hybrid';
 
-export const validateOrganizationProfile = (org: Pick<Organization, 'slug' | 'name' | 'website' | 'headquartersCountry'>): void => {
+export const validateOrganizationProfile = (
+  org: Pick<Organization, 'slug' | 'name' | 'website' | 'headquartersCountry'>,
+): void => {
   const problems: string[] = [];
   if (!isSlug(org.slug)) problems.push('slug must be lowercase kebab-case');
   if (org.name.trim().length < 2 || org.name.length > 160) problems.push('name must be 2-160 characters');
@@ -57,13 +59,18 @@ export const validateOrganizationProfile = (org: Pick<Organization, 'slug' | 'na
     problems.push('headquartersCountry must be an ISO 3166-1 alpha-2 code');
   }
   if (problems.length > 0) {
-    throw validationError('Invalid organization profile', problems.map((message) => ({ message })));
+    throw validationError(
+      'Invalid organization profile',
+      problems.map((message) => ({ message })),
+    );
   }
 };
 
 export const sanitizeProfileText = (value: string, max = 4000): string => sanitizeUntrustedText(value, max);
 
-const VERIFICATION_TRANSITIONS: Readonly<Record<OrganizationVerificationState, readonly OrganizationVerificationState[]>> = {
+const VERIFICATION_TRANSITIONS: Readonly<
+  Record<OrganizationVerificationState, readonly OrganizationVerificationState[]>
+> = {
   unverified: ['pending'],
   pending: ['verified', 'rejected'],
   verified: ['suspended', 'pending'],

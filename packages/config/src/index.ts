@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-const bool = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((value) => value === 'true' || value === '1');
+const bool = z.enum(['true', 'false', '1', '0']).transform((value) => value === 'true' || value === '1');
 
 const DEV_SECRET = 'dev-only-insecure-secret-change-me-0123456789';
 
@@ -86,12 +84,19 @@ export const loadConfig = (source: NodeJS.ProcessEnv = process.env): Env => {
     if (env.ASSET_URL_SECRET === DEV_SECRET) problems.push('ASSET_URL_SECRET');
     if (!env.AUTH_SIGNING_JWK && !env.MCP_AUTH_JWKS_URL) problems.push('AUTH_SIGNING_JWK');
     if (env.STORAGE_DRIVER === 's3' && !env.S3_BUCKET) problems.push('S3_BUCKET');
-    if (problems.length > 0) throw new ConfigError(`Production requires explicit secure values for: ${problems.join(', ')}`);
+    if (problems.length > 0)
+      throw new ConfigError(`Production requires explicit secure values for: ${problems.join(', ')}`);
   }
-  if (env.AI_PROVIDER === 'anthropic' && !env.ANTHROPIC_API_KEY) throw new ConfigError('AI_PROVIDER=anthropic requires ANTHROPIC_API_KEY');
-  if (env.EMBEDDINGS_PROVIDER === 'http' && !env.EMBEDDINGS_URL) throw new ConfigError('EMBEDDINGS_PROVIDER=http requires EMBEDDINGS_URL');
+  if (env.AI_PROVIDER === 'anthropic' && !env.ANTHROPIC_API_KEY)
+    throw new ConfigError('AI_PROVIDER=anthropic requires ANTHROPIC_API_KEY');
+  if (env.EMBEDDINGS_PROVIDER === 'http' && !env.EMBEDDINGS_URL)
+    throw new ConfigError('EMBEDDINGS_PROVIDER=http requires EMBEDDINGS_URL');
   return env;
 };
 
 export const authIssuer = (env: Env): string => env.AUTH_ISSUER ?? env.API_PUBLIC_URL;
-export const listSetting = (value: string): string[] => value.split(',').map((item) => item.trim()).filter(Boolean);
+export const listSetting = (value: string): string[] =>
+  value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);

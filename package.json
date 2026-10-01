@@ -27,7 +27,9 @@
     "dev:web": "pnpm --filter @atx/web dev",
     "dev:worker": "pnpm --filter @atx/worker dev",
     "build": "pnpm -r --if-present build",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm contracts:check"
+    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm contracts:check",
+    "auth:generate-key": "tsx scripts/generate-signing-key.ts",
+    "auth:token": "tsx scripts/issue-token.ts"
   },
   "devDependencies": {
     "@atx/api": "workspace:*",
@@ -41,6 +43,7 @@
     "@types/node": "^22.19.0",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
+    "jose": "^6.2.12",
     "prettier": "^3.6.2",
     "tsx": "^4.20.6",
     "typescript": "~6.0.3",

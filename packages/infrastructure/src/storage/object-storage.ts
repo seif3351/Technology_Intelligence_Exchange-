@@ -52,7 +52,13 @@ export const createS3Storage = (options: S3StorageOptions): ObjectStorage => {
     async put(key, body, contentType) {
       assertSafeKey(key);
       await client.send(
-        new PutObjectCommand({ Bucket: options.bucket, Key: key, Body: body, ContentType: contentType, ServerSideEncryption: 'AES256' }),
+        new PutObjectCommand({
+          Bucket: options.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+          ServerSideEncryption: 'AES256',
+        }),
       );
     },
     async get(key) {

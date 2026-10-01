@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { type JWTVerifyGetKey, SignJWT, createLocalJWKSet, createRemoteJWKSet, errors, jwtVerify } from 'jose';
+import {
+  type JWTVerifyGetKey,
+  SignJWT,
+  createLocalJWKSet,
+  createRemoteJWKSet,
+  errors,
+  jwtVerify,
+} from 'jose';
 import { ACCESS_TOKEN_ALG, type SigningKey } from './keys';
 
 export interface AccessTokenClaims {
@@ -19,8 +26,17 @@ export class InvalidTokenError extends Error {
 
 /** Issues short-lived JWT access tokens bound to one audience (RFC 8707 resource). */
 export const createAccessTokenIssuer = (key: SigningKey, issuer: string) => ({
-  async issue(input: { readonly subject: string; readonly audience: string; readonly scopes: readonly string[]; readonly clientId?: string | null; readonly ttlSeconds: number }): Promise<string> {
-    return new SignJWT({ scope: input.scopes.join(' '), ...(input.clientId ? { client_id: input.clientId } : {}) })
+  async issue(input: {
+    readonly subject: string;
+    readonly audience: string;
+    readonly scopes: readonly string[];
+    readonly clientId?: string | null;
+    readonly ttlSeconds: number;
+  }): Promise<string> {
+    return new SignJWT({
+      scope: input.scopes.join(' '),
+      ...(input.clientId ? { client_id: input.clientId } : {}),
+    })
       .setProtectedHeader({ alg: ACCESS_TOKEN_ALG, kid: key.kid, typ: 'at+jwt' })
       .setIssuer(issuer)
       .setSubject(input.subject)
@@ -69,7 +85,10 @@ export const createAccessTokenVerifier = (options: {
         };
       } catch (error) {
         if (error instanceof InvalidTokenError) throw error;
-        if (error instanceof errors.JOSEError) throw new InvalidTokenError(error.code === 'ERR_JWT_EXPIRED' ? 'Access token expired' : 'Invalid access token');
+        if (error instanceof errors.JOSEError)
+          throw new InvalidTokenError(
+            error.code === 'ERR_JWT_EXPIRED' ? 'Access token expired' : 'Invalid access token',
+          );
         throw error;
       }
     },

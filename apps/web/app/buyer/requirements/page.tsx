@@ -11,13 +11,21 @@ export const dynamic = 'force-dynamic';
 export default async function RequirementsPage() {
   const me = await currentUser();
   if (!me) redirect('/login?next=/buyer/requirements');
-  const buyerOrg = me.memberships.find((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid');
-  if (!buyerOrg) return <p className="notice">Requirements are available to members of buyer organizations.</p>;
-  const { items } = await api(`/v1/organizations/${buyerOrg.organizationId}/requirements`, { schema: z.object({ items: z.array(RequirementView) }) });
+  const buyerOrg = me.memberships.find(
+    (m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid',
+  );
+  if (!buyerOrg)
+    return <p className="notice">Requirements are available to members of buyer organizations.</p>;
+  const { items } = await api(`/v1/organizations/${buyerOrg.organizationId}/requirements`, {
+    schema: z.object({ items: z.array(RequirementView) }),
+  });
   return (
     <div className="stack">
       <h1>Private requirements — {buyerOrg.organizationName}</h1>
-      <p className="muted">Requirements are private to your organization. Suppliers never see them unless you explicitly share selected technical constraints in a request.</p>
+      <p className="muted">
+        Requirements are private to your organization. Suppliers never see them unless you explicitly share
+        selected technical constraints in a request.
+      </p>
       <table>
         <thead>
           <tr>
@@ -56,8 +64,14 @@ export default async function RequirementsPage() {
           </div>
           <div>
             <label htmlFor="confidentialTerms">Confidential terms (comma-separated)</label>
-            <input id="confidentialTerms" name="confidentialTerms" placeholder="Project names, vehicle programs, customers, internal identifiers" />
-            <p className="small muted">These terms are removed before interpretation and can never be sent to a supplier.</p>
+            <input
+              id="confidentialTerms"
+              name="confidentialTerms"
+              placeholder="Project names, vehicle programs, customers, internal identifiers"
+            />
+            <p className="small muted">
+              These terms are removed before interpretation and can never be sent to a supplier.
+            </p>
           </div>
         </ActionForm>
       </section>

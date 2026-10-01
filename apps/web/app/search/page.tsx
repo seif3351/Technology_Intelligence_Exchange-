@@ -4,7 +4,11 @@ import { api, describeError } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; strict?: string }> }) {
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; strict?: string }>;
+}) {
   const { q, strict } = await searchParams;
   const query = q?.trim() ?? '';
   let content: React.ReactNode = <p className="muted">Describe your requirement above.</p>;
@@ -18,14 +22,21 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       content = (
         <div className="stack">
           <InterpretationPanel interpretation={result.interpretation} />
-          {result.degraded.length > 0 ? <p className="notice">Some search signals are unavailable ({result.degraded.join(', ')}); results use keyword and structured matching.</p> : null}
+          {result.degraded.length > 0 ? (
+            <p className="notice">
+              Some search signals are unavailable ({result.degraded.join(', ')}); results use keyword and
+              structured matching.
+            </p>
+          ) : null}
           <form action="/compare">
             <input type="hidden" name="q" value={query} />
             <div className="row spread">
               <h2 className="flush">{result.matches.length} candidates</h2>
               <button type="submit">Compare selected</button>
             </div>
-            {result.matches.length === 0 ? <p className="muted">No published offering matches these constraints.</p> : null}
+            {result.matches.length === 0 ? (
+              <p className="muted">No published offering matches these constraints.</p>
+            ) : null}
             {result.matches.map((match) => (
               <MatchCard key={match.offering.id} match={match} selectable />
             ))}
@@ -47,10 +58,20 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           </button>
         </div>
         <label className="row plain">
-          <input type="checkbox" name="strict" value="1" defaultChecked={strict === '1'} className="inline-check" /> Only show candidates that meet every hard constraint
+          <input
+            type="checkbox"
+            name="strict"
+            value="1"
+            defaultChecked={strict === '1'}
+            className="inline-check"
+          />{' '}
+          Only show candidates that meet every hard constraint
         </label>
       </form>
-      <p className="small muted">Do not enter confidential project names here; use a private requirement with confidential terms instead.</p>
+      <p className="small muted">
+        Do not enter confidential project names here; use a private requirement with confidential terms
+        instead.
+      </p>
       {content}
     </div>
   );

@@ -25,7 +25,15 @@ export const createRequirementDraftTool = {
     const r = result.requirement;
     return {
       structured: {
-        requirement: { id: r.id, organizationId: r.organizationId, title: r.title, visibility: r.visibility, status: r.status, confidentialTermCount: r.confidentialTermCount, url: env.links.requirement(r.id) },
+        requirement: {
+          id: r.id,
+          organizationId: r.organizationId,
+          title: r.title,
+          visibility: r.visibility,
+          status: r.status,
+          confidentialTermCount: r.confidentialTermCount,
+          url: env.links.requirement(r.id),
+        },
         constraints: r.constraints.map(present.constraint),
         issues: result.issues.map((i) => ({ ...i })),
       },
@@ -34,7 +42,12 @@ export const createRequirementDraftTool = {
   },
 } satisfies ToolDefinition<'create_requirement_draft'>;
 
-const ACTION = { readOnlyHint: false, idempotentHint: false, openWorldHint: true, destructiveHint: false } as const;
+const ACTION = {
+  readOnlyHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+  destructiveHint: false,
+} as const;
 
 /**
  * Consequential actions (disclose information to a supplier). Registered only
@@ -110,8 +123,14 @@ export const confirmEngagementTool = {
       args.idempotency_key,
     );
     return {
-      structured: { engagementId: result.engagement.id, status: result.engagement.status, replayed: result.replayed },
-      text: result.replayed ? `Already submitted earlier (engagement ${result.engagement.id}).` : `Submitted engagement ${result.engagement.id} to the supplier.`,
+      structured: {
+        engagementId: result.engagement.id,
+        status: result.engagement.status,
+        replayed: result.replayed,
+      },
+      text: result.replayed
+        ? `Already submitted earlier (engagement ${result.engagement.id}).`
+        : `Submitted engagement ${result.engagement.id} to the supplier.`,
     };
   },
 } satisfies ToolDefinition<'confirm_engagement_request'>;

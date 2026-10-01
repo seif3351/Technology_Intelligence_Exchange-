@@ -8,7 +8,10 @@ import { type Queryable, withTransaction } from './db';
  * revalidated against `ontology_meta.version` at most every `ttlMs`, so
  * taxonomy edits propagate to every instance without restarts.
  */
-export const createPostgresOntologyProvider = (pool: pg.Pool, options: { readonly ttlMs?: number } = {}): OntologyProvider => {
+export const createPostgresOntologyProvider = (
+  pool: pg.Pool,
+  options: { readonly ttlMs?: number } = {},
+): OntologyProvider => {
   const ttlMs = options.ttlMs ?? 30_000;
   let cached: { ontology: Ontology; version: number; checkedAt: number } | null = null;
   let loading: Promise<Ontology> | null = null;
@@ -47,17 +50,24 @@ export const createPostgresOntologyProvider = (pool: pg.Pool, options: { readonl
             `INSERT INTO ontology_concepts (id, facet_id, label, description, aliases, case_sensitive_aliases, status) VALUES ($1,$2,$3,$4,$5,$6,$7)
              ON CONFLICT (id) DO UPDATE SET facet_id = EXCLUDED.facet_id, label = EXCLUDED.label, description = EXCLUDED.description,
                aliases = EXCLUDED.aliases, case_sensitive_aliases = EXCLUDED.case_sensitive_aliases, status = EXCLUDED.status`,
-            [concept.id, concept.facetId, concept.label, concept.description, concept.aliases, concept.caseSensitiveAliases ?? [], concept.status],
+            [
+              concept.id,
+              concept.facetId,
+              concept.label,
+              concept.description,
+              concept.aliases,
+              concept.caseSensitiveAliases ?? [],
+              concept.status,
+            ],
           );
         }
         // Relations are fully owned by the snapshot source (data files); concepts are never deleted, only deprecated.
         await client.query('DELETE FROM ontology_relations');
         for (const relation of snapshot.relations) {
-          await client.query('INSERT INTO ontology_relations (from_concept_id, to_concept_id, type) VALUES ($1,$2,$3)', [
-            relation.fromConceptId,
-            relation.toConceptId,
-            relation.type,
-          ]);
+          await client.query(
+            'INSERT INTO ontology_relations (from_concept_id, to_concept_id, type) VALUES ($1,$2,$3)',
+            [relation.fromConceptId, relation.toConceptId, relation.type],
+          );
         }
         await client.query('UPDATE ontology_meta SET version = version + 1');
       });
@@ -70,7 +80,10 @@ export const createPostgresOntologyProvider = (pool: pg.Pool, options: { readonl
           [input.id, input.facetId, input.label, input.description, input.aliases, 'active'],
         );
         for (const broader of input.broaderConceptIds) {
-          await client.query("INSERT INTO ontology_relations (from_concept_id, to_concept_id, type) VALUES ($1,$2,'is_a')", [input.id, broader]);
+          await client.query(
+            "INSERT INTO ontology_relations (from_concept_id, to_concept_id, type) VALUES ($1,$2,'is_a')",
+            [input.id, broader],
+          );
         }
         await client.query('UPDATE ontology_meta SET version = version + 1');
       });

@@ -74,13 +74,13 @@ Each constraint in a match has a status:
 
 The evidence **basis** tells you how much to trust a met constraint:
 
-| basis | meaning |
-|---|---|
-| verified by platform review of evidence | platform reviewed linked evidence |
+| basis                                    | meaning                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| verified by platform review of evidence  | platform reviewed linked evidence                                                    |
 | stated by supplier, with linked evidence | supplier statement plus document/certificate/case study — not independently verified |
-| stated by supplier | supplier statement only |
-| from public/third-party documentation | public source, not supplier-confirmed |
-| AI-inferred | drafted by AI from documents, not confirmed — never present as fact |
+| stated by supplier                       | supplier statement only                                                              |
+| from public/third-party documentation    | public source, not supplier-confirmed                                                |
+| AI-inferred                              | drafted by AI from documents, not confirmed — never present as fact                  |
 
 The `score` is a transparent weighted sum (`scoreBreakdown`) used for
 ordering. Never present it as a quality rating or a probability.
@@ -90,10 +90,10 @@ ordering. Never present it as a quality rating or a probability.
 - Lead with the candidates whose hard constraints are all met, then those
   with unknowns. Say explicitly which constraints are unknown.
 - Keep these distinctions exact — never upgrade them:
-  - *supports* ≠ *certified* ≠ *has production deployment*
-  - *designed for ASIL-B* ≠ *ASIL-B certified*
-  - *supplier-stated* ≠ *platform-verified* ≠ *publicly documented*
-  - *similar/related* ≠ *compatible*
+  - _supports_ ≠ _certified_ ≠ _has production deployment_
+  - _designed for ASIL-B_ ≠ _ASIL-B certified_
+  - _supplier-stated_ ≠ _platform-verified_ ≠ _publicly documented_
+  - _similar/related_ ≠ _compatible_
 - Cite the basis for important claims ("stated by the supplier with a linked
   certificate", "inferred, unconfirmed").
 - Say "unknown" when data is missing. Never invent capabilities,

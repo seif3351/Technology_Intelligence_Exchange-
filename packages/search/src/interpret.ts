@@ -23,17 +23,42 @@ export interface InterpretedRequirement {
 
 const PREFERENCE_CUE =
   /\b(ideally|preferably|preferred|prefer|nice to have|would be (a )?(plus|nice)|optional(ly)?|bonus|if possible|desirable)\b/;
-const PRODUCTION_REFERENCE_CUE = /\b(production references?|reference customers?|series production references?|production track record)\b/;
-const MATURITY_PRODUCTION_CUE = /\b(production ready|production grade|series ready|production proven|mature)\b/;
+const PRODUCTION_REFERENCE_CUE =
+  /\b(production references?|reference customers?|series production references?|production track record)\b/;
+const MATURITY_PRODUCTION_CUE =
+  /\b(production ready|production grade|series ready|production proven|mature)\b/;
 const LEVEL_CUES: readonly { readonly level: ConstraintLevel; readonly pattern: RegExp }[] = [
   { level: 'certified', pattern: /\b(certified|certification|certificate)\b/ },
-  { level: 'production', pattern: /\b(in series production|deployed in production|production deployments?)\b/ },
+  {
+    level: 'production',
+    pattern: /\b(in series production|deployed in production|production deployments?)\b/,
+  },
   { level: 'experience', pattern: /\b(experience|experienced|track record|proven)\b/ },
 ];
 const CUE_WINDOW = 28;
 
 const COMMON_UPPERCASE_WORDS = new Set([
-  'I', 'A', 'WE', 'OEM', 'OEMS', 'RFI', 'RFQ', 'POC', 'SOP', 'EU', 'US', 'USA', 'UK', 'API', 'APIS', 'OK', 'IT', 'Q1', 'Q2', 'Q3', 'Q4',
+  'I',
+  'A',
+  'WE',
+  'OEM',
+  'OEMS',
+  'RFI',
+  'RFQ',
+  'POC',
+  'SOP',
+  'EU',
+  'US',
+  'USA',
+  'UK',
+  'API',
+  'APIS',
+  'OK',
+  'IT',
+  'Q1',
+  'Q2',
+  'Q3',
+  'Q4',
 ]);
 
 export const interpretRequirementText = (text: string, ontology: Ontology): InterpretedRequirement => {
@@ -82,7 +107,8 @@ export const interpretRequirementText = (text: string, ontology: Ontology): Inte
       const facet = ontology.getFacet(concept.facetId);
       const cueLevel = detectLevelCue(working, mention, mentions[index - 1], mentions[index + 1]);
       const level = cueLevel ?? facet?.defaultConstraintLevel ?? 'supports';
-      if (cueLevel) notes.push(`"${concept.label}" requires level "${cueLevel}" (cue found next to the term)`);
+      if (cueLevel)
+        notes.push(`"${concept.label}" requires level "${cueLevel}" (cue found next to the term)`);
       const constraint: ConceptConstraint = {
         kind: 'concept',
         id: nextId(),
@@ -147,10 +173,16 @@ const upsert = (map: Map<string, RequirementConstraint>, key: string, next: Requ
     map.set(key, next);
     return;
   }
-  const priority = PRIORITY_RANK[next.priority] > PRIORITY_RANK[existing.priority] ? next.priority : existing.priority;
+  const priority =
+    PRIORITY_RANK[next.priority] > PRIORITY_RANK[existing.priority] ? next.priority : existing.priority;
   if (existing.kind === 'concept' && next.kind === 'concept') {
     const level = LEVEL_RANK[next.level] > LEVEL_RANK[existing.level] ? next.level : existing.level;
-    map.set(key, { ...existing, priority, level, qualifiers: { ...existing.qualifiers, ...next.qualifiers } });
+    map.set(key, {
+      ...existing,
+      priority,
+      level,
+      qualifiers: { ...existing.qualifiers, ...next.qualifiers },
+    });
   } else {
     map.set(key, { ...existing, priority });
   }
@@ -182,7 +214,8 @@ const renumber = (constraints: RequirementConstraint[]): RequirementConstraint[]
 
 const findUnrecognizedTerms = (text: string, ontology: Ontology): string[] => {
   const recognized = ontology.findMentions(text).map((mention) => mention.matchedText);
-  const candidates = text.match(/\b(?:[A-Z][A-Z0-9]{1,11}(?:[-/][A-Z0-9]+)*|[A-Za-z]+[0-9][A-Za-z0-9-]*)\b/g) ?? [];
+  const candidates =
+    text.match(/\b(?:[A-Z][A-Z0-9]{1,11}(?:[-/][A-Z0-9]+)*|[A-Za-z]+[0-9][A-Za-z0-9-]*)\b/g) ?? [];
   const unknown = new Set<string>();
   for (const candidate of candidates) {
     if (COMMON_UPPERCASE_WORDS.has(candidate.toUpperCase())) continue;

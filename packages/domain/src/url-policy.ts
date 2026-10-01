@@ -22,7 +22,8 @@ const PRIVATE_HOST_PATTERNS: readonly RegExp[] = [
   /^metadata\.google\.internal$/i,
 ];
 
-export type UrlCheck = { readonly ok: true; readonly url: string } | { readonly ok: false; readonly reason: string };
+export type UrlCheck =
+  { readonly ok: true; readonly url: string } | { readonly ok: false; readonly reason: string };
 
 export const checkExternalUrl = (raw: string): UrlCheck => {
   let parsed: URL;

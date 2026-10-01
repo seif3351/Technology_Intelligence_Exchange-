@@ -7,13 +7,26 @@ import {
   presentationOf,
 } from '@atx/ui';
 
-export const Badge = ({ tone = 'neutral', children, title }: { tone?: string; children: React.ReactNode; title?: string }) => (
+export const Badge = ({
+  tone = 'neutral',
+  children,
+  title,
+}: {
+  tone?: string;
+  children: React.ReactNode;
+  title?: string;
+}) => (
   <span className={`badge tone-${tone}`} title={title}>
     {children}
   </span>
 );
 
-export const DemoBadge = ({ isDemo }: { isDemo: boolean }) => (isDemo ? <span className="badge demo" title="Synthetic demonstration data">Demo data</span> : null);
+export const DemoBadge = ({ isDemo }: { isDemo: boolean }) =>
+  isDemo ? (
+    <span className="badge demo" title="Synthetic demonstration data">
+      Demo data
+    </span>
+  ) : null;
 
 export const StatusBadge = ({ status, title }: { status: string; title?: string | null }) => {
   const p = presentationOf(ASSESSMENT_PRESENTATION, status, { label: status, tone: 'neutral', symbol: '?' });
@@ -44,4 +57,6 @@ export const VerificationBadge = ({ state }: { state: string }) => {
   return <Badge tone={p.tone}>{p.label}</Badge>;
 };
 
-export const MaturityBadge = ({ maturity }: { maturity: string }) => <Badge>{MATURITY_LABEL[maturity] ?? maturity}</Badge>;
+export const MaturityBadge = ({ maturity }: { maturity: string }) => (
+  <Badge>{MATURITY_LABEL[maturity] ?? maturity}</Badge>
+);

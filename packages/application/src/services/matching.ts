@@ -68,7 +68,11 @@ const CANDIDATE_POOL = 80;
 export class MatchingService {
   constructor(private readonly deps: ApplicationDeps) {}
 
-  async interpret(ctx: RequestContext, text: string, confidentialTerms: readonly string[] = []): Promise<InterpretationView> {
+  async interpret(
+    ctx: RequestContext,
+    text: string,
+    confidentialTerms: readonly string[] = [],
+  ): Promise<InterpretationView> {
     const ontology = await this.deps.ontology.current();
     const result = await this.interpretText(redact(text, confidentialTerms), ontology);
     return toInterpretationView(result, ontology, result.method);
@@ -79,11 +83,17 @@ export class MatchingService {
       const started = Date.now();
       const ontology = await this.deps.ontology.current();
       const degraded: string[] = [];
-      const { constraints, interpretation, retrievalText } = await this.resolveConstraints(ctx, query, ontology);
+      const { constraints, interpretation, retrievalText } = await this.resolveConstraints(
+        ctx,
+        query,
+        ontology,
+      );
       validateConstraints(constraints);
       for (const constraint of constraints) {
         if (constraint.kind === 'concept' && !ontology.hasConcept(constraint.conceptId)) {
-          throw validationError(`Unknown concept "${constraint.conceptId}"`, [{ path: 'constraints', message: 'unknown concept' }]);
+          throw validationError(`Unknown concept "${constraint.conceptId}"`, [
+            { path: 'constraints', message: 'unknown concept' },
+          ]);
         }
       }
       if (constraints.length === 0 && !retrievalText) {
@@ -91,17 +101,27 @@ export class MatchingService {
       }
 
       const fused = query.offeringIds
-        ? query.offeringIds.map((id) => ({ id, rrf: 0, relevance: 0.5, sources: ['explicit'] }) as FusedCandidate)
+        ? query.offeringIds.map(
+            (id) => ({ id, rrf: 0, relevance: 0.5, sources: ['explicit'] }) as FusedCandidate,
+          )
         : await this.retrieve(retrievalText, constraints, ontology, degraded);
 
-      const bundle = await loadCatalogBundle(this.deps, fused.map((candidate) => asId<'OfferingId'>(candidate.id)));
+      const bundle = await loadCatalogBundle(
+        this.deps,
+        fused.map((candidate) => asId<'OfferingId'>(candidate.id)),
+      );
       const now = this.deps.clock.now();
       const evaluated: RankableMatch[] = [];
       for (const candidate of fused) {
         const input = toCandidate(bundle, asId(candidate.id), candidate.relevance);
         if (!input) continue;
         const match = evaluateCandidate(input, constraints, ontology, now);
-        if (query.excludeUnmetHardConstraints !== false && match.hardConstraintStatus === 'some_unmet' && !query.offeringIds) continue;
+        if (
+          query.excludeUnmetHardConstraints !== false &&
+          match.hardConstraintStatus === 'some_unmet' &&
+          !query.offeringIds
+        )
+          continue;
         if (query.requireAllHardConstraintsMet && match.hardConstraintStatus !== 'all_met') continue;
         evaluated.push({ match, tieBreakName: input.offering.name });
       }
@@ -118,7 +138,13 @@ export class MatchingService {
         degraded: degraded.length > 0,
       });
       this.deps.telemetry.increment('atx.search.results', { hasResults: matches.length > 0 });
-      return { interpretation, matches, nextCursor: page.nextCursor, totalCandidatesEvaluated: evaluated.length, degraded };
+      return {
+        interpretation,
+        matches,
+        nextCursor: page.nextCursor,
+        totalCandidatesEvaluated: evaluated.length,
+        degraded,
+      };
     });
   }
 
@@ -130,7 +156,10 @@ export class MatchingService {
     const ontology = await this.deps.ontology.current();
     let effective: MatchQuery = { ...query, limit: 5, cursor: null };
     if (!query.text && !query.constraints?.length && !query.requirement) {
-      effective = { ...effective, constraints: await this.claimedConceptConstraints(query.offeringIds, ontology) };
+      effective = {
+        ...effective,
+        constraints: await this.claimedConceptConstraints(query.offeringIds, ontology),
+      };
     }
     const response = await this.findMatches(ctx, effective);
     const order = new Map(query.offeringIds.map((id, index) => [id, index]));
@@ -143,11 +172,20 @@ export class MatchingService {
     return { ...response, matches, matrix };
   }
 
-  private async claimedConceptConstraints(offeringIds: readonly string[], ontology: Ontology): Promise<RequirementConstraint[]> {
-    const claims = await this.deps.repos.claims.listPublishedForOfferings(offeringIds.map((id) => asId<'OfferingId'>(id)));
+  private async claimedConceptConstraints(
+    offeringIds: readonly string[],
+    ontology: Ontology,
+  ): Promise<RequirementConstraint[]> {
+    const claims = await this.deps.repos.claims.listPublishedForOfferings(
+      offeringIds.map((id) => asId<'OfferingId'>(id)),
+    );
     const conceptIds = [...new Set(claims.map((claim) => claim.conceptId))]
       .filter((id) => ontology.hasConcept(id))
-      .sort((a, b) => (ontology.getConcept(a)?.facetId ?? '').localeCompare(ontology.getConcept(b)?.facetId ?? '') || a.localeCompare(b))
+      .sort(
+        (a, b) =>
+          (ontology.getConcept(a)?.facetId ?? '').localeCompare(ontology.getConcept(b)?.facetId ?? '') ||
+          a.localeCompare(b),
+      )
       .slice(0, 30);
     return conceptIds.map((conceptId, index) => ({
       kind: 'concept',
@@ -163,7 +201,10 @@ export class MatchingService {
   private async resolveConstraints(ctx: RequestContext, query: MatchQuery, ontology: Ontology) {
     if (query.requirement) {
       const scope = authorizeTenant(ctx, asId(query.requirement.organizationId), 'viewer');
-      const requirement = await this.deps.repos.requirements.findById(scope, asId(query.requirement.requirementId));
+      const requirement = await this.deps.repos.requirements.findById(
+        scope,
+        asId(query.requirement.requirementId),
+      );
       await recordAudit(this.deps.repos.audit, ctx, this.deps.clock.now(), {
         action: 'requirement.match',
         resourceType: 'requirement',
@@ -187,14 +228,28 @@ export class MatchingService {
     if (query.constraints && query.constraints.length > 0) {
       return {
         constraints: query.constraints,
-        interpretation: toInterpretationView({ constraints: query.constraints, unrecognizedTerms: [], notes: [] }, ontology, 'provided'),
-        retrievalText: [redact(query.text ?? '', query.confidentialTerms ?? []), labelsText(query.constraints, ontology)].join(' ').trim(),
+        interpretation: toInterpretationView(
+          { constraints: query.constraints, unrecognizedTerms: [], notes: [] },
+          ontology,
+          'provided',
+        ),
+        retrievalText: [
+          redact(query.text ?? '', query.confidentialTerms ?? []),
+          labelsText(query.constraints, ontology),
+        ]
+          .join(' ')
+          .trim(),
       };
     }
     const text = redact(query.text ?? '', query.confidentialTerms ?? []);
-    if (text.trim().length === 0) return { constraints: [], interpretation: emptyInterpretation, retrievalText: '' };
+    if (text.trim().length === 0)
+      return { constraints: [], interpretation: emptyInterpretation, retrievalText: '' };
     const result = await this.interpretText(text, ontology);
-    return { constraints: result.constraints, interpretation: toInterpretationView(result, ontology, result.method), retrievalText: text };
+    return {
+      constraints: result.constraints,
+      interpretation: toInterpretationView(result, ontology, result.method),
+      retrievalText: text,
+    };
   }
 
   private async interpretText(text: string, ontology: Ontology) {
@@ -217,7 +272,9 @@ export class MatchingService {
       try {
         const started = Date.now();
         const [vector] = await this.deps.embeddings.embed([text]);
-        this.deps.telemetry.recordDuration('atx.embedding.duration', Date.now() - started, { model: this.deps.embeddings.model });
+        this.deps.telemetry.recordDuration('atx.embedding.duration', Date.now() - started, {
+          model: this.deps.embeddings.model,
+        });
         if (vector) embedding = { model: this.deps.embeddings.model, vector };
       } catch {
         degraded.push('semantic_search_unavailable');
@@ -225,12 +282,22 @@ export class MatchingService {
     } else if (!this.deps.embeddings) {
       degraded.push('semantic_search_not_configured');
     }
-    const lists = await this.deps.searchIndex.retrieve({ text: text || null, embedding, conceptIds, limit: CANDIDATE_POOL });
+    const lists = await this.deps.searchIndex.retrieve({
+      text: text || null,
+      embedding,
+      conceptIds,
+      limit: CANDIDATE_POOL,
+    });
     return reciprocalRankFusion(lists).slice(0, CANDIDATE_POOL);
   }
 }
 
-const emptyInterpretation: InterpretationView = { constraints: [], unrecognizedTerms: [], notes: [], method: 'provided' };
+const emptyInterpretation: InterpretationView = {
+  constraints: [],
+  unrecognizedTerms: [],
+  notes: [],
+  method: 'provided',
+};
 
 const toInterpretationView = (
   result: InterpretedRequirement,
@@ -246,7 +313,9 @@ const toInterpretationView = (
 const labelsText = (constraints: readonly RequirementConstraint[], ontology: Ontology): string =>
   constraints
     .flatMap((constraint) =>
-      constraint.kind === 'concept' ? [ontology.getConcept(constraint.conceptId)?.label ?? constraint.conceptId] : [],
+      constraint.kind === 'concept'
+        ? [ontology.getConcept(constraint.conceptId)?.label ?? constraint.conceptId]
+        : [],
     )
     .join(' ');
 

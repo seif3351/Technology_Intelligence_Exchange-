@@ -22,7 +22,11 @@ export const adminRoutes = (app: Application): AnyRouteSpec[] => [
     summary: 'Organizations awaiting verification',
     tags: ['admin'],
     auth: 'required',
-    response: z.object({ items: z.array(OrganizationRef.extend({ kind: z.string(), website: z.string().nullable(), requestedAt: z.string() })) }),
+    response: z.object({
+      items: z.array(
+        OrganizationRef.extend({ kind: z.string(), website: z.string().nullable(), requestedAt: z.string() }),
+      ),
+    }),
     handler: async ({ ctx }) => ({ items: await app.admin.verificationQueue(ctx) }),
   }),
   defineRoute({
@@ -35,7 +39,8 @@ export const adminRoutes = (app: Application): AnyRouteSpec[] => [
     params: z.object({ orgId: Uuid }),
     body: AdminVerificationDecision,
     response: OrganizationRecord,
-    handler: async ({ params, body, ctx }) => app.admin.setOrganizationVerification(ctx, params.orgId, body.state, body.reason),
+    handler: async ({ params, body, ctx }) =>
+      app.admin.setOrganizationVerification(ctx, params.orgId, body.state, body.reason),
   }),
   defineRoute({
     method: 'GET',
@@ -57,7 +62,8 @@ export const adminRoutes = (app: Application): AnyRouteSpec[] => [
     params: z.object({ claimId: Uuid }),
     body: AdminClaimReview,
     response: ClaimView,
-    handler: async ({ params, body, ctx }) => app.admin.reviewClaim(ctx, params.claimId, body.outcome, body.notes),
+    handler: async ({ params, body, ctx }) =>
+      app.admin.reviewClaim(ctx, params.claimId, body.outcome, body.notes),
   }),
   defineRoute({
     method: 'GET',
@@ -100,7 +106,12 @@ export const adminRoutes = (app: Application): AnyRouteSpec[] => [
     summary: 'Audit events (newest first)',
     tags: ['admin'],
     auth: 'required',
-    query: z.object({ organizationId: Uuid.optional(), action: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(200).optional(), before: z.iso.datetime().optional() }),
+    query: z.object({
+      organizationId: Uuid.optional(),
+      action: z.string().max(100).optional(),
+      limit: z.coerce.number().int().min(1).max(200).optional(),
+      before: z.iso.datetime().optional(),
+    }),
     response: z.object({ items: z.array(AuditEventRecord) }),
     handler: async ({ query, ctx }) => ({ items: await app.admin.auditLog(ctx, query) }),
   }),
@@ -111,7 +122,11 @@ export const adminRoutes = (app: Application): AnyRouteSpec[] => [
     summary: 'Aggregated anonymized demand by concept',
     tags: ['admin'],
     auth: 'required',
-    response: z.object({ items: z.array(z.object({ concept: z.string(), conceptId: z.string(), requirementCount: z.number().int() })) }),
+    response: z.object({
+      items: z.array(
+        z.object({ concept: z.string(), conceptId: z.string(), requirementCount: z.number().int() }),
+      ),
+    }),
     handler: async ({ ctx }) => ({ items: await app.admin.demandSignals(ctx) }),
   }),
 ];

@@ -6,7 +6,9 @@ export const createAssetUrlSigner = (secret: string, apiBaseUrl: string) => {
   if (secret.length < 32) throw new Error('ASSET_URL_SECRET must be at least 32 characters');
   const sign = (assetId: string, expires: number) =>
     createHmac('sha256', secret).update(`${assetId}.${expires}`).digest('base64url');
-  const signer: AssetUrlSigner & { verify(assetId: string, expires: string, signature: string, now?: number): boolean } = {
+  const signer: AssetUrlSigner & {
+    verify(assetId: string, expires: string, signature: string, now?: number): boolean;
+  } = {
     signedUrl(assetId, ttlSeconds) {
       const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
       const url = new URL(`/v1/assets/${assetId}/content`, apiBaseUrl);

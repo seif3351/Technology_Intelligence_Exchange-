@@ -31,6 +31,11 @@ export const reciprocalRankFusion = (lists: readonly RankedList[]): FusedCandida
   const nonEmpty = lists.filter((list) => list.ids.length > 0).length;
   const best = nonEmpty === 0 ? 1 : nonEmpty / (RRF_K + 1);
   return [...scores.entries()]
-    .map(([id, entry]) => ({ id, rrf: entry.rrf, relevance: Math.min(1, entry.rrf / best), sources: entry.sources }))
+    .map(([id, entry]) => ({
+      id,
+      rrf: entry.rrf,
+      relevance: Math.min(1, entry.rrf / best),
+      sources: entry.sources,
+    }))
     .sort((a, b) => b.rrf - a.rrf || a.id.localeCompare(b.id));
 };

@@ -82,16 +82,25 @@ export class Ontology {
       }
       this.conceptsById.set(concept.id, concept);
       for (const exact of concept.caseSensitiveAliases ?? []) {
-        this.caseSensitive.push({ exact, pattern: new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(exact)}(?![A-Za-z0-9])`, 'gi') });
+        this.caseSensitive.push({
+          exact,
+          pattern: new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(exact)}(?![A-Za-z0-9])`, 'gi'),
+        });
       }
-      const names = new Set([concept.label, ...concept.aliases, ...(concept.caseSensitiveAliases ?? [])].map(normalizeForMatching));
+      const names = new Set(
+        [concept.label, ...concept.aliases, ...(concept.caseSensitiveAliases ?? [])].map(
+          normalizeForMatching,
+        ),
+      );
       for (const normalized of names) {
         if (normalized.length > 0) this.aliasIndex.push({ normalized, conceptId: concept.id });
       }
     }
     for (const relation of snapshot.relations) {
       if (!this.conceptsById.has(relation.fromConceptId) || !this.conceptsById.has(relation.toConceptId)) {
-        throw new Error(`Relation ${relation.fromConceptId} -> ${relation.toConceptId} references unknown concept`);
+        throw new Error(
+          `Relation ${relation.fromConceptId} -> ${relation.toConceptId} references unknown concept`,
+        );
       }
       push(this.outgoing, relation.fromConceptId, relation);
       push(this.incoming, relation.toConceptId, relation);

@@ -15,7 +15,12 @@ const requirement: Requirement = {
   title: 'Project Falcon ADAS integration testing',
   description: 'For vehicle program VP-2031 with customer Contoso Motors',
   constraints: [],
-  confidentialTerms: normalizeConfidentialTerms(['Project Falcon', 'VP-2031', 'Contoso Motors', 'Contoso Motors']),
+  confidentialTerms: normalizeConfidentialTerms([
+    'Project Falcon',
+    'VP-2031',
+    'Contoso Motors',
+    'Contoso Motors',
+  ]),
   visibility: 'private',
   status: 'draft',
   createdBy: asId('00000000-0000-4000-8000-000000000012'),
@@ -30,10 +35,16 @@ describe('confidential requirement handling', () => {
   });
 
   it('detects leaks regardless of case, punctuation and spacing', () => {
-    expect(findConfidentialLeaks('Our PROJECT-FALCON needs...', requirement.confidentialTerms)).toEqual(['Project Falcon']);
+    expect(findConfidentialLeaks('Our PROJECT-FALCON needs...', requirement.confidentialTerms)).toEqual([
+      'Project Falcon',
+    ]);
     expect(findConfidentialLeaks('program vp 2031', requirement.confidentialTerms)).toEqual(['VP-2031']);
-    expect(findConfidentialLeaks('for contosomotors', requirement.confidentialTerms)).toEqual(['Contoso Motors']);
-    expect(findConfidentialLeaks('Generic ADAS integration testing', requirement.confidentialTerms)).toEqual([]);
+    expect(findConfidentialLeaks('for contosomotors', requirement.confidentialTerms)).toEqual([
+      'Contoso Motors',
+    ]);
+    expect(findConfidentialLeaks('Generic ADAS integration testing', requirement.confidentialTerms)).toEqual(
+      [],
+    );
   });
 
   it('refuses supplier-facing summaries that contain confidential terms without echoing them', () => {

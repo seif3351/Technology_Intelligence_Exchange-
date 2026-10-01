@@ -11,7 +11,11 @@ const LLM_CHAR_BUDGET = 60_000;
 /** Lexicon + cue-word drafting. Conservative by design: the weakest matching predicate wins. */
 export const deterministicProfileDraftGenerator: SupplierProfileDraftGenerator = {
   async generate({ sourceText, ontology }) {
-    return { claims: deterministicClaims(sourceText, ontology), suggestedSummary: null, method: 'deterministic' };
+    return {
+      claims: deterministicClaims(sourceText, ontology),
+      suggestedSummary: null,
+      method: 'deterministic',
+    };
   },
 };
 
@@ -66,7 +70,10 @@ The summary must be at most two neutral sentences without marketing superlatives
  * quote's own wording allows are discarded. Results are merged with the
  * deterministic pass. Any failure returns the deterministic draft.
  */
-export const createAiProfileDraftGenerator = (llm: StructuredLlm, onFailure?: (error: unknown) => void): SupplierProfileDraftGenerator => ({
+export const createAiProfileDraftGenerator = (
+  llm: StructuredLlm,
+  onFailure?: (error: unknown) => void,
+): SupplierProfileDraftGenerator => ({
   async generate({ sourceText, ontology }): Promise<ProfileDraft> {
     const baseline = deterministicClaims(sourceText, ontology);
     try {
@@ -82,18 +89,24 @@ export const createAiProfileDraftGenerator = (llm: StructuredLlm, onFailure?: (e
       for (const claim of output.claims) {
         if (!ontology.hasConcept(claim.conceptId)) continue;
         const quote = claim.quote.slice(0, MAX_QUOTE);
-        if (normalizeForMatching(quote).length < 8 || !normalizedSource.includes(normalizeForMatching(quote))) continue;
+        if (normalizeForMatching(quote).length < 8 || !normalizedSource.includes(normalizeForMatching(quote)))
+          continue;
         const concept = ontology.getConcept(asId(claim.conceptId));
         const cue = concept ? inferClaimPredicate(quote, concept.facetId) : null;
         if (!cue) continue; // negated or planned capability
         // Never accept a predicate the quote's own wording does not support.
-        const predicate = cue.matchedCues.length === 0 || cue.matchedCues.includes(claim.predicate) ? claim.predicate : cue.predicate;
+        const predicate =
+          cue.matchedCues.length === 0 || cue.matchedCues.includes(claim.predicate)
+            ? claim.predicate
+            : cue.predicate;
         grounded.push({
           conceptId: asId(claim.conceptId),
           predicate,
           qualifiers: {
             ...(claim.asil ? { asil: claim.asil } : {}),
-            ...(predicate === 'CERTIFIED' && claim.certificationBody ? { certificationBody: claim.certificationBody.slice(0, 120) } : {}),
+            ...(predicate === 'CERTIFIED' && claim.certificationBody
+              ? { certificationBody: claim.certificationBody.slice(0, 120) }
+              : {}),
           },
           quote,
         });
@@ -103,7 +116,11 @@ export const createAiProfileDraftGenerator = (llm: StructuredLlm, onFailure?: (e
         const key = `${claim.conceptId}:${claim.predicate}`;
         if (!merged.has(key)) merged.set(key, claim);
       }
-      return { claims: [...merged.values()], suggestedSummary: output.summary?.slice(0, 400) ?? null, method: 'ai_assisted' };
+      return {
+        claims: [...merged.values()],
+        suggestedSummary: output.summary?.slice(0, 400) ?? null,
+        method: 'ai_assisted',
+      };
     } catch (error) {
       onFailure?.(error);
       return { claims: baseline, suggestedSummary: null, method: 'deterministic' };

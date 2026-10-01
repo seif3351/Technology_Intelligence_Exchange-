@@ -20,7 +20,12 @@ export async function login(_state: FormState, form: FormData): Promise<FormStat
   const parsed = LoginRequest.safeParse({ email: form.get('email'), password: form.get('password') });
   if (!parsed.success) return { error: 'Enter a valid email and password.' };
   try {
-    const token = await api('/v1/auth/login', { method: 'POST', body: parsed.data, schema: TokenResponse, anonymous: true });
+    const token = await api('/v1/auth/login', {
+      method: 'POST',
+      body: parsed.data,
+      schema: TokenResponse,
+      anonymous: true,
+    });
     await setSessionToken(token.accessToken, token.expiresIn);
   } catch (error) {
     return { error: describeError(error) };

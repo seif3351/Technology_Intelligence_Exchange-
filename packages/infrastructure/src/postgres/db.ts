@@ -2,7 +2,10 @@ import pg from 'pg';
 
 /** Anything that can run a parameterized query: the pool or a transaction client. */
 export interface Queryable {
-  query<R extends pg.QueryResultRow = pg.QueryResultRow>(text: string, params?: readonly unknown[]): Promise<pg.QueryResult<R>>;
+  query<R extends pg.QueryResultRow = pg.QueryResultRow>(
+    text: string,
+    params?: readonly unknown[],
+  ): Promise<pg.QueryResult<R>>;
 }
 
 export interface DatabaseOptions {
@@ -23,7 +26,10 @@ export const createPool = (options: DatabaseOptions): pg.Pool => {
   return pool;
 };
 
-export const withTransaction = async <T>(pool: pg.Pool, work: (client: pg.PoolClient) => Promise<T>): Promise<T> => {
+export const withTransaction = async <T>(
+  pool: pg.Pool,
+  work: (client: pg.PoolClient) => Promise<T>,
+): Promise<T> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

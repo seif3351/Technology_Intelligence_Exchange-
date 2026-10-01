@@ -75,7 +75,8 @@ export class CatalogService {
       origin: 'user',
     }));
     const text = query.query?.trim() ?? '';
-    if (!text && constraints.length === 0) throw validationError('Provide a query or at least one concept filter');
+    if (!text && constraints.length === 0)
+      throw validationError('Provide a query or at least one concept filter');
 
     const response = await this.matching.findMatches(ctx, {
       text,
@@ -87,7 +88,8 @@ export class CatalogService {
     const filtered = response.matches.filter(
       (match) =>
         (!query.types?.length || query.types.includes(match.offering.type as OfferingType)) &&
-        (!query.minimumMaturity || maturityAtLeast(match.offering.maturity as MaturityLevel, query.minimumMaturity)),
+        (!query.minimumMaturity ||
+          maturityAtLeast(match.offering.maturity as MaturityLevel, query.minimumMaturity)),
     );
     const offset = decodeCursor(query.cursor);
     const limit = clampLimit(query.limit, 10);
@@ -96,14 +98,19 @@ export class CatalogService {
       items: filtered.slice(offset, offset + limit).map((match) => ({
         offering: match.offering,
         relevance: match.scoreComponents.find((c) => c.name === 'text_relevance')?.value ?? 0,
-        matchedConcepts: match.assessments.filter((a) => a.status === 'met').flatMap((a) => (a.concept ? [a.concept] : [])),
+        matchedConcepts: match.assessments
+          .filter((a) => a.status === 'met')
+          .flatMap((a) => (a.concept ? [a.concept] : [])),
       })),
       nextCursor: offset + limit < filtered.length ? encodeCursor(offset + limit) : null,
       degraded: response.degraded,
     };
   }
 
-  async getOffering(ctx: RequestContext, idOrSlug: { readonly id?: string; readonly organizationSlug?: string; readonly slug?: string }): Promise<OfferingDetailView> {
+  async getOffering(
+    ctx: RequestContext,
+    idOrSlug: { readonly id?: string; readonly organizationSlug?: string; readonly slug?: string },
+  ): Promise<OfferingDetailView> {
     const ontology = await this.deps.ontology.current();
     const offering = await this.resolveOffering(idOrSlug);
     if (!offering || !canViewOffering(ctx.principal, offering)) throw notFound('Offering');
@@ -115,7 +122,9 @@ export class CatalogService {
       this.deps.repos.evidence.listPublicForOfferings([offering.id]),
       this.deps.repos.assets.listPublicForOfferings([offering.id]),
     ]);
-    const offeringClaims = claims.filter((claim) => claim.subject.type === 'offering' && claim.subject.id === offering.id);
+    const offeringClaims = claims.filter(
+      (claim) => claim.subject.type === 'offering' && claim.subject.id === offering.id,
+    );
     const organizationClaims = claims.filter((claim) => claim.subject.type !== 'offering');
     return {
       ...presentOfferingSummary(offering, organization, offeringClaims, ontology),
@@ -165,13 +174,23 @@ export class CatalogService {
         .map((offering) => presentOfferingSummary(offering, organization, offeringClaims, ontology)),
       capabilities: capabilities.map((capability) => presentCapability(capability, ontology)),
       organizationClaims: sortClaims(
-        orgClaims.filter((claim) => claim.subject.type !== 'offering').map((claim) => presentClaim(claim, ontology)),
+        orgClaims
+          .filter((claim) => claim.subject.type !== 'offering')
+          .map((claim) => presentClaim(claim, ontology)),
       ),
       evidence: evidence.map(presentEvidence),
     };
   }
 
-  async searchSuppliers(_ctx: RequestContext, query: { readonly query?: string | null; readonly conceptIds?: readonly string[]; readonly limit?: number; readonly cursor?: string | null }) {
+  async searchSuppliers(
+    _ctx: RequestContext,
+    query: {
+      readonly query?: string | null;
+      readonly conceptIds?: readonly string[];
+      readonly limit?: number;
+      readonly cursor?: string | null;
+    },
+  ) {
     const ontology = await this.deps.ontology.current();
     const conceptIds = (query.conceptIds ?? []).map((id) => {
       if (!ontology.hasConcept(id)) throw validationError(`Unknown concept id: ${id}`);
@@ -187,12 +206,21 @@ export class CatalogService {
       offset,
     });
     return {
-      items: items.map((org) => ({ ...organizationRef(org), summary: org.summary, untrusted: true as const, headquartersCountry: org.headquartersCountry, regions: org.regions })),
+      items: items.map((org) => ({
+        ...organizationRef(org),
+        summary: org.summary,
+        untrusted: true as const,
+        headquartersCountry: org.headquartersCountry,
+        regions: org.regions,
+      })),
       nextCursor: offset + limit < total ? encodeCursor(offset + limit) : null,
     };
   }
 
-  async getEvidence(ctx: RequestContext, input: { readonly offeringId?: string; readonly claimId?: string; readonly evidenceId?: string }): Promise<{ claims: ClaimView[]; evidence: EvidenceView[] }> {
+  async getEvidence(
+    ctx: RequestContext,
+    input: { readonly offeringId?: string; readonly claimId?: string; readonly evidenceId?: string },
+  ): Promise<{ claims: ClaimView[]; evidence: EvidenceView[] }> {
     const ontology = await this.deps.ontology.current();
     if (input.evidenceId) {
       const evidence = await this.deps.repos.evidence.findById(asId(input.evidenceId));
@@ -216,7 +244,10 @@ export class CatalogService {
   }
 
   /** Technical demo videos, by offering or by capability/text search. */
-  async getDemos(ctx: RequestContext, input: { readonly offeringId?: string | null; readonly query?: string | null; readonly limit?: number }): Promise<{ videos: VideoView[]; offerings: ReturnType<typeof presentOfferingSummary>[] }> {
+  async getDemos(
+    ctx: RequestContext,
+    input: { readonly offeringId?: string | null; readonly query?: string | null; readonly limit?: number },
+  ): Promise<{ videos: VideoView[]; offerings: ReturnType<typeof presentOfferingSummary>[] }> {
     const limit = clampLimit(input.limit, 5);
     if (input.offeringId) {
       const detail = await this.getOffering(ctx, { id: input.offeringId });
@@ -238,41 +269,69 @@ export class CatalogService {
     const rank = new Map(offeringIds.map((id, index) => [id, index]));
     const ordered = videos
       .filter((video) => video.offeringId !== null)
-      .sort((a, b) => (rank.get(a.offeringId!) ?? 99) - (rank.get(b.offeringId!) ?? 99) || a.title.localeCompare(b.title))
+      .sort(
+        (a, b) =>
+          (rank.get(a.offeringId!) ?? 99) - (rank.get(b.offeringId!) ?? 99) || a.title.localeCompare(b.title),
+      )
       .slice(0, limit);
-    const offerings = relevant.map((item) => item.offering).filter((o) => ordered.some((v) => v.offeringId === o.id));
+    const offerings = relevant
+      .map((item) => item.offering)
+      .filter((o) => ordered.some((v) => v.offeringId === o.id));
     return { videos: ordered.map((asset) => this.video(asset)), offerings };
   }
 
-  async searchTechnologies(_ctx: RequestContext, input: { readonly query?: string | null; readonly facet?: string | null; readonly limit?: number }): Promise<TechnologyView[]> {
+  async searchTechnologies(
+    _ctx: RequestContext,
+    input: { readonly query?: string | null; readonly facet?: string | null; readonly limit?: number },
+  ): Promise<TechnologyView[]> {
     const ontology = await this.deps.ontology.current();
     const limit = clampLimit(input.limit, 10);
     const needle = normalizeForMatching(input.query ?? '');
     const scored = ontology.concepts
       .filter((concept) => concept.status === 'active' && (!input.facet || concept.facetId === input.facet))
-      .map((concept) => ({ concept, score: needle ? conceptScore(needle, concept.label, concept.aliases, concept.description) : 1 }))
+      .map((concept) => ({
+        concept,
+        score: needle ? conceptScore(needle, concept.label, concept.aliases, concept.description) : 1,
+      }))
       .filter((entry) => entry.score > 0)
       .sort((a, b) => b.score - a.score || a.concept.label.localeCompare(b.concept.label))
       .slice(0, limit);
-    const counts = await this.deps.repos.claims.countPublishedOfferingsByConcept(scored.map((entry) => entry.concept.id));
+    const counts = await this.deps.repos.claims.countPublishedOfferingsByConcept(
+      scored.map((entry) => entry.concept.id),
+    );
     return scored.map(({ concept }) => ({
       ...conceptRef(ontology, concept.id),
       description: concept.description,
       aliases: concept.aliases,
-      broader: ontology.relationsFrom(concept.id).filter((r) => r.type === 'is_a').map((r) => conceptRef(ontology, r.toConceptId)),
-      narrower: ontology.relationsTo(concept.id).filter((r) => r.type === 'is_a').map((r) => conceptRef(ontology, r.fromConceptId)),
+      broader: ontology
+        .relationsFrom(concept.id)
+        .filter((r) => r.type === 'is_a')
+        .map((r) => conceptRef(ontology, r.toConceptId)),
+      narrower: ontology
+        .relationsTo(concept.id)
+        .filter((r) => r.type === 'is_a')
+        .map((r) => conceptRef(ontology, r.fromConceptId)),
       related: [
-        ...ontology.relationsFrom(concept.id).filter((r) => r.type !== 'is_a').map((r) => ({ ...conceptRef(ontology, r.toConceptId), relation: r.type })),
-        ...ontology.relationsTo(concept.id).filter((r) => r.type !== 'is_a').map((r) => ({ ...conceptRef(ontology, r.fromConceptId), relation: `inverse_${r.type}` })),
+        ...ontology
+          .relationsFrom(concept.id)
+          .filter((r) => r.type !== 'is_a')
+          .map((r) => ({ ...conceptRef(ontology, r.toConceptId), relation: r.type })),
+        ...ontology
+          .relationsTo(concept.id)
+          .filter((r) => r.type !== 'is_a')
+          .map((r) => ({ ...conceptRef(ontology, r.fromConceptId), relation: `inverse_${r.type}` })),
       ],
       publishedOfferingCount: counts.get(concept.id) ?? 0,
     }));
   }
 
   /** A stored asset that may be served through a signed URL (public and fully processed only). */
-  async downloadableAsset(assetId: string): Promise<{ readonly storageKey: string; readonly contentType: string; readonly id: string }> {
+  async downloadableAsset(
+    assetId: string,
+  ): Promise<{ readonly storageKey: string; readonly contentType: string; readonly id: string }> {
     const asset = isUuid(assetId) ? await this.deps.repos.assets.findById(asId(assetId)) : null;
-    if (!asset || !asset.storageKey || asset.visibility !== 'public' || asset.processingState !== 'ready') throw notFound('Asset');
+    if (!asset || !asset.storageKey || asset.visibility !== 'public' || asset.processingState !== 'ready')
+      throw notFound('Asset');
     return { storageKey: asset.storageKey, contentType: asset.contentType, id: asset.id };
   }
 
@@ -281,8 +340,13 @@ export class CatalogService {
     return { facets: ontology.facets, concepts: ontology.concepts.filter((c) => c.status === 'active') };
   }
 
-  private async resolveOffering(idOrSlug: { readonly id?: string; readonly organizationSlug?: string; readonly slug?: string }) {
-    if (idOrSlug.id) return isUuid(idOrSlug.id) ? this.deps.repos.offerings.findById(asId(idOrSlug.id)) : null;
+  private async resolveOffering(idOrSlug: {
+    readonly id?: string;
+    readonly organizationSlug?: string;
+    readonly slug?: string;
+  }) {
+    if (idOrSlug.id)
+      return isUuid(idOrSlug.id) ? this.deps.repos.offerings.findById(asId(idOrSlug.id)) : null;
     if (idOrSlug.organizationSlug && idOrSlug.slug) {
       const org = await this.deps.repos.organizations.findBySlug(idOrSlug.organizationSlug);
       if (!org) return null;
@@ -296,12 +360,20 @@ export class CatalogService {
     const playbackUrl =
       asset.processingState !== 'ready'
         ? null
-        : asset.externalUrl ?? (asset.storageKey ? this.deps.assetUrls.signedUrl(asset.id, SIGNED_URL_TTL_SECONDS) : null);
+        : (asset.externalUrl ??
+          (asset.storageKey ? this.deps.assetUrls.signedUrl(asset.id, SIGNED_URL_TTL_SECONDS) : null));
     return presentVideo(asset, playbackUrl);
   }
 }
 
-const TRUST_ORDER = ['platform_verified', 'supplier_verified_with_evidence', 'supplier_verified', 'public_source', 'unverified', 'ai_inferred'];
+const TRUST_ORDER = [
+  'platform_verified',
+  'supplier_verified_with_evidence',
+  'supplier_verified',
+  'public_source',
+  'unverified',
+  'ai_inferred',
+];
 
 const sortClaims = (claims: ClaimView[]): ClaimView[] =>
   claims.sort(
@@ -312,10 +384,16 @@ const sortClaims = (claims: ClaimView[]): ClaimView[] =>
       a.id.localeCompare(b.id),
   );
 
-const conceptScore = (needle: string, label: string, aliases: readonly string[], description: string): number => {
+const conceptScore = (
+  needle: string,
+  label: string,
+  aliases: readonly string[],
+  description: string,
+): number => {
   const names = [label, ...aliases].map(normalizeForMatching);
   if (names.includes(needle)) return 3;
   if (names.some((name) => name.startsWith(needle) || (name.length >= 3 && needle.includes(name)))) return 2;
-  if (names.some((name) => name.includes(needle)) || normalizeForMatching(description).includes(needle)) return 1;
+  if (names.some((name) => name.includes(needle)) || normalizeForMatching(description).includes(needle))
+    return 1;
   return 0;
 };

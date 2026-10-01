@@ -53,7 +53,10 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     response: z.object({ requirement: RequirementView, issues: z.array(ValidationIssue) }),
     status: 201,
     handler: async ({ params, body, ctx }) =>
-      app.requirements.createDraft(ctx, params.orgId, { ...body, constraints: toDomainConstraints(body.constraints) ?? null }),
+      app.requirements.createDraft(ctx, params.orgId, {
+        ...body,
+        constraints: toDomainConstraints(body.constraints) ?? null,
+      }),
   }),
   defineRoute({
     method: 'GET',
@@ -77,7 +80,10 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     body: RequirementUpdate,
     response: RequirementView,
     handler: async ({ params, body, ctx }) =>
-      app.requirements.update(ctx, params.orgId, params.requirementId, { ...body, constraints: toDomainConstraints(body.constraints) }),
+      app.requirements.update(ctx, params.orgId, params.requirementId, {
+        ...body,
+        constraints: toDomainConstraints(body.constraints),
+      }),
   }),
   defineRoute({
     method: 'POST',
@@ -87,8 +93,13 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     tags: ['requirements'],
     auth: 'required',
     params: orgReq,
-    response: z.object({ disclosure: z.record(z.string(), z.unknown()), confirmationToken: z.string(), expiresAt: z.string() }),
-    handler: async ({ params, ctx }) => app.requirements.preparePublication(ctx, params.orgId, params.requirementId),
+    response: z.object({
+      disclosure: z.record(z.string(), z.unknown()),
+      confirmationToken: z.string(),
+      expiresAt: z.string(),
+    }),
+    handler: async ({ params, ctx }) =>
+      app.requirements.preparePublication(ctx, params.orgId, params.requirementId),
   }),
   defineRoute({
     method: 'POST',
@@ -100,7 +111,8 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     params: orgReq,
     body: z.object({ confirmationToken: z.string().min(20).max(4000) }),
     response: z.object({ published: z.boolean(), disclosure: z.record(z.string(), z.unknown()) }),
-    handler: async ({ params, body, ctx }) => app.requirements.confirmPublication(ctx, params.orgId, params.requirementId, body.confirmationToken),
+    handler: async ({ params, body, ctx }) =>
+      app.requirements.confirmPublication(ctx, params.orgId, params.requirementId, body.confirmationToken),
   }),
   defineRoute({
     method: 'POST',
@@ -140,7 +152,10 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     query: z.object({ direction: z.enum(['incoming', 'outgoing']).default('incoming') }),
     response: z.object({ items: z.array(Engagement) }),
     handler: async ({ params, query, ctx }) => {
-      const items = query.direction === 'incoming' ? await app.engagements.listForSupplier(ctx, params.orgId) : await app.engagements.listForBuyer(ctx, params.orgId);
+      const items =
+        query.direction === 'incoming'
+          ? await app.engagements.listForSupplier(ctx, params.orgId)
+          : await app.engagements.listForBuyer(ctx, params.orgId);
       return { items: items.map(engagementView) };
     },
   }),
@@ -154,6 +169,7 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
     params: z.object({ orgId: Uuid, engagementId: Uuid }),
     body: z.object({ status: z.enum(['acknowledged', 'declined', 'closed']) }),
     response: Engagement,
-    handler: async ({ params, body, ctx }) => engagementView(await app.engagements.respond(ctx, params.orgId, params.engagementId, body.status)),
+    handler: async ({ params, body, ctx }) =>
+      engagementView(await app.engagements.respond(ctx, params.orgId, params.engagementId, body.status)),
   }),
 ];

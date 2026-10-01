@@ -96,7 +96,10 @@ export const seedOntology = async (runtime: Runtime, directory: string): Promise
  * Loads the synthetic demo dataset. Organizations that already exist (by
  * slug) are skipped, so the command is safe to re-run.
  */
-export const seedDemoData = async (runtime: Runtime, file: string): Promise<{ organizations: number; offerings: number; claims: number }> => {
+export const seedDemoData = async (
+  runtime: Runtime,
+  file: string,
+): Promise<{ organizations: number; offerings: number; claims: number }> => {
   const data = parse(await readFile(file, 'utf8')) as SeedFile;
   const now = new Date('2026-09-01T00:00:00Z');
   const counts = { organizations: 0, offerings: 0, claims: 0 };
@@ -109,7 +112,13 @@ export const seedDemoData = async (runtime: Runtime, file: string): Promise<{ or
     for (const user of data.users) {
       if (await repos.users.findCredentialByEmail(user.email)) continue;
       await repos.users.insert(
-        { id: asId(stableUuid(`user:${user.key}`)), email: user.email, displayName: user.display_name, platformRole: user.platform_role ?? 'none', createdAt: now },
+        {
+          id: asId(stableUuid(`user:${user.key}`)),
+          email: user.email,
+          displayName: user.display_name,
+          platformRole: user.platform_role ?? 'none',
+          createdAt: now,
+        },
         passwordHash,
       );
     }
@@ -172,7 +181,14 @@ const seedOrganization = async (
         url: item.url ?? null,
         provenance: {
           category: 'SUPPLIER_VERIFIED',
-          sourceType: item.kind === 'certificate' ? 'certificate' : item.kind === 'case_study' ? 'case_study' : item.url ? 'public_url' : 'supplier_statement',
+          sourceType:
+            item.kind === 'certificate'
+              ? 'certificate'
+              : item.kind === 'case_study'
+                ? 'case_study'
+                : item.url
+                  ? 'public_url'
+                  : 'supplier_statement',
           sourceReference: item.source_reference ?? null,
           sourceUrl: item.url ?? null,
           sourceVersion: null,
@@ -189,7 +205,11 @@ const seedOrganization = async (
     }
   };
 
-  const insertClaims = async (items: SeedClaim[] | undefined, subject: TechnicalClaim['subject'], prefix: string) => {
+  const insertClaims = async (
+    items: SeedClaim[] | undefined,
+    subject: TechnicalClaim['subject'],
+    prefix: string,
+  ) => {
     for (const [index, item] of (items ?? []).entries()) {
       const category = item.provenance ?? 'SUPPLIER_VERIFIED';
       let claim = createClaim({
@@ -202,7 +222,11 @@ const seedOrganization = async (
         statement: item.statement,
         provenance: {
           category,
-          sourceType: item.source_url ? 'public_url' : category === 'AI_INFERRED' ? 'document' : 'supplier_statement',
+          sourceType: item.source_url
+            ? 'public_url'
+            : category === 'AI_INFERRED'
+              ? 'document'
+              : 'supplier_statement',
           sourceReference: null,
           sourceUrl: item.source_url ?? null,
           sourceVersion: null,
@@ -213,11 +237,16 @@ const seedOrganization = async (
             return asId<'EvidenceId'>(id);
           }),
         },
-        providedBy: { organizationId, userId: category === 'AI_INFERRED' ? null : owner, via: category === 'AI_INFERRED' ? 'ai_extraction' : 'seed' },
+        providedBy: {
+          organizationId,
+          userId: category === 'AI_INFERRED' ? null : owner,
+          via: category === 'AI_INFERRED' ? 'ai_extraction' : 'seed',
+        },
         now,
       });
       if (item.status !== 'draft') claim = publishClaim(claim, owner, now);
-      if (item.verification === 'platform_verified') claim = verifyClaim(claim, admin, 'platform_verified', 'Synthetic demo verification', now);
+      if (item.verification === 'platform_verified')
+        claim = verifyClaim(claim, admin, 'platform_verified', 'Synthetic demo verification', now);
       await repos.claims.insert(scope, claim);
       counts.claims += 1;
     }
@@ -297,7 +326,15 @@ const seedOrganization = async (
         description: video.description,
         assetId: asset.id,
         url: video.url,
-        provenance: { category: 'SUPPLIER_VERIFIED', sourceType: 'video', sourceReference: video.title, sourceUrl: video.url, sourceVersion: null, license: null, evidenceIds: [] },
+        provenance: {
+          category: 'SUPPLIER_VERIFIED',
+          sourceType: 'video',
+          sourceReference: video.title,
+          sourceUrl: video.url,
+          sourceVersion: null,
+          license: null,
+          evidenceIds: [],
+        },
         visibility: 'public',
         customerDisclosure: null,
         createdBy: owner,
@@ -310,7 +347,10 @@ const seedOrganization = async (
 
   for (const [index, requirement] of (org.requirements ?? []).entries()) {
     const confidentialTerms = normalizeConfidentialTerms(requirement.confidential_terms);
-    const { constraints } = await interpretation.extractor.extract(redact(requirement.description, confidentialTerms), interpretation.ontology);
+    const { constraints } = await interpretation.extractor.extract(
+      redact(requirement.description, confidentialTerms),
+      interpretation.ontology,
+    );
     await repos.requirements.insert(scope, {
       id: asId(stableUuid(`requirement:${org.key}:${index}`)),
       organizationId,

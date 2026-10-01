@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const me = await currentUser();
   const isSupplier = me?.memberships.some((m) => m.organizationKind !== 'buyer') ?? false;
-  const isBuyer = me?.memberships.some((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') ?? false;
+  const isBuyer =
+    me?.memberships.some((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') ?? false;
   return (
     <html lang="en">
       <body>
@@ -43,8 +44,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </header>
         <main>{children}</main>
         <footer>
-          Discovery before procurement. Supplier statements are shown with their provenance; they are not endorsements. Records marked
-          “Demo data” are synthetic.
+          Discovery before procurement. Supplier statements are shown with their provenance; they are not
+          endorsements. Records marked “Demo data” are synthetic.
         </footer>
       </body>
     </html>

@@ -7,7 +7,13 @@ export const createJobQueue = (db: Queryable): JobQueue => ({
       `INSERT INTO jobs (type, payload, status, max_attempts, run_at, dedupe_key)
        VALUES ($1, $2, 'queued', $3, coalesce($4, now()), $5)
        ON CONFLICT (dedupe_key) WHERE status = 'queued' AND dedupe_key IS NOT NULL DO NOTHING`,
-      [type, JSON.stringify(payload), options.maxAttempts ?? 5, options.runAt ?? null, options.dedupeKey ?? null],
+      [
+        type,
+        JSON.stringify(payload),
+        options.maxAttempts ?? 5,
+        options.runAt ?? null,
+        options.dedupeKey ?? null,
+      ],
     );
   },
 });
@@ -32,11 +38,20 @@ export const createJobRunnerStore = (db: Queryable) => ({
     );
     const row = rows[0];
     return row
-      ? { id: Number(row['id']), type: row['type'] as JobType, payload: row['payload'], attempts: Number(row['attempts']), maxAttempts: Number(row['max_attempts']) }
+      ? {
+          id: Number(row['id']),
+          type: row['type'] as JobType,
+          payload: row['payload'],
+          attempts: Number(row['attempts']),
+          maxAttempts: Number(row['max_attempts']),
+        }
       : null;
   },
   async complete(id: number): Promise<void> {
-    await db.query("UPDATE jobs SET status = 'succeeded', completed_at = now(), updated_at = now(), locked_at = NULL WHERE id = $1", [id]);
+    await db.query(
+      "UPDATE jobs SET status = 'succeeded', completed_at = now(), updated_at = now(), locked_at = NULL WHERE id = $1",
+      [id],
+    );
   },
   /** Exponential backoff; jobs that exhausted their attempts become 'dead' for operator attention. */
   async fail(job: ClaimedJob, error: string): Promise<'retry' | 'dead'> {

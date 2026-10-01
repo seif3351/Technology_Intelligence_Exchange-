@@ -20,11 +20,41 @@ const bucket = (feature: string, dimensions: number): { index: number; sign: num
   return { index: digest.readUInt32LE(0) % dimensions, sign: (digest[4] ?? 0) & 1 ? 1 : -1 };
 };
 
-const STOPWORDS = new Set(['a', 'an', 'the', 'and', 'or', 'for', 'of', 'to', 'in', 'on', 'with', 'we', 'i', 'need', 'that', 'can', 'is', 'are', 'our', 'be', 'by', 'it', 'this', 'from', 'as', 'at', 'using']);
+const STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'and',
+  'or',
+  'for',
+  'of',
+  'to',
+  'in',
+  'on',
+  'with',
+  'we',
+  'i',
+  'need',
+  'that',
+  'can',
+  'is',
+  'are',
+  'our',
+  'be',
+  'by',
+  'it',
+  'this',
+  'from',
+  'as',
+  'at',
+  'using',
+]);
 
 export const hashEmbed = (text: string, dimensions: number): number[] => {
   const vector = new Array<number>(dimensions).fill(0);
-  const words = normalizeForMatching(text).split(' ').filter((word) => word && !STOPWORDS.has(word));
+  const words = normalizeForMatching(text)
+    .split(' ')
+    .filter((word) => word && !STOPWORDS.has(word));
   const add = (feature: string, weight: number) => {
     const { index, sign } = bucket(feature, dimensions);
     vector[index] = (vector[index] ?? 0) + sign * weight;
@@ -41,15 +71,26 @@ export const hashEmbed = (text: string, dimensions: number): number[] => {
 };
 
 /** OpenAI-compatible /v1/embeddings endpoint (OpenAI, Azure OpenAI, vLLM, Ollama, ...). */
-export const createHttpEmbeddingProvider = (options: { readonly baseUrl: string; readonly apiKey: string | null; readonly model: string; readonly timeoutMs?: number }): EmbeddingProvider => ({
+export const createHttpEmbeddingProvider = (options: {
+  readonly baseUrl: string;
+  readonly apiKey: string | null;
+  readonly model: string;
+  readonly timeoutMs?: number;
+}): EmbeddingProvider => ({
   model: options.model,
   async embed(texts) {
-    const response = await fetch(new URL('embeddings', options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`), {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...(options.apiKey ? { authorization: `Bearer ${options.apiKey}` } : {}) },
-      body: JSON.stringify({ model: options.model, input: texts }),
-      signal: AbortSignal.timeout(options.timeoutMs ?? 20_000),
-    });
+    const response = await fetch(
+      new URL('embeddings', options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`),
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(options.apiKey ? { authorization: `Bearer ${options.apiKey}` } : {}),
+        },
+        body: JSON.stringify({ model: options.model, input: texts }),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 20_000),
+      },
+    );
     if (!response.ok) throw new Error(`Embedding provider returned HTTP ${response.status}`);
     const body = (await response.json()) as { data?: { embedding?: unknown; index?: number }[] };
     const data = [...(body.data ?? [])].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));

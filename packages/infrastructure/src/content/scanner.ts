@@ -55,7 +55,8 @@ export const basicContentScanner: MalwareScanner = {
       return { clean: false, reason: 'content does not match declared media type' };
     }
     const sample = new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, 1024 * 1024)));
-    if (sample.includes(EICAR)) return { clean: false, reason: 'malware signature detected (EICAR test file)' };
+    if (sample.includes(EICAR))
+      return { clean: false, reason: 'malware signature detected (EICAR test file)' };
     return { clean: true };
   },
 };
@@ -71,7 +72,8 @@ export const createClamdScanner = (host: string, port: number, timeoutMs = 30_00
       socket.on('data', (chunk) => (response += chunk.toString('utf8')));
       socket.on('end', () => {
         if (/OK\0?$/.test(response.trim())) resolve({ clean: true });
-        else if (/FOUND/.test(response)) resolve({ clean: false, reason: `malware detected: ${response.replace(/\0/g, '').trim()}` });
+        else if (/FOUND/.test(response))
+          resolve({ clean: false, reason: `malware detected: ${response.replace(/\0/g, '').trim()}` });
         else reject(new Error(`unexpected clamd response: ${response.slice(0, 200)}`));
       });
       socket.write('zINSTREAM\0');

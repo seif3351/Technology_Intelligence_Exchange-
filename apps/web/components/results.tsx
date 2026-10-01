@@ -2,7 +2,15 @@ import type { ClaimView, Interpretation, Match } from '@atx/contracts';
 import { OFFERING_TYPE_LABEL } from '@atx/ui';
 import Link from 'next/link';
 import type { z } from 'zod';
-import { Badge, DemoBadge, HardStatusBadge, MaturityBadge, StatusBadge, TrustBadge, VerificationBadge } from './badges';
+import {
+  Badge,
+  DemoBadge,
+  HardStatusBadge,
+  MaturityBadge,
+  StatusBadge,
+  TrustBadge,
+  VerificationBadge,
+} from './badges';
 
 type MatchT = z.infer<typeof Match>;
 type InterpretationT = z.infer<typeof Interpretation>;
@@ -15,19 +23,43 @@ export const InterpretationPanel = ({ interpretation }: { interpretation: Interp
     <div className="panel stack" aria-label="How your requirement was interpreted">
       <div className="row">
         <strong>Hard constraints</strong>
-        <div className="chips">{hard.length ? hard.map((c) => <Badge key={c.id} tone="info">{c.description}</Badge>) : <span className="muted">none</span>}</div>
+        <div className="chips">
+          {hard.length ? (
+            hard.map((c) => (
+              <Badge key={c.id} tone="info">
+                {c.description}
+              </Badge>
+            ))
+          ) : (
+            <span className="muted">none</span>
+          )}
+        </div>
       </div>
       <div className="row">
         <strong>Preferences</strong>
-        <div className="chips">{preferences.length ? preferences.map((c) => <Badge key={c.id}>{c.description}</Badge>) : <span className="muted">none</span>}</div>
+        <div className="chips">
+          {preferences.length ? (
+            preferences.map((c) => <Badge key={c.id}>{c.description}</Badge>)
+          ) : (
+            <span className="muted">none</span>
+          )}
+        </div>
       </div>
       {interpretation.unrecognizedTerms.length > 0 ? (
         <div className="row small">
           <strong>Unknown terms</strong>
-          <span className="muted">{interpretation.unrecognizedTerms.join(', ')} — not in the technology ontology; used for text relevance only.</span>
+          <span className="muted">
+            {interpretation.unrecognizedTerms.join(', ')} — not in the technology ontology; used for text
+            relevance only.
+          </span>
         </div>
       ) : null}
-      <div className="small muted">Interpretation: {interpretation.method === 'ai_assisted' ? 'AI-assisted, validated against the ontology' : 'rule-based (ontology + cue words)'}</div>
+      <div className="small muted">
+        Interpretation:{' '}
+        {interpretation.method === 'ai_assisted'
+          ? 'AI-assisted, validated against the ontology'
+          : 'rule-based (ontology + cue words)'}
+      </div>
     </div>
   );
 };
@@ -36,7 +68,15 @@ export const MatchCard = ({ match, selectable = false }: { match: MatchT; select
   <article className="card" data-testid="match-card">
     <div className="row spread">
       <div className="row">
-        {selectable ? <input type="checkbox" name="ids" value={match.offering.id} aria-label={`Select ${match.offering.name} for comparison`} className="inline-check" /> : null}
+        {selectable ? (
+          <input
+            type="checkbox"
+            name="ids"
+            value={match.offering.id}
+            aria-label={`Select ${match.offering.name} for comparison`}
+            className="inline-check"
+          />
+        ) : null}
         <h3 className="flush">
           {match.rank}. <Link href={`/offerings/${match.offering.id}`}>{match.offering.name}</Link>
         </h3>
@@ -104,7 +144,13 @@ export const MatchCard = ({ match, selectable = false }: { match: MatchT; select
   </article>
 );
 
-export const ClaimsTable = ({ claims, showStatus = false }: { claims: readonly ClaimT[]; showStatus?: boolean }) =>
+export const ClaimsTable = ({
+  claims,
+  showStatus = false,
+}: {
+  claims: readonly ClaimT[];
+  showStatus?: boolean;
+}) =>
   claims.length === 0 ? (
     <p className="muted">No technical claims published.</p>
   ) : (
@@ -133,7 +179,11 @@ export const ClaimsTable = ({ claims, showStatus = false }: { claims: readonly C
             <td>{c.predicateLabel}</td>
             <td className="untrusted">
               {c.statement}
-              {c.contentWarnings.length > 0 ? <div className="small tone-warn">⚠ contains instruction-like text (flagged for moderation)</div> : null}
+              {c.contentWarnings.length > 0 ? (
+                <div className="small tone-warn">
+                  ⚠ contains instruction-like text (flagged for moderation)
+                </div>
+              ) : null}
             </td>
             <td>
               <TrustBadge tier={c.trustTier} label={c.trustLabel} />

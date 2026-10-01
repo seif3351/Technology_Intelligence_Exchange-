@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { type ConceptId, Ontology, asId } from '../src';
 
-const facet = { id: asId<'FacetId'>('f'), label: 'F', description: 'F', defaultConstraintLevel: 'supports' as const };
+const facet = {
+  id: asId<'FacetId'>('f'),
+  label: 'F',
+  description: 'F',
+  defaultConstraintLevel: 'supports' as const,
+};
 const concept = (id: string, aliases: string[] = []) => ({
   id: asId<'ConceptId'>(id),
   facetId: facet.id,
@@ -19,7 +24,11 @@ const rel = (from: string, to: string, type: 'is_a' | 'part_of' = 'is_a') => ({
 describe('Ontology', () => {
   const ontology = new Ontology({
     facets: [facet],
-    concepts: [concept('autosar'), concept('autosar-adaptive', ['AUTOSAR Adaptive', 'adaptive autosar']), concept('some-ip', ['SOME/IP'])],
+    concepts: [
+      concept('autosar'),
+      concept('autosar-adaptive', ['AUTOSAR Adaptive', 'adaptive autosar']),
+      concept('some-ip', ['SOME/IP']),
+    ],
     relations: [rel('autosar-adaptive', 'autosar')],
   });
 
@@ -36,10 +45,14 @@ describe('Ontology', () => {
   it('rejects is_a cycles and dangling relations', () => {
     expect(
       () =>
-        new Ontology({ facets: [facet], concepts: [concept('a'), concept('b')], relations: [rel('a', 'b'), rel('b', 'a')] }),
+        new Ontology({
+          facets: [facet],
+          concepts: [concept('a'), concept('b')],
+          relations: [rel('a', 'b'), rel('b', 'a')],
+        }),
     ).toThrow(/cycle/);
-    expect(() => new Ontology({ facets: [facet], concepts: [concept('a')], relations: [rel('a', 'zzz')] })).toThrow(
-      /unknown concept/,
-    );
+    expect(
+      () => new Ontology({ facets: [facet], concepts: [concept('a')], relations: [rel('a', 'zzz')] }),
+    ).toThrow(/unknown concept/);
   });
 });

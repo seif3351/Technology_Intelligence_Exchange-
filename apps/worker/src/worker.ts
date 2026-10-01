@@ -47,7 +47,10 @@ export interface WorkerOptions {
 }
 
 /** Processes jobs until no job is ready. Returns the number processed (useful for tests and one-shot runs). */
-export const drainJobs = async (runtime: Runtime, workerId = `${hostname()}-${process.pid}`): Promise<number> => {
+export const drainJobs = async (
+  runtime: Runtime,
+  workerId = `${hostname()}-${process.pid}`,
+): Promise<number> => {
   let processed = 0;
   for (;;) {
     const job = await runtime.jobStore.claimNext(workerId, JOB_TYPES);
@@ -61,9 +64,16 @@ const runOne = async (runtime: Runtime, job: ClaimedJob): Promise<void> => {
   const telemetry = runtime.app.deps.telemetry;
   const started = Date.now();
   try {
-    await telemetry.span(`job ${job.type}`, { 'job.id': job.id, 'job.type': job.type, 'job.attempt': job.attempts }, () => executeJob(runtime, job));
+    await telemetry.span(
+      `job ${job.type}`,
+      { 'job.id': job.id, 'job.type': job.type, 'job.attempt': job.attempts },
+      () => executeJob(runtime, job),
+    );
     await runtime.jobStore.complete(job.id);
-    telemetry.recordDuration('atx.job.duration', Date.now() - started, { type: job.type, outcome: 'succeeded' });
+    telemetry.recordDuration('atx.job.duration', Date.now() - started, {
+      type: job.type,
+      outcome: 'succeeded',
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
     const outcome = await runtime.jobStore.fail(job, message);
@@ -71,7 +81,8 @@ const runOne = async (runtime: Runtime, job: ClaimedJob): Promise<void> => {
     runtime.logger.error({ err: error, jobId: job.id, type: job.type, outcome }, 'job failed');
     if (outcome === 'dead' && job.type === 'asset.process') {
       const parsed = payloads['asset.process'].safeParse(job.payload);
-      if (parsed.success) await runtime.app.ingestion.markFailed(asId(parsed.data.assetId), 'processing failed repeatedly');
+      if (parsed.success)
+        await runtime.app.ingestion.markFailed(asId(parsed.data.assetId), 'processing failed repeatedly');
     }
   }
 };

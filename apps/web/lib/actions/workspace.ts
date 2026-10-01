@@ -33,9 +33,14 @@ export async function createOffering(_state: FormState, form: FormData): Promise
     maturity: text(form, 'maturity'),
     details: type === 'service' ? { type: 'service' } : { type },
   });
-  if (!parsed.success) return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
+  if (!parsed.success)
+    return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
   try {
-    await api(`/v1/organizations/${orgId}/offerings`, { method: 'POST', body: parsed.data, schema: OfferingRecord });
+    await api(`/v1/organizations/${orgId}/offerings`, {
+      method: 'POST',
+      body: parsed.data,
+      schema: OfferingRecord,
+    });
     return done('Draft offering created.');
   } catch (error) {
     return { error: describeError(error) };
@@ -52,7 +57,8 @@ export async function addClaim(_state: FormState, form: FormData): Promise<FormS
     sourceUrl: optional(form, 'sourceUrl') ?? null,
     qualifiers: optional(form, 'asil') ? { asil: text(form, 'asil') } : undefined,
   });
-  if (!parsed.success) return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
+  if (!parsed.success)
+    return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
   try {
     await api(`/v1/organizations/${orgId}/claims`, { method: 'POST', body: parsed.data, schema: ClaimView });
     return done('Draft claim added. Publish it after review.');
@@ -96,7 +102,9 @@ export async function uploadDocument(_state: FormState, form: FormData): Promise
       raw: { bytes: await file.arrayBuffer(), contentType: file.type || 'application/octet-stream' },
       schema: AssetRecord,
     });
-    return done('Uploaded. The document is scanned and analysed in the background; AI-drafted claims will appear below for your review.');
+    return done(
+      'Uploaded. The document is scanned and analysed in the background; AI-drafted claims will appear below for your review.',
+    );
   } catch (error) {
     return { error: describeError(error) };
   }
@@ -110,9 +118,14 @@ export async function registerVideo(_state: FormState, form: FormData): Promise<
     url: text(form, 'url'),
     durationSeconds: optional(form, 'durationSeconds') ? Number(text(form, 'durationSeconds')) : null,
   });
-  if (!parsed.success) return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
+  if (!parsed.success)
+    return { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
   try {
-    await api(`/v1/organizations/${text(form, 'orgId')}/videos`, { method: 'POST', body: parsed.data, schema: AssetRecord });
+    await api(`/v1/organizations/${text(form, 'orgId')}/videos`, {
+      method: 'POST',
+      body: parsed.data,
+      schema: AssetRecord,
+    });
     return done('Demo video registered.');
   } catch (error) {
     return { error: describeError(error) };
@@ -120,7 +133,10 @@ export async function registerVideo(_state: FormState, form: FormData): Promise<
 }
 
 export async function requestVerification(form: FormData): Promise<void> {
-  await api(`/v1/organizations/${text(form, 'orgId')}/verification-request`, { method: 'POST', schema: OrganizationRecord });
+  await api(`/v1/organizations/${text(form, 'orgId')}/verification-request`, {
+    method: 'POST',
+    schema: OrganizationRecord,
+  });
   revalidatePath('/workspace');
 }
 

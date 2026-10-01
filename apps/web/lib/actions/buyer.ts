@@ -17,7 +17,10 @@ export async function createRequirement(_state: FormState, form: FormData): Prom
       body: {
         title: text(form, 'title'),
         description: text(form, 'description'),
-        confidentialTerms: text(form, 'confidentialTerms').split(/[,\n]/).map((t) => t.trim()).filter(Boolean),
+        confidentialTerms: text(form, 'confidentialTerms')
+          .split(/[,\n]/)
+          .map((t) => t.trim())
+          .filter(Boolean),
       },
       schema: z.object({ requirement: RequirementView, issues: z.array(ValidationIssue) }),
     });
@@ -53,7 +56,11 @@ const draftFrom = (form: FormData) => {
 export async function prepareRequest(_state: RequestState, form: FormData): Promise<RequestState> {
   const draft = draftFrom(form);
   try {
-    const preview = await api('/v1/engagements/prepare', { method: 'POST', body: draft, schema: EngagementPreview });
+    const preview = await api('/v1/engagements/prepare', {
+      method: 'POST',
+      body: draft,
+      schema: EngagementPreview,
+    });
     return { preview, draft, idempotencyKey: crypto.randomUUID() };
   } catch (error) {
     return { error: describeError(error), draft };
@@ -66,11 +73,16 @@ export async function prepareRequest(_state: RequestState, form: FormData): Prom
  * into the confirmation token, so any change after review is rejected.
  */
 export async function confirmRequest(_state: RequestState, form: FormData): Promise<RequestState> {
-  if (form.get('approve') !== 'yes') return { error: 'Tick the approval box to confirm exactly what will be shared.' };
+  if (form.get('approve') !== 'yes')
+    return { error: 'Tick the approval box to confirm exactly what will be shared.' };
   try {
     await api('/v1/engagements', {
       method: 'POST',
-      body: { ...draftFrom(form), confirmationToken: text(form, 'confirmationToken'), idempotencyKey: text(form, 'idempotencyKey') },
+      body: {
+        ...draftFrom(form),
+        confirmationToken: text(form, 'confirmationToken'),
+        idempotencyKey: text(form, 'idempotencyKey'),
+      },
       schema: z.object({ engagement: Engagement, replayed: z.boolean() }),
     });
     return { submitted: true, message: 'Request sent to the supplier.' };

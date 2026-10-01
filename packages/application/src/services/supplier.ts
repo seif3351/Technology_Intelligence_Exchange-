@@ -48,7 +48,10 @@ export interface ClaimInput {
   readonly conceptId: string;
   readonly qualifiers?: ClaimQualifiers;
   readonly statement: string;
-  readonly provenanceCategory?: Extract<ProvenanceCategory, 'SUPPLIER_VERIFIED' | 'PUBLIC_SOURCE' | 'UNVERIFIED'>;
+  readonly provenanceCategory?: Extract<
+    ProvenanceCategory,
+    'SUPPLIER_VERIFIED' | 'PUBLIC_SOURCE' | 'UNVERIFIED'
+  >;
   readonly sourceType?: SourceType;
   readonly sourceUrl?: string | null;
   readonly sourceReference?: string | null;
@@ -97,7 +100,13 @@ export class SupplierService {
 
   async createOrganization(
     ctx: RequestContext,
-    input: { readonly name: string; readonly kind: Exclude<OrganizationKind, 'platform'>; readonly summary: string; readonly website?: string | null; readonly headquartersCountry?: string | null },
+    input: {
+      readonly name: string;
+      readonly kind: Exclude<OrganizationKind, 'platform'>;
+      readonly summary: string;
+      readonly website?: string | null;
+      readonly headquartersCountry?: string | null;
+    },
   ): Promise<Organization> {
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
@@ -124,9 +133,15 @@ export class SupplierService {
     };
     validateOrganizationProfile(organization);
     await this.deps.transaction(async (repos) => {
-      if (await repos.organizations.findBySlug(organization.slug)) throw conflict('An organization with this name already exists');
+      if (await repos.organizations.findBySlug(organization.slug))
+        throw conflict('An organization with this name already exists');
       await repos.organizations.insert(organization);
-      await repos.users.addMembership({ organizationId: organization.id, userId: user.userId, role: 'owner', createdAt: now });
+      await repos.users.addMembership({
+        organizationId: organization.id,
+        userId: user.userId,
+        role: 'owner',
+        createdAt: now,
+      });
       await recordAudit(repos.audit, ctx, now, {
         action: 'organization.create',
         resourceType: 'organization',
@@ -140,7 +155,16 @@ export class SupplierService {
   async updateOrganizationProfile(
     ctx: RequestContext,
     organizationId: string,
-    input: { readonly expectedVersion: number; readonly summary?: string; readonly description?: string; readonly website?: string | null; readonly headquartersCountry?: string | null; readonly regions?: readonly string[]; readonly employeeRange?: string | null; readonly contactEmail?: string | null },
+    input: {
+      readonly expectedVersion: number;
+      readonly summary?: string;
+      readonly description?: string;
+      readonly website?: string | null;
+      readonly headquartersCountry?: string | null;
+      readonly regions?: readonly string[];
+      readonly employeeRange?: string | null;
+      readonly contactEmail?: string | null;
+    },
   ): Promise<Organization> {
     const scope = this.writeScope(ctx, organizationId, 'admin');
     const now = this.deps.clock.now();
@@ -150,18 +174,37 @@ export class SupplierService {
       const next: Organization = {
         ...current,
         summary: input.summary !== undefined ? sanitizeProfileText(input.summary, 400) : current.summary,
-        description: input.description !== undefined ? sanitizeProfileText(input.description, 8000) : current.description,
-        website: input.website !== undefined ? (input.website ? this.safeUrl(input.website, 'website') : null) : current.website,
-        headquartersCountry: input.headquartersCountry !== undefined ? input.headquartersCountry : current.headquartersCountry,
-        regions: input.regions ? input.regions.map((region) => sanitizeUntrustedText(region, 60)) : current.regions,
+        description:
+          input.description !== undefined
+            ? sanitizeProfileText(input.description, 8000)
+            : current.description,
+        website:
+          input.website !== undefined
+            ? input.website
+              ? this.safeUrl(input.website, 'website')
+              : null
+            : current.website,
+        headquartersCountry:
+          input.headquartersCountry !== undefined ? input.headquartersCountry : current.headquartersCountry,
+        regions: input.regions
+          ? input.regions.map((region) => sanitizeUntrustedText(region, 60))
+          : current.regions,
         employeeRange: input.employeeRange !== undefined ? input.employeeRange : current.employeeRange,
-        contact: input.contactEmail !== undefined ? { ...current.contact, email: input.contactEmail } : current.contact,
+        contact:
+          input.contactEmail !== undefined
+            ? { ...current.contact, email: input.contactEmail }
+            : current.contact,
         version: current.version + 1,
         updatedAt: now,
       };
       validateOrganizationProfile(next);
       await repos.organizations.update(next, input.expectedVersion);
-      await recordAudit(repos.audit, ctx, now, { action: 'organization.update', resourceType: 'organization', resourceId: next.id, organizationId: next.id });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'organization.update',
+        resourceType: 'organization',
+        resourceId: next.id,
+        organizationId: next.id,
+      });
       return next;
     });
   }
@@ -175,7 +218,12 @@ export class SupplierService {
       if (!current) throw notFound('Organization');
       const next = transitionOrganizationVerification(current, 'pending', user.userId, now);
       await repos.organizations.update(next, current.version);
-      await recordAudit(repos.audit, ctx, now, { action: 'organization.verification_requested', resourceType: 'organization', resourceId: next.id, organizationId: next.id });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'organization.verification_requested',
+        resourceType: 'organization',
+        resourceId: next.id,
+        organizationId: next.id,
+      });
       return next;
     });
   }
@@ -222,9 +270,15 @@ export class SupplierService {
     };
     await this.deps.transaction(async (repos) => {
       const existing = await repos.offerings.listForTenant(scope);
-      if (existing.some((other) => other.slug === offering.slug)) throw conflict('An offering with this slug already exists');
+      if (existing.some((other) => other.slug === offering.slug))
+        throw conflict('An offering with this slug already exists');
       await repos.offerings.insert(scope, offering);
-      await recordAudit(repos.audit, ctx, now, { action: 'offering.create', resourceType: 'offering', resourceId: offering.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'offering.create',
+        resourceType: 'offering',
+        resourceId: offering.id,
+        organizationId: scope.organizationId,
+      });
     });
     return offering;
   }
@@ -233,7 +287,11 @@ export class SupplierService {
     ctx: RequestContext,
     organizationId: string,
     offeringId: string,
-    input: Partial<Omit<OfferingInput, 'slug' | 'type'>> & { readonly expectedVersion: number; readonly details?: OfferingDetails; readonly commercial?: CommercialModel },
+    input: Partial<Omit<OfferingInput, 'slug' | 'type'>> & {
+      readonly expectedVersion: number;
+      readonly details?: OfferingDetails;
+      readonly commercial?: CommercialModel;
+    },
   ): Promise<Offering> {
     const scope = this.writeScope(ctx, organizationId);
     const now = this.deps.clock.now();
@@ -252,10 +310,20 @@ export class SupplierService {
       });
       const next: Offering = { ...current, ...normalized, version: current.version + 1, updatedAt: now };
       await repos.offerings.update(scope, next, input.expectedVersion);
-      await recordAudit(repos.audit, ctx, now, { action: 'offering.update', resourceType: 'offering', resourceId: next.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'offering.update',
+        resourceType: 'offering',
+        resourceId: next.id,
+        organizationId: scope.organizationId,
+      });
       return next;
     });
-    if (offering.status === 'published') await this.deps.jobs.enqueue('offering.reindex', { offeringId: offering.id }, { dedupeKey: `reindex:${offering.id}` });
+    if (offering.status === 'published')
+      await this.deps.jobs.enqueue(
+        'offering.reindex',
+        { offeringId: offering.id },
+        { dedupeKey: `reindex:${offering.id}` },
+      );
     return offering;
   }
 
@@ -263,26 +331,49 @@ export class SupplierService {
    * Explicit human publication. An offering needs at least one published
    * technical claim so that it is discoverable through structured matching.
    */
-  async setOfferingStatus(ctx: RequestContext, organizationId: string, offeringId: string, status: 'published' | 'draft' | 'archived', expectedVersion: number): Promise<Offering> {
+  async setOfferingStatus(
+    ctx: RequestContext,
+    organizationId: string,
+    offeringId: string,
+    status: 'published' | 'draft' | 'archived',
+    expectedVersion: number,
+  ): Promise<Offering> {
     const scope = this.writeScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
     const offering = await this.deps.transaction(async (repos) => {
       const current = await this.ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
       if (status === 'published') {
-        const claims = await repos.claims.listForTenant(scope, { offeringId: current.id, status: 'published' });
-        if (claims.length === 0) throw invariant('Publish at least one technical claim before publishing the offering');
+        const claims = await repos.claims.listForTenant(scope, {
+          offeringId: current.id,
+          status: 'published',
+        });
+        if (claims.length === 0)
+          throw invariant('Publish at least one technical claim before publishing the offering');
       }
       const next = transitionOffering(current, status, user.userId, now);
       await repos.offerings.update(scope, next, expectedVersion);
-      await recordAudit(repos.audit, ctx, now, { action: `offering.${status}`, resourceType: 'offering', resourceId: next.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: `offering.${status}`,
+        resourceType: 'offering',
+        resourceId: next.id,
+        organizationId: scope.organizationId,
+      });
       return next;
     });
-    await this.deps.jobs.enqueue('offering.reindex', { offeringId: offering.id }, { dedupeKey: `reindex:${offering.id}` });
+    await this.deps.jobs.enqueue(
+      'offering.reindex',
+      { offeringId: offering.id },
+      { dedupeKey: `reindex:${offering.id}` },
+    );
     return offering;
   }
 
-  async createCapability(ctx: RequestContext, organizationId: string, input: { readonly conceptId: string; readonly name: string; readonly description: string }): Promise<Capability> {
+  async createCapability(
+    ctx: RequestContext,
+    organizationId: string,
+    input: { readonly conceptId: string; readonly name: string; readonly description: string },
+  ): Promise<Capability> {
     const scope = this.writeScope(ctx, organizationId);
     const ontology = await this.deps.ontology.current();
     if (!ontology.hasConcept(input.conceptId)) throw validationError(`Unknown concept "${input.conceptId}"`);
@@ -300,7 +391,12 @@ export class SupplierService {
     };
     await this.deps.transaction(async (repos) => {
       await repos.capabilities.insert(scope, capability);
-      await recordAudit(repos.audit, ctx, now, { action: 'capability.create', resourceType: 'capability', resourceId: capability.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'capability.create',
+        resourceType: 'capability',
+        resourceId: capability.id,
+        organizationId: scope.organizationId,
+      });
     });
     return capability;
   }
@@ -331,15 +427,26 @@ export class SupplierService {
     });
     await this.deps.transaction(async (repos) => {
       await repos.claims.insert(scope, claim);
-      await recordAudit(repos.audit, ctx, now, { action: 'claim.create', resourceType: 'claim', resourceId: claim.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'claim.create',
+        resourceType: 'claim',
+        resourceId: claim.id,
+        organizationId: scope.organizationId,
+      });
     });
     return presentClaim(claim, ontology);
   }
 
-  async reviseClaim(ctx: RequestContext, organizationId: string, claimId: string, input: Partial<ClaimInput> & { readonly expectedVersion: number }) {
+  async reviseClaim(
+    ctx: RequestContext,
+    organizationId: string,
+    claimId: string,
+    input: Partial<ClaimInput> & { readonly expectedVersion: number },
+  ) {
     const scope = this.writeScope(ctx, organizationId);
     const ontology = await this.deps.ontology.current();
-    if (input.conceptId && !ontology.hasConcept(input.conceptId)) throw validationError(`Unknown concept "${input.conceptId}"`);
+    if (input.conceptId && !ontology.hasConcept(input.conceptId))
+      throw validationError(`Unknown concept "${input.conceptId}"`);
     const now = this.deps.clock.now();
     const evidenceIds = input.evidenceIds ? await this.ownedEvidenceIds(scope, input.evidenceIds) : undefined;
     const revised = await this.deps.transaction(async (repos) => {
@@ -353,13 +460,26 @@ export class SupplierService {
           statement: input.statement,
           provenance:
             input.provenanceCategory || input.sourceUrl !== undefined || evidenceIds
-              ? this.provenance({ ...input, provenanceCategory: input.provenanceCategory ?? (current.provenance.category as ClaimInput['provenanceCategory']) }, evidenceIds ?? current.provenance.evidenceIds)
+              ? this.provenance(
+                  {
+                    ...input,
+                    provenanceCategory:
+                      input.provenanceCategory ??
+                      (current.provenance.category as ClaimInput['provenanceCategory']),
+                  },
+                  evidenceIds ?? current.provenance.evidenceIds,
+                )
               : undefined,
         },
         now,
       );
       await repos.claims.update(scope, next, input.expectedVersion);
-      await recordAudit(repos.audit, ctx, now, { action: 'claim.revise', resourceType: 'claim', resourceId: next.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'claim.revise',
+        resourceType: 'claim',
+        resourceId: next.id,
+        organizationId: scope.organizationId,
+      });
       return next;
     });
     await this.reindexSubject(revised.subject);
@@ -368,11 +488,25 @@ export class SupplierService {
 
   /** Human review step: publishes a draft (including AI-extracted drafts) as a supplier statement. */
   async publishClaim(ctx: RequestContext, organizationId: string, claimId: string, expectedVersion: number) {
-    return this.changeClaim(ctx, organizationId, claimId, expectedVersion, 'claim.publish', (claim, userId, now) => publishClaim(claim, userId, now));
+    return this.changeClaim(
+      ctx,
+      organizationId,
+      claimId,
+      expectedVersion,
+      'claim.publish',
+      (claim, userId, now) => publishClaim(claim, userId, now),
+    );
   }
 
   async retractClaim(ctx: RequestContext, organizationId: string, claimId: string, expectedVersion: number) {
-    return this.changeClaim(ctx, organizationId, claimId, expectedVersion, 'claim.retract', (claim, _userId, now) => retractClaim(claim, now));
+    return this.changeClaim(
+      ctx,
+      organizationId,
+      claimId,
+      expectedVersion,
+      'claim.retract',
+      (claim, _userId, now) => retractClaim(claim, now),
+    );
   }
 
   // -------------------------------------------------------- evidence/assets
@@ -381,7 +515,9 @@ export class SupplierService {
     const scope = this.writeScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
-    const offeringId = input.offeringId ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id : null;
+    const offeringId = input.offeringId
+      ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
+      : null;
     const url = input.url ? this.safeUrl(input.url, 'url') : null;
     if (input.kind === 'public_url' && !url) throw validationError('public_url evidence requires a url');
     const evidence: Evidence = {
@@ -395,7 +531,14 @@ export class SupplierService {
       url,
       provenance: {
         category: 'SUPPLIER_VERIFIED',
-        sourceType: input.kind === 'public_url' ? 'public_url' : input.kind === 'case_study' ? 'case_study' : input.kind === 'certificate' ? 'certificate' : 'document',
+        sourceType:
+          input.kind === 'public_url'
+            ? 'public_url'
+            : input.kind === 'case_study'
+              ? 'case_study'
+              : input.kind === 'certificate'
+                ? 'certificate'
+                : 'document',
         sourceReference: input.sourceReference ?? null,
         sourceUrl: url,
         sourceVersion: input.sourceVersion ?? null,
@@ -403,24 +546,37 @@ export class SupplierService {
         evidenceIds: [],
       },
       visibility: 'public',
-      customerDisclosure: input.kind === 'production_reference' ? (input.customerDisclosure ?? 'anonymized') : null,
+      customerDisclosure:
+        input.kind === 'production_reference' ? (input.customerDisclosure ?? 'anonymized') : null,
       createdBy: user.userId,
       createdAt: now,
       updatedAt: now,
     };
     await this.deps.transaction(async (repos) => {
       await repos.evidence.insert(scope, evidence);
-      await recordAudit(repos.audit, ctx, now, { action: 'evidence.create', resourceType: 'evidence', resourceId: evidence.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'evidence.create',
+        resourceType: 'evidence',
+        resourceId: evidence.id,
+        organizationId: scope.organizationId,
+      });
     });
     return presentEvidence(evidence);
   }
 
   /** Registers an externally hosted demo video (e.g. on the supplier's CDN). Nothing is fetched server-side. */
-  async registerExternalVideo(ctx: RequestContext, organizationId: string, input: ExternalVideoInput): Promise<Asset> {
+  async registerExternalVideo(
+    ctx: RequestContext,
+    organizationId: string,
+    input: ExternalVideoInput,
+  ): Promise<Asset> {
     const scope = this.writeScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
     const now = this.deps.clock.now();
-    const offering = await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope);
+    const offering = await this.ownedOffering(
+      this.deps.repos.offerings.findById(asId(input.offeringId)),
+      scope,
+    );
     const asset: Asset = {
       id: newId(),
       organizationId: scope.organizationId,
@@ -447,7 +603,12 @@ export class SupplierService {
     await this.deps.transaction(async (repos) => {
       await repos.assets.insert(scope, asset);
       await repos.evidence.insert(scope, this.assetEvidence(asset, user.userId, now));
-      await recordAudit(repos.audit, ctx, now, { action: 'asset.register_external', resourceType: 'asset', resourceId: asset.id, organizationId: scope.organizationId });
+      await recordAudit(repos.audit, ctx, now, {
+        action: 'asset.register_external',
+        resourceType: 'asset',
+        resourceId: asset.id,
+        organizationId: scope.organizationId,
+      });
     });
     return asset;
   }
@@ -461,9 +622,13 @@ export class SupplierService {
     const user = requireUser(ctx.principal);
     const policy = ASSET_UPLOAD_POLICY[input.kind];
     const contentType = input.contentType.split(';')[0]?.trim().toLowerCase() ?? '';
-    if (!policy.contentTypes.includes(contentType)) throw validationError(`Content type ${contentType} is not allowed for ${input.kind}`);
-    if (input.bytes.byteLength === 0 || input.bytes.byteLength > policy.maxBytes) throw validationError('File is empty or too large');
-    const offeringId = input.offeringId ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id : null;
+    if (!policy.contentTypes.includes(contentType))
+      throw validationError(`Content type ${contentType} is not allowed for ${input.kind}`);
+    if (input.bytes.byteLength === 0 || input.bytes.byteLength > policy.maxBytes)
+      throw validationError('File is empty or too large');
+    const offeringId = input.offeringId
+      ? (await this.ownedOffering(this.deps.repos.offerings.findById(asId(input.offeringId)), scope)).id
+      : null;
     const now = this.deps.clock.now();
     const id = newId<'AssetId'>();
     const storageKey = `org/${scope.organizationId}/assets/${id}`;
@@ -508,7 +673,11 @@ export class SupplierService {
 
   // --------------------------------------------------------------- helpers
 
-  private writeScope(ctx: RequestContext, organizationId: string, role: 'editor' | 'admin' = WORKSPACE_WRITE_ROLE): TenantScope {
+  private writeScope(
+    ctx: RequestContext,
+    organizationId: string,
+    role: 'editor' | 'admin' = WORKSPACE_WRITE_ROLE,
+  ): TenantScope {
     requireScope(ctx.principal, 'supplier:write');
     return authorizeTenant(ctx, asId(organizationId), role);
   }
@@ -532,7 +701,10 @@ export class SupplierService {
         if (subject.id !== scope.organizationId) throw notFound('Organization');
         return { type: 'organization', id: scope.organizationId };
       case 'offering': {
-        const offering = await this.ownedOffering(this.deps.repos.offerings.findById(asId(subject.id)), scope);
+        const offering = await this.ownedOffering(
+          this.deps.repos.offerings.findById(asId(subject.id)),
+          scope,
+        );
         return { type: 'offering', id: offering.id };
       }
       case 'capability': {
@@ -547,13 +719,22 @@ export class SupplierService {
   private async ownedEvidenceIds(scope: TenantScope, ids: readonly string[]) {
     if (ids.length === 0) return [];
     const evidence = await this.deps.repos.evidence.findManyByIds(ids.map((id) => asId<'EvidenceId'>(id)));
-    if (evidence.length !== new Set(ids).size || evidence.some((item) => item.organizationId !== scope.organizationId)) {
+    if (
+      evidence.length !== new Set(ids).size ||
+      evidence.some((item) => item.organizationId !== scope.organizationId)
+    ) {
       throw notFound('Evidence');
     }
     return evidence.map((item) => item.id);
   }
 
-  private provenance(input: Pick<ClaimInput, 'provenanceCategory' | 'sourceType' | 'sourceUrl' | 'sourceReference' | 'sourceVersion'>, evidenceIds: Provenance['evidenceIds']): Provenance {
+  private provenance(
+    input: Pick<
+      ClaimInput,
+      'provenanceCategory' | 'sourceType' | 'sourceUrl' | 'sourceReference' | 'sourceVersion'
+    >,
+    evidenceIds: Provenance['evidenceIds'],
+  ): Provenance {
     const url = input.sourceUrl ? this.safeUrl(input.sourceUrl, 'sourceUrl') : null;
     return {
       category: input.provenanceCategory ?? 'SUPPLIER_VERIFIED',
@@ -568,7 +749,8 @@ export class SupplierService {
 
   private safeUrl(raw: string, field: string): string {
     const result = checkExternalUrl(raw);
-    if (!result.ok) throw validationError(`Invalid ${field}: ${result.reason}`, [{ path: field, message: result.reason }]);
+    if (!result.ok)
+      throw validationError(`Invalid ${field}: ${result.reason}`, [{ path: field, message: result.reason }]);
     return result.url;
   }
 
@@ -605,7 +787,11 @@ export class SupplierService {
     claimId: string,
     expectedVersion: number,
     action: string,
-    change: (claim: Awaited<ReturnType<SupplierService['ownedClaim']>>, userId: ReturnType<typeof requireUser>['userId'], now: Date) => Awaited<ReturnType<SupplierService['ownedClaim']>>,
+    change: (
+      claim: Awaited<ReturnType<SupplierService['ownedClaim']>>,
+      userId: ReturnType<typeof requireUser>['userId'],
+      now: Date,
+    ) => Awaited<ReturnType<SupplierService['ownedClaim']>>,
   ) {
     const scope = this.writeScope(ctx, organizationId);
     const user = requireUser(ctx.principal);
@@ -630,7 +816,11 @@ export class SupplierService {
 
   private async reindexSubject(subject: ClaimSubject): Promise<void> {
     if (subject.type === 'offering') {
-      await this.deps.jobs.enqueue('offering.reindex', { offeringId: subject.id }, { dedupeKey: `reindex:${subject.id}` });
+      await this.deps.jobs.enqueue(
+        'offering.reindex',
+        { offeringId: subject.id },
+        { dedupeKey: `reindex:${subject.id}` },
+      );
     }
   }
 }

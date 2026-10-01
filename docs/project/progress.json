@@ -1,0 +1,65 @@
+{
+  "project": "Automotive Technology Exchange",
+  "updatedAt": "2026-10-01",
+  "currentPhase": "MVP foundation complete (phases 0-14 at MVP depth); next: production hardening and real-data onboarding",
+  "phases": {
+    "0-research": "done — MCP 2026-07-28 changelog, SDK v2.2 typings, MCP Apps 2.0.3, Skills SEP-2640, MCP authorization (RFC 9728/8707) verified from packages and spec sources",
+    "1-architecture-contracts": "done — modular monolith, ADR-0001..0010, Zod contracts, generated OpenAPI 3.1 + MCP JSON Schemas",
+    "2-domain-persistence": "done — domain model, PostgreSQL schema (0001), repositories, optimistic concurrency, claim revisions",
+    "3-auth-tenancy": "done — ES256 audience-bound tokens, scrypt, TenantScope, audit log; external OIDC mapping pending",
+    "4-supplier-onboarding": "done — workspace, offerings, claims, evidence, uploads, external videos, verification request",
+    "5-ontology": "done — 92 concepts / 14 facets in YAML, case-sensitive aliases, admin concept creation",
+    "6-search-matching": "done — hybrid retrieval (tsvector + pgvector + structured) with RRF, deterministic evaluation, transparent scoring",
+    "7-ai-enrichment": "done — Anthropic structured-output adapter (claude-opus-5-5) with grounding and deterministic fallbacks; not exercised against the live API in CI",
+    "8-mcp-read": "done — 14 tools, stateless 2026-07-28 server, OAuth resource server",
+    "9-mcp-skill": "done — skills/automotive-technology-exchange served via Skills extension",
+    "10-mcp-apps": "done — 7 views with structured fallback",
+    "11-buyer-requirements": "done — private requirements, confidential terms, anonymized demand signals, prepare/confirm engagements",
+    "12-security": "done at MVP depth — see docs/security/threat-model.md residual risks",
+    "13-observability": "done — pino with redaction, OpenTelemetry traces/metrics (OTLP), request ids, compose collector + Jaeger",
+    "14-e2e": "done — Playwright journeys pass against dev and production builds"
+  },
+  "completed": [
+    "Domain: claims with closed predicates, provenance vs verification, trust tiers, requirements with confidential-term leak checks, URL policy, engagement and asset state machines",
+    "Search: requirement interpretation (hard/preference/unknown, levels, maturity, production references), evaluation, scoring, comparison matrix",
+    "Application: catalog, matching, supplier workspace, requirements, engagements, admin, ingestion, indexing, identity use cases",
+    "Infrastructure: PostgreSQL repositories, migrations runner, pgvector search index, SKIP LOCKED job queue, filesystem/S3 storage, scanning (magic bytes, EICAR, ClamAV), PDF/HTML/VTT text extraction",
+    "Interfaces: Fastify API (53 paths), MCP server (14 tools + 2 feature-flagged action tools, Skills, Apps), worker, Next.js web app (buyer, supplier, admin, MCP onboarding)",
+    "Synthetic demo dataset: 6 organizations, 9 offerings, 82 claims, videos, evidence, a private buyer requirement",
+    "Tests: 75 unit/architecture, 34 PostgreSQL integration (API + MCP via official client), 9 Playwright journeys",
+    "CI workflow (verify, integration, e2e, docker); Dockerfiles verified locally (API and MCP containers boot in production mode)"
+  ],
+  "verification": {
+    "unit": "pnpm test — 75 passed",
+    "integration": "pnpm test:integration — 34 passed",
+    "e2e": "pnpm test:e2e — 9 passed (dev and production builds)",
+    "typecheck": "pnpm typecheck — clean",
+    "lint": "pnpm lint — clean",
+    "contracts": "pnpm contracts:check — clean"
+  },
+  "knownIssues": [
+    "External OIDC: MCP_AUTH_ISSUER/JWKS validation works, but mapping external subjects to platform users (JIT provisioning) and a full OAuth authorization-server integration for MCP hosts are not implemented; MVP uses built-in login and personal agent tokens",
+    "AI adapter not tested against the live Anthropic API in this environment (no key); behaviour verified with a fake LLM and fallbacks",
+    "Default embeddings are a deterministic hashing model (weak semantics); configure EMBEDDINGS_PROVIDER=http for a learned model",
+    "MCP App view bundle is ~600 KiB (ext-apps SDK includes its schema layer)",
+    "Rate limiting is in-process (per instance); use a shared store or gateway when scaling out",
+    "Large video uploads go through the API (50 MB limit); presigned direct-to-storage uploads and speech-to-text are not implemented",
+    "Engagement notifications are logged only (no email/webhook/supplier-agent delivery yet)",
+    "PostgreSQL row-level security not enabled (tenant isolation is enforced in application/repositories)",
+    "Docker images run TypeScript via tsx; no bundling/slim runtime image yet; GitHub Actions workflow not yet executed on GitHub",
+    "Claim editing UI in the web workspace supports create/publish/retract; revision editing is API-only"
+  ],
+  "nextRecommendedStep": "Integrate a production OIDC provider (JIT user provisioning + MCP authorization-server metadata), then onboard real supplier data through the document pipeline with a configured LLM and learned embeddings; add PostgreSQL RLS and shared rate limiting before multi-instance deployment.",
+  "decisions": [
+    "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
+    "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",
+    "ADR-0003 stateless MCP 2026-07-28 via SDK v2 createMcpHandler; Skills + Apps extensions",
+    "ADR-0004 ES256 audience-bound JWTs; built-in IdP for MVP; external OIDC for production; BFF cookies for web",
+    "ADR-0005 organization tenancy with unforgeable TenantScope",
+    "ADR-0006 AI behind ports with deterministic baselines and grounded, schema-validated output",
+    "ADR-0007 claims: closed predicates, provenance separate from verification",
+    "ADR-0008 async asset pipeline on PostgreSQL jobs; no server-side URL fetching",
+    "ADR-0009 data-driven ontology in YAML",
+    "ADR-0010 prepare/confirm with bound confirmation tokens for consequential actions"
+  ]
+}

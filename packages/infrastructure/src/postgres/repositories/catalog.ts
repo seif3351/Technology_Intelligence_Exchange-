@@ -11,7 +11,8 @@ import type { Queryable } from '../db';
 import { claimParams, toAsset, toCapability, toClaim, toEvidence, toOffering } from '../mappers';
 
 const assertScope = (scope: TenantScope, organizationId: string): void => {
-  if (scope.organizationId !== organizationId) throw invariant('Tenant scope does not match the entity organization');
+  if (scope.organizationId !== organizationId)
+    throw invariant('Tenant scope does not match the entity organization');
 };
 
 export const createOfferingRepository = (db: Queryable): OfferingRepository => ({
@@ -52,8 +53,26 @@ export const createOfferingRepository = (db: Queryable): OfferingRepository => (
       `INSERT INTO offerings (id, organization_id, slug, type, name, summary, description, maturity, details, commercial,
          regions, status, is_demo, published_at, published_by, version, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-      [o.id, o.organizationId, o.slug, o.type, o.name, o.summary, o.description, o.maturity, JSON.stringify(o.details),
-        JSON.stringify(o.commercial), o.regions, o.status, o.isDemo, o.publishedAt, o.publishedBy, o.version, o.createdAt, o.updatedAt],
+      [
+        o.id,
+        o.organizationId,
+        o.slug,
+        o.type,
+        o.name,
+        o.summary,
+        o.description,
+        o.maturity,
+        JSON.stringify(o.details),
+        JSON.stringify(o.commercial),
+        o.regions,
+        o.status,
+        o.isDemo,
+        o.publishedAt,
+        o.publishedBy,
+        o.version,
+        o.createdAt,
+        o.updatedAt,
+      ],
     );
   },
   async update(scope, o, expectedVersion) {
@@ -62,8 +81,23 @@ export const createOfferingRepository = (db: Queryable): OfferingRepository => (
       `UPDATE offerings SET name=$4, summary=$5, description=$6, maturity=$7, details=$8, commercial=$9, regions=$10,
          status=$11, published_at=$12, published_by=$13, version=$14, updated_at=$15
        WHERE id=$1 AND organization_id=$2 AND version=$3`,
-      [o.id, o.organizationId, expectedVersion, o.name, o.summary, o.description, o.maturity, JSON.stringify(o.details),
-        JSON.stringify(o.commercial), o.regions, o.status, o.publishedAt, o.publishedBy, o.version, o.updatedAt],
+      [
+        o.id,
+        o.organizationId,
+        expectedVersion,
+        o.name,
+        o.summary,
+        o.description,
+        o.maturity,
+        JSON.stringify(o.details),
+        JSON.stringify(o.commercial),
+        o.regions,
+        o.status,
+        o.publishedAt,
+        o.publishedBy,
+        o.version,
+        o.updatedAt,
+      ],
     );
     if (result.rowCount !== 1) throw conflict('Offering was modified concurrently; reload and retry');
   },
@@ -140,7 +174,9 @@ export const createClaimRepository = (db: Queryable): ClaimRepository => ({
   async insert(scope, claim) {
     assertScope(scope, claim.organizationId);
     await db.query(
-      `INSERT INTO technical_claims (${CLAIM_COLUMNS}) VALUES (${claimParams(claim).map((_, i) => `$${i + 1}`).join(',')})`,
+      `INSERT INTO technical_claims (${CLAIM_COLUMNS}) VALUES (${claimParams(claim)
+        .map((_, i) => `$${i + 1}`)
+        .join(',')})`,
       claimParams(claim),
     );
     await recordRevision(db, claim);
@@ -175,7 +211,10 @@ export const createCapabilityRepository = (db: Queryable): CapabilityRepository 
     return rows.map(toCapability);
   },
   async listForTenant(scope) {
-    const { rows } = await db.query('SELECT * FROM capabilities WHERE organization_id = $1 ORDER BY name, id', [scope.organizationId]);
+    const { rows } = await db.query(
+      'SELECT * FROM capabilities WHERE organization_id = $1 ORDER BY name, id',
+      [scope.organizationId],
+    );
     return rows.map(toCapability);
   },
   async insert(scope, c) {
@@ -183,7 +222,17 @@ export const createCapabilityRepository = (db: Queryable): CapabilityRepository 
     await db.query(
       `INSERT INTO capabilities (id, organization_id, concept_id, name, description, status, version, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [c.id, c.organizationId, c.conceptId, c.name, c.description, c.status, c.version, c.createdAt, c.updatedAt],
+      [
+        c.id,
+        c.organizationId,
+        c.conceptId,
+        c.name,
+        c.description,
+        c.status,
+        c.version,
+        c.createdAt,
+        c.updatedAt,
+      ],
     );
   },
 });
@@ -221,7 +270,10 @@ export const createEvidenceRepository = (db: Queryable): EvidenceRepository => (
     return rows.map(toEvidence);
   },
   async listForTenant(scope) {
-    const { rows } = await db.query('SELECT * FROM evidence WHERE organization_id = $1 ORDER BY created_at DESC, id', [scope.organizationId]);
+    const { rows } = await db.query(
+      'SELECT * FROM evidence WHERE organization_id = $1 ORDER BY created_at DESC, id',
+      [scope.organizationId],
+    );
     return rows.map(toEvidence);
   },
   async offeringsWithProductionReferences(offeringIds) {
@@ -236,7 +288,10 @@ export const createEvidenceRepository = (db: Queryable): EvidenceRepository => (
     return new Set(rows.map((row) => asId<'OfferingId'>(row['id'] as string))) as Set<OfferingId>;
   },
   async findByAsset(assetId) {
-    const { rows } = await db.query('SELECT * FROM evidence WHERE asset_id = $1 ORDER BY created_at LIMIT 1', [assetId]);
+    const { rows } = await db.query(
+      'SELECT * FROM evidence WHERE asset_id = $1 ORDER BY created_at LIMIT 1',
+      [assetId],
+    );
     return rows[0] ? toEvidence(rows[0]) : null;
   },
   async insert(scope, e) {
@@ -245,9 +300,27 @@ export const createEvidenceRepository = (db: Queryable): EvidenceRepository => (
       `INSERT INTO evidence (id, organization_id, offering_id, kind, title, description, asset_id, url, provenance_category,
          source_type, source_reference, source_url, source_version, license, visibility, customer_disclosure, created_by, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
-      [e.id, e.organizationId, e.offeringId, e.kind, e.title, e.description, e.assetId, e.url, e.provenance.category,
-        e.provenance.sourceType, e.provenance.sourceReference, e.provenance.sourceUrl, e.provenance.sourceVersion,
-        e.provenance.license, e.visibility, e.customerDisclosure, e.createdBy, e.createdAt, e.updatedAt],
+      [
+        e.id,
+        e.organizationId,
+        e.offeringId,
+        e.kind,
+        e.title,
+        e.description,
+        e.assetId,
+        e.url,
+        e.provenance.category,
+        e.provenance.sourceType,
+        e.provenance.sourceReference,
+        e.provenance.sourceUrl,
+        e.provenance.sourceVersion,
+        e.provenance.license,
+        e.visibility,
+        e.customerDisclosure,
+        e.createdBy,
+        e.createdAt,
+        e.updatedAt,
+      ],
     );
   },
 });
@@ -258,9 +331,27 @@ const ASSET_COLUMNS = `id, organization_id, offering_id, kind, title, descriptio
 
 export const createAssetRepository = (db: Queryable): AssetRepository => {
   const params = (a: Parameters<AssetRepository['save']>[0]) => [
-    a.id, a.organizationId, a.offeringId, a.kind, a.title, a.description, a.contentType, a.byteSize, a.storageKey,
-    a.externalUrl, a.sha256, a.durationSeconds, a.thumbnailUrl, a.visibility, a.processingState, a.extractionState,
-    a.failureReason, a.createdBy, a.isDemo, a.createdAt, a.updatedAt,
+    a.id,
+    a.organizationId,
+    a.offeringId,
+    a.kind,
+    a.title,
+    a.description,
+    a.contentType,
+    a.byteSize,
+    a.storageKey,
+    a.externalUrl,
+    a.sha256,
+    a.durationSeconds,
+    a.thumbnailUrl,
+    a.visibility,
+    a.processingState,
+    a.extractionState,
+    a.failureReason,
+    a.createdBy,
+    a.isDemo,
+    a.createdAt,
+    a.updatedAt,
   ];
   return {
     async findById(id) {
@@ -288,18 +379,31 @@ export const createAssetRepository = (db: Queryable): AssetRepository => {
       return rows.map(toAsset);
     },
     async listForTenant(scope) {
-      const { rows } = await db.query('SELECT * FROM assets WHERE organization_id = $1 ORDER BY created_at DESC, id', [scope.organizationId]);
+      const { rows } = await db.query(
+        'SELECT * FROM assets WHERE organization_id = $1 ORDER BY created_at DESC, id',
+        [scope.organizationId],
+      );
       return rows.map(toAsset);
     },
     async insert(scope, asset) {
       assertScope(scope, asset.organizationId);
       const values = params(asset);
-      await db.query(`INSERT INTO assets (${ASSET_COLUMNS}) VALUES (${values.map((_, i) => `$${i + 1}`).join(',')})`, values);
+      await db.query(
+        `INSERT INTO assets (${ASSET_COLUMNS}) VALUES (${values.map((_, i) => `$${i + 1}`).join(',')})`,
+        values,
+      );
     },
     async save(asset) {
       await db.query(
         `UPDATE assets SET processing_state=$2, extraction_state=$3, failure_reason=$4, sha256=$5, updated_at=$6 WHERE id=$1`,
-        [asset.id, asset.processingState, asset.extractionState, asset.failureReason, asset.sha256, asset.updatedAt],
+        [
+          asset.id,
+          asset.processingState,
+          asset.extractionState,
+          asset.failureReason,
+          asset.sha256,
+          asset.updatedAt,
+        ],
       );
     },
   };

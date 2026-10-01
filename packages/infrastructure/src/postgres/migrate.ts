@@ -17,7 +17,9 @@ export const migrate = async (pool: pg.Pool, directory = MIGRATIONS_DIR): Promis
     id text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`);
   const files = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
   const applied = new Map(
-    (await pool.query<{ id: string; checksum: string }>('SELECT id, checksum FROM schema_migrations')).rows.map((row) => [row.id, row.checksum]),
+    (
+      await pool.query<{ id: string; checksum: string }>('SELECT id, checksum FROM schema_migrations')
+    ).rows.map((row) => [row.id, row.checksum]),
   );
   const newlyApplied: string[] = [];
   for (const file of files) {

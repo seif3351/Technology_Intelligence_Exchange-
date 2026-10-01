@@ -1,12 +1,5 @@
 import { invariant, validationError } from './errors';
-import type {
-  CapabilityId,
-  ClaimId,
-  ConceptId,
-  OfferingId,
-  OrganizationId,
-  UserId,
-} from './ids';
+import type { CapabilityId, ClaimId, ConceptId, OfferingId, OrganizationId, UserId } from './ids';
 import {
   type Confidence,
   type Provenance,
@@ -128,7 +121,10 @@ export const createClaim = (input: NewClaimInput): TechnicalClaim => {
     problems.push('AI_INFERRED provenance is reserved for AI extraction');
   }
   if (problems.length > 0) {
-    throw validationError('Invalid technical claim', problems.map((message) => ({ message })));
+    throw validationError(
+      'Invalid technical claim',
+      problems.map((message) => ({ message })),
+    );
   }
   return {
     id: input.id,

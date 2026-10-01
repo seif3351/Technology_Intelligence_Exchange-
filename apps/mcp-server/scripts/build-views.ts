@@ -10,7 +10,15 @@ import { build } from 'esbuild';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, '../dist/views');
-const VIEWS = ['offering-card', 'compatibility-matrix', 'video-player', 'comparison', 'requirement-builder', 'evidence-viewer', 'request-form'];
+const VIEWS = [
+  'offering-card',
+  'compatibility-matrix',
+  'video-player',
+  'comparison',
+  'requirement-builder',
+  'evidence-viewer',
+  'request-form',
+];
 
 const result = await build({
   entryPoints: [path.resolve(here, '../src/apps/views/main.ts')],

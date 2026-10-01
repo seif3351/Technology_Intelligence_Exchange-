@@ -1,14 +1,26 @@
 import { z } from 'zod';
 import { Untrusted } from './common';
 
-export const ConceptRef = z.object({ id: z.string(), label: z.string(), facet: z.string() }).meta({ id: 'ConceptRef' });
+export const ConceptRef = z
+  .object({ id: z.string(), label: z.string(), facet: z.string() })
+  .meta({ id: 'ConceptRef' });
 
 export const OrganizationRef = z
-  .object({ id: z.string(), slug: z.string(), name: z.string(), verificationState: z.string(), isDemo: z.boolean() })
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    verificationState: z.string(),
+    isDemo: z.boolean(),
+  })
   .meta({ id: 'OrganizationRef' });
 
 export const Provenance = z.object({
-  category: z.string().describe('SUPPLIER_VERIFIED | PUBLIC_SOURCE | LICENSED_THIRD_PARTY | INTERNAL | AI_INFERRED | UNVERIFIED'),
+  category: z
+    .string()
+    .describe(
+      'SUPPLIER_VERIFIED | PUBLIC_SOURCE | LICENSED_THIRD_PARTY | INTERNAL | AI_INFERRED | UNVERIFIED',
+    ),
   sourceType: z.string(),
   sourceReference: z.string().nullable(),
   sourceUrl: z.string().nullable().optional(),
@@ -90,7 +102,11 @@ export const OfferingSummary = z
 export const OfferingDetail = OfferingSummary.extend({
   description: z.string(),
   details: z.record(z.string(), z.unknown()),
-  commercial: z.object({ pricingModel: z.string().nullable(), availability: z.array(z.string()), notes: z.string().nullable() }),
+  commercial: z.object({
+    pricingModel: z.string().nullable(),
+    availability: z.array(z.string()),
+    notes: z.string().nullable(),
+  }),
   regions: z.array(z.string()),
   publishedAt: z.string().nullable(),
   version: z.number().int(),
@@ -114,7 +130,9 @@ export const SupplierView = z
       verifiedAt: z.string().nullable(),
     }),
     offerings: z.array(OfferingSummary),
-    capabilities: z.array(z.object({ id: z.string(), name: z.string(), description: z.string(), concept: ConceptRef })),
+    capabilities: z.array(
+      z.object({ id: z.string(), name: z.string(), description: z.string(), concept: ConceptRef }),
+    ),
     organizationClaims: z.array(ClaimView),
     evidence: z.array(EvidenceView),
   })
@@ -143,7 +161,12 @@ export const Interpretation = z
   })
   .meta({ id: 'Interpretation' });
 
-export const ScoreComponent = z.object({ name: z.string(), weight: z.number(), value: z.number(), explanation: z.string() });
+export const ScoreComponent = z.object({
+  name: z.string(),
+  weight: z.number(),
+  value: z.number(),
+  explanation: z.string(),
+});
 
 export const Assessment = z
   .object({
@@ -155,12 +178,25 @@ export const Assessment = z
     concept: ConceptRef.nullable(),
     strongestTrustTier: z.string().nullable(),
     strongestTrustLabel: z.string().nullable(),
-    supportingClaims: z.array(z.object({ claimId: z.string(), predicate: z.string(), trustTier: z.string(), statement: z.string(), untrusted: Untrusted })),
+    supportingClaims: z.array(
+      z.object({
+        claimId: z.string(),
+        predicate: z.string(),
+        trustTier: z.string(),
+        statement: z.string(),
+        untrusted: Untrusted,
+      }),
+    ),
     explanation: z.string(),
   })
   .meta({ id: 'Assessment' });
 
-export const Gap = z.object({ constraintId: z.string(), description: z.string(), kind: z.string(), suggestedQuestion: z.string() });
+export const Gap = z.object({
+  constraintId: z.string(),
+  description: z.string(),
+  kind: z.string(),
+  suggestedQuestion: z.string(),
+});
 
 export const Match = z
   .object({
@@ -190,15 +226,26 @@ export const ComparisonRow = z.object({
   constraintId: z.string(),
   description: z.string(),
   priority: z.string(),
-  cells: z.array(z.object({ offeringId: z.string(), status: z.string(), strongestTrustTier: z.string().nullable(), claimIds: z.array(z.string()) })),
+  cells: z.array(
+    z.object({
+      offeringId: z.string(),
+      status: z.string(),
+      strongestTrustTier: z.string().nullable(),
+      claimIds: z.array(z.string()),
+    }),
+  ),
 });
 
-export const CompareResponse = MatchResponse.extend({ matrix: z.array(ComparisonRow) }).meta({ id: 'CompareResponse' });
+export const CompareResponse = MatchResponse.extend({ matrix: z.array(ComparisonRow) }).meta({
+  id: 'CompareResponse',
+});
 
 export const OfferingSearchResponse = z
   .object({
     interpretation: Interpretation,
-    items: z.array(z.object({ offering: OfferingSummary, relevance: z.number(), matchedConcepts: z.array(ConceptRef) })),
+    items: z.array(
+      z.object({ offering: OfferingSummary, relevance: z.number(), matchedConcepts: z.array(ConceptRef) }),
+    ),
     nextCursor: z.string().nullable(),
     degraded: z.array(z.string()),
   })
@@ -206,7 +253,14 @@ export const OfferingSearchResponse = z
 
 export const SupplierSearchResponse = z
   .object({
-    items: z.array(OrganizationRef.extend({ summary: z.string(), untrusted: Untrusted, headquartersCountry: z.string().nullable(), regions: z.array(z.string()) })),
+    items: z.array(
+      OrganizationRef.extend({
+        summary: z.string(),
+        untrusted: Untrusted,
+        headquartersCountry: z.string().nullable(),
+        regions: z.array(z.string()),
+      }),
+    ),
     nextCursor: z.string().nullable(),
   })
   .meta({ id: 'SupplierSearchResponse' });
@@ -220,8 +274,12 @@ export const Technology = ConceptRef.extend({
   publishedOfferingCount: z.number().int(),
 }).meta({ id: 'Technology' });
 
-export const EvidenceResponse = z.object({ claims: z.array(ClaimView), evidence: z.array(EvidenceView) }).meta({ id: 'EvidenceResponse' });
-export const DemoResponse = z.object({ videos: z.array(VideoView), offerings: z.array(OfferingSummary) }).meta({ id: 'DemoResponse' });
+export const EvidenceResponse = z
+  .object({ claims: z.array(ClaimView), evidence: z.array(EvidenceView) })
+  .meta({ id: 'EvidenceResponse' });
+export const DemoResponse = z
+  .object({ videos: z.array(VideoView), offerings: z.array(OfferingSummary) })
+  .meta({ id: 'DemoResponse' });
 
 export const RequirementView = z
   .object({
@@ -239,10 +297,19 @@ export const RequirementView = z
   })
   .meta({ id: 'Requirement' });
 
-export const ValidationIssue = z.object({ severity: z.enum(['error', 'warning', 'info']), code: z.string(), message: z.string() });
+export const ValidationIssue = z.object({
+  severity: z.enum(['error', 'warning', 'info']),
+  code: z.string(),
+  message: z.string(),
+});
 
 export const RequirementValidation = z
-  .object({ valid: z.boolean(), issues: z.array(ValidationIssue), constraints: z.array(ConstraintView), unrecognizedTerms: z.array(z.string()) })
+  .object({
+    valid: z.boolean(),
+    issues: z.array(ValidationIssue),
+    constraints: z.array(ConstraintView),
+    unrecognizedTerms: z.array(z.string()),
+  })
   .meta({ id: 'RequirementValidation' });
 
 export const EngagementPreview = z

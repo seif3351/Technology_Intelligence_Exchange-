@@ -84,7 +84,10 @@ export interface ClaimRepository {
    */
   listPublishedForOfferings(offeringIds: readonly OfferingId[]): Promise<TechnicalClaim[]>;
   listPublishedForOrganization(organizationId: OrganizationId): Promise<TechnicalClaim[]>;
-  listForTenant(scope: TenantScope, filter: { readonly status?: TechnicalClaim['status']; readonly offeringId?: OfferingId }): Promise<TechnicalClaim[]>;
+  listForTenant(
+    scope: TenantScope,
+    filter: { readonly status?: TechnicalClaim['status']; readonly offeringId?: OfferingId },
+  ): Promise<TechnicalClaim[]>;
   listAwaitingPlatformReview(limit: number): Promise<TechnicalClaim[]>;
   countPublishedOfferingsByConcept(conceptIds: readonly ConceptId[]): Promise<Map<ConceptId, number>>;
   insert(scope: TenantScope, claim: TechnicalClaim): Promise<void>;
@@ -129,7 +132,12 @@ export interface RequirementRepository {
   listForTenant(scope: TenantScope): Promise<Requirement[]>;
   insert(scope: TenantScope, requirement: Requirement): Promise<void>;
   update(scope: TenantScope, requirement: Requirement, expectedVersion: number): Promise<void>;
-  recordDemandSignal(scope: TenantScope, requirementId: RequirementId, conceptIds: readonly ConceptId[], minimumMaturity: string | null): Promise<void>;
+  recordDemandSignal(
+    scope: TenantScope,
+    requirementId: RequirementId,
+    conceptIds: readonly ConceptId[],
+    minimumMaturity: string | null,
+  ): Promise<void>;
   listDemandSignals(limit: number): Promise<{ conceptId: ConceptId; requirementCount: number }[]>;
 }
 

@@ -20,9 +20,15 @@ const PREDICATE_STRENGTH: readonly ClaimPredicate[] = [
 ];
 
 const CUES: readonly { readonly predicate: ClaimPredicate; readonly pattern: RegExp }[] = [
-  { predicate: 'DESIGNED_FOR', pattern: /\b(designed for|intended for|suitable for|ready for|prepared for|aligned with|targeting)\b/i },
+  {
+    predicate: 'DESIGNED_FOR',
+    pattern: /\b(designed for|intended for|suitable for|ready for|prepared for|aligned with|targeting)\b/i,
+  },
   { predicate: 'CERTIFIED', pattern: /\b(certified|certification|certificate)\b/i },
-  { predicate: 'PRODUCTION_DEPLOYMENT', pattern: /\b(in series production|series production|production vehicles?|in production|deployed in)\b/i },
+  {
+    predicate: 'PRODUCTION_DEPLOYMENT',
+    pattern: /\b(in series production|series production|production vehicles?|in production|deployed in)\b/i,
+  },
   { predicate: 'PROCESS_COMPLIANT', pattern: /\b(compliant|compliance|in accordance with|according to)\b/i },
   { predicate: 'EXPERIENCE_WITH', pattern: /\b(experience|projects?|delivered|track record)\b/i },
   { predicate: 'IMPLEMENTS', pattern: /\b(implements|implementation of|conforms to)\b/i },
@@ -49,7 +55,9 @@ export const inferClaimPredicate = (sentence: string, facetId: FacetId): Predica
           : 'SUPPORTS';
     return { predicate: fallback, matchedCues: [] };
   }
-  const weakest = [...matched].sort((a, b) => PREDICATE_STRENGTH.indexOf(a) - PREDICATE_STRENGTH.indexOf(b))[0];
+  const weakest = [...matched].sort(
+    (a, b) => PREDICATE_STRENGTH.indexOf(a) - PREDICATE_STRENGTH.indexOf(b),
+  )[0];
   return weakest ? { predicate: weakest, matchedCues: matched } : null;
 };
 

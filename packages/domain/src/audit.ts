@@ -1,7 +1,12 @@
 import type { AuditEventId, OrganizationId, UserId } from './ids';
 
 export type AuditActor =
-  | { readonly type: 'user'; readonly userId: UserId; readonly clientId: string | null; readonly channel: Channel }
+  | {
+      readonly type: 'user';
+      readonly userId: UserId;
+      readonly clientId: string | null;
+      readonly channel: Channel;
+    }
   | { readonly type: 'anonymous'; readonly channel: Channel }
   | { readonly type: 'system'; readonly component: string };
 

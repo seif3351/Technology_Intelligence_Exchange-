@@ -71,7 +71,9 @@ export const transitionAsset = (
 };
 
 /** Upload policy: an explicit allow-list of media types and a size ceiling per kind. */
-export const ASSET_UPLOAD_POLICY: Readonly<Record<AssetKind, { readonly contentTypes: readonly string[]; readonly maxBytes: number }>> = {
+export const ASSET_UPLOAD_POLICY: Readonly<
+  Record<AssetKind, { readonly contentTypes: readonly string[]; readonly maxBytes: number }>
+> = {
   document: {
     contentTypes: ['application/pdf', 'text/plain', 'text/markdown', 'text/html'],
     maxBytes: 50 * 1024 * 1024,

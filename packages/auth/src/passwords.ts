@@ -1,7 +1,12 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import type { PasswordHasher } from '@atx/application';
 
-const scrypt = (password: string, salt: Buffer, keylen: number, options: { N: number; r: number; p: number }) =>
+const scrypt = (
+  password: string,
+  salt: Buffer,
+  keylen: number,
+  options: { N: number; r: number; p: number },
+) =>
   new Promise<Buffer>((resolve, reject) =>
     scryptCallback(password, salt, keylen, { ...options, maxmem: 64 * 1024 * 1024 }, (error, key) =>
       error ? reject(error) : resolve(key),
@@ -16,7 +21,14 @@ export const scryptPasswordHasher: PasswordHasher = {
   async hash(password) {
     const salt = randomBytes(16);
     const key = await scrypt(password, salt, KEY_LENGTH, PARAMS);
-    return ['scrypt', PARAMS.N, PARAMS.r, PARAMS.p, salt.toString('base64url'), key.toString('base64url')].join('$');
+    return [
+      'scrypt',
+      PARAMS.N,
+      PARAMS.r,
+      PARAMS.p,
+      salt.toString('base64url'),
+      key.toString('base64url'),
+    ].join('$');
   },
   async verify(password, stored) {
     const [scheme, n, r, p, saltText, hashText] = stored.split('$');

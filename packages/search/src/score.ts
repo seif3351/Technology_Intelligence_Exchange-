@@ -56,7 +56,9 @@ export const buildScore = (
       weight: SCORE_WEIGHTS.preferences,
       value: preferences.length === 0 ? 1 : round(mean(preferences.map((a) => STATUS_VALUE[a.status]))),
       explanation:
-        preferences.length === 0 ? 'No preferences specified.' : 'Mean over preferences, same scale as hard constraints.',
+        preferences.length === 0
+          ? 'No preferences specified.'
+          : 'Mean over preferences, same scale as hard constraints.',
     },
     {
       name: 'evidence_strength',

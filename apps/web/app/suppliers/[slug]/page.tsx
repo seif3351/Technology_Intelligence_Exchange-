@@ -11,7 +11,10 @@ export default async function SupplierPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   let supplier;
   try {
-    supplier = await api(`/v1/suppliers/${encodeURIComponent(slug)}`, { schema: SupplierView, anonymous: true });
+    supplier = await api(`/v1/suppliers/${encodeURIComponent(slug)}`, {
+      schema: SupplierView,
+      anonymous: true,
+    });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
@@ -26,7 +29,8 @@ export default async function SupplierPage({ params }: { params: Promise<{ slug:
       </div>
       <p className="untrusted">{org.summary}</p>
       <p className="small muted">
-        {org.headquartersCountry ? `Headquarters: ${org.headquartersCountry}. ` : ''}Regions: {org.regions.join(', ') || 'not stated'}.{' '}
+        {org.headquartersCountry ? `Headquarters: ${org.headquartersCountry}. ` : ''}Regions:{' '}
+        {org.regions.join(', ') || 'not stated'}.{' '}
         {org.website ? (
           <a href={org.website} rel="noopener noreferrer nofollow" target="_blank">
             Website

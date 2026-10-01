@@ -34,7 +34,10 @@ export const requirePlatformAdmin = (principal: Principal): UserPrincipal => {
   return user;
 };
 
-export const membershipRole = (principal: Principal, organizationId: OrganizationId): OrganizationRole | null =>
+export const membershipRole = (
+  principal: Principal,
+  organizationId: OrganizationId,
+): OrganizationRole | null =>
   principal.kind === 'user'
     ? (principal.memberships.find((membership) => membership.organizationId === organizationId)?.role ?? null)
     : null;
