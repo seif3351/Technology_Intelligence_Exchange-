@@ -12,6 +12,7 @@ const payloads = {
   'offering.reindex': z.object({ offeringId: z.uuid() }),
   'engagement.notify': z.object({ engagementId: z.uuid() }),
   'engagement.response_notify': z.object({ engagementId: z.uuid() }),
+  'requirement.alerts': z.object({ offeringId: z.uuid() }),
 } satisfies Record<JobType, z.ZodType>;
 
 /**
@@ -35,6 +36,12 @@ export const executeJob = async (runtime: Runtime, job: ClaimedJob): Promise<voi
       const { engagementId } = payloads['engagement.notify'].parse(job.payload);
       const notified = await runtime.app.engagements.notifySupplier(ctx, engagementId);
       runtime.logger.info({ engagementId, recipients: notified }, 'supplier notified of engagement request');
+      return;
+    }
+    case 'requirement.alerts': {
+      const { offeringId } = payloads['requirement.alerts'].parse(job.payload);
+      const sent = await runtime.app.requirementAlerts.alertForNewOffering(ctx, asId(offeringId));
+      runtime.logger.info({ offeringId, sent }, 'requirement alerts evaluated');
       return;
     }
     case 'engagement.response_notify': {

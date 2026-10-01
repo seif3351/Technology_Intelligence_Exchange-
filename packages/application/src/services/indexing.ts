@@ -43,7 +43,8 @@ export class IndexingService {
     const contentHash = createHash('sha256')
       .update(`${this.deps.embeddings?.model ?? 'none'}\n${text}`)
       .digest('hex');
-    if ((await this.deps.searchIndex.currentHash(offering.id)) === contentHash) return 'unchanged';
+    const previousHash = await this.deps.searchIndex.currentHash(offering.id);
+    if (previousHash === contentHash) return 'unchanged';
 
     let embedding: { model: string; vector: number[] } | null = null;
     if (this.deps.embeddings) {
@@ -55,6 +56,13 @@ export class IndexingService {
       }
     }
     await this.deps.searchIndex.upsert({ offeringId: offering.id, text, contentHash, embedding });
+    // Newly listed (first time in the index): check watched buyer requirements.
+    if (previousHash === null)
+      await this.deps.jobs.enqueue(
+        'requirement.alerts',
+        { offeringId: offering.id },
+        { dedupeKey: `requirement-alerts:${offering.id}` },
+      );
     return 'indexed';
   }
 

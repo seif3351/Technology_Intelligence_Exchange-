@@ -22,6 +22,7 @@ import {
 } from '@atx/contracts';
 import { notFound, validationError } from '@atx/domain';
 import { z } from 'zod';
+import { shortlistCsv } from '../http/csv';
 import { type AnyRouteSpec, defineRoute } from '../http/route';
 
 const conceptList = z
@@ -33,7 +34,7 @@ const conceptList = z
       : (Array.isArray(value) ? value : value.split(',')).map((v) => v.trim()).filter(Boolean),
   );
 
-export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
+export const catalogRoutes = (app: Application, webUrl: string): AnyRouteSpec[] => [
   defineRoute({
     method: 'GET',
     url: '/v1/technologies',
@@ -156,6 +157,34 @@ export const catalogRoutes = (app: Application): AnyRouteSpec[] => [
         limit: body.limit,
         cursor: body.cursor ?? null,
       }),
+  }),
+  defineRoute({
+    method: 'POST',
+    url: '/v1/matches/export',
+    operationId: 'exportShortlist',
+    summary: 'Download the matching result as a CSV shortlist (status and evidence basis per constraint)',
+    tags: ['matching'],
+    auth: 'optional',
+    body: MatchRequest,
+    response: z.string().describe('text/csv'),
+    handler: async ({ body, ctx, reply }) => {
+      const result = await app.matching.findMatches(ctx, {
+        text: body.text ?? null,
+        constraints: toDomainConstraints(body.constraints) ?? null,
+        requirement: body.requirementId
+          ? { organizationId: requireOrg(body.organizationId), requirementId: body.requirementId }
+          : null,
+        confidentialTerms: body.confidentialTerms ?? [],
+        requireAllHardConstraintsMet: body.requireAllHardConstraintsMet,
+        limit: body.limit,
+        cursor: null,
+      });
+      return reply
+        .header('content-type', 'text/csv; charset=utf-8')
+        .header('content-disposition', 'attachment; filename="atx-shortlist.csv"')
+        .header('cache-control', 'no-store')
+        .send(shortlistCsv(result.matches, (id) => new URL(`/offerings/${id}`, webUrl).toString())) as never;
+    },
   }),
   defineRoute({
     method: 'POST',

@@ -141,9 +141,14 @@ shown with their evidence basis, and get flagged in matching.
    call `get_supplier_workspace` again after a short wait. Proposed claims
    appear as **drafts with `aiDrafted: true`**. Review every one with the user
    against the document: right concept? predicate not stronger than the
-   text? Leave anything wrong unpublished (drafts stay private) and, if the
-   fact is real but mis-stated, add a corrected claim with `add_claim`. Never
-   publish an AI draft unreviewed.
+   text? Fix a mis-stated draft with `revise_claim` (e.g. weaken CERTIFIED to
+   DESIGNED_FOR), discard a wrong one with `retract_claim`, and edit a draft
+   offering with `update_offering` (pass the `version` shown by
+   `get_supplier_workspace` as `expected_version`). Never publish an AI draft
+   unreviewed.
+   Agents can only edit **drafts**: to correct something already public,
+   retract it and publish a corrected draft with the user's approval (or the
+   user edits it on the website).
 7. **Publish — only with explicit approval.**
    1. `prepare_publication` with the reviewed `claim_ids` (and `offering_id`
       to publish the offering; it needs at least one claim about it). Nothing

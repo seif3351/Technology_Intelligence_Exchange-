@@ -423,6 +423,45 @@ describe('skill section 3: a supplier agent publishes the supplier’s technolog
     expect(offering.videos.map((video) => video.title)).toContain('SecOC key rotation on an S32G gateway');
   });
 
+  it('lets the agent fix and discard drafts, but never edit published content directly', async () => {
+    const workspace = await call<Workspace>(supplier, 'get_supplier_workspace', {});
+    const draft = workspace.claims.find((claim) => claim.aiDrafted && claim.status === 'draft');
+    expect(draft).toBeDefined();
+    const revised = await call<{ claim: WorkspaceClaim }>(supplier, 'revise_claim', {
+      claim_id: draft?.id,
+      expected_version: draft?.version,
+      statement: 'Supports CAN FD gateways (reviewed wording).',
+    });
+    expect(revised.claim).toMatchObject({ status: 'draft', version: (draft?.version ?? 0) + 1 });
+    const retracted = await call<{ claim: WorkspaceClaim }>(supplier, 'retract_claim', {
+      claim_id: draft?.id,
+      expected_version: revised.claim.version,
+    });
+    expect(retracted.claim.status).toBe('retracted');
+
+    const published = workspace.claims.find((claim) => claim.status === 'published');
+    const blocked = await supplier.callTool({
+      name: 'revise_claim',
+      arguments: {
+        claim_id: published?.id,
+        expected_version: published?.version,
+        statement: 'Changed silently.',
+      },
+    });
+    expect(blocked.isError).toBe(true);
+    expect(text(blocked)).toMatch(/INVARIANT_VIOLATION.*only edit drafts/);
+    const offering = workspace.offerings[0];
+    const blockedOffering = await supplier.callTool({
+      name: 'update_offering',
+      arguments: {
+        offering_id: offering?.id,
+        expected_version: offering?.version,
+        summary: 'A silently changed public summary.',
+      },
+    });
+    expect(blockedOffering.isError).toBe(true);
+  });
+
   it('cannot touch another supplier’s content or act without the supplier scope', async () => {
     const crossTenant = await supplier.callTool({
       name: 'add_claim',

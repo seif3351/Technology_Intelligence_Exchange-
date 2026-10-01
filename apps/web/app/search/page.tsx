@@ -32,7 +32,15 @@ export default async function SearchPage({
             <input type="hidden" name="q" value={query} />
             <div className="row spread">
               <h2 className="flush">{result.matches.length} candidates</h2>
-              <button type="submit">Compare selected</button>
+              <div className="row">
+                <a
+                  href={`/search/export?q=${encodeURIComponent(query)}${strict === '1' ? '&strict=1' : ''}`}
+                  download
+                >
+                  Download shortlist (CSV)
+                </a>
+                <button type="submit">Compare selected</button>
+              </div>
             </div>
             {result.matches.length === 0 ? (
               <p className="muted">No published offering matches these constraints.</p>

@@ -18,6 +18,7 @@ export * from './services/matching';
 export * from './services/members';
 export * from './services/oauth';
 export * from './services/publication';
+export * from './services/requirement-alerts';
 export * from './services/requirements';
 export * from './services/supplier';
 export * from './services/support';

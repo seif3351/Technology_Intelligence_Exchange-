@@ -34,7 +34,7 @@ const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 export const allRoutes = (runtime: Runtime) => [
   ...systemRoutes(runtime),
   ...identityRoutes(runtime),
-  ...catalogRoutes(runtime.app),
+  ...catalogRoutes(runtime.app, runtime.env.PUBLIC_WEB_URL),
   ...workspaceRoutes(runtime.app),
   ...memberRoutes(runtime.app),
   ...oauthRoutes(runtime.app, { max: runtime.env.AUTH_RATE_LIMIT_PER_MINUTE * 3, timeWindow: '1 minute' }),

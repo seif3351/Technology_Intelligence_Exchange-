@@ -87,3 +87,18 @@ export const describeError = (error: unknown): string =>
   error instanceof ApiError
     ? `${error.message}${error.details.length ? ` (${error.details.map((d) => d.message).join('; ')})` : ''}`
     : 'Something went wrong. Please try again.';
+
+/** Server-side call returning the raw response (downloads such as CSV). The session token never reaches the browser. */
+export const apiDownload = async (path: string, body: unknown): Promise<Response> => {
+  const token = await getSessionToken();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (token) headers['authorization'] = `Bearer ${token}`;
+  const forwardedFor = (await requestHeaders()).get('x-forwarded-for');
+  if (forwardedFor) headers['x-forwarded-for'] = forwardedFor;
+  return fetch(new URL(path, webConfig.apiUrl), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+};

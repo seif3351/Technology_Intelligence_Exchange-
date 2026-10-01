@@ -1,6 +1,7 @@
 'use server';
 
 import { Engagement, EngagementPreview, RequirementView, ValidationIssue } from '@atx/contracts';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { api, describeError } from '../api';
@@ -89,4 +90,15 @@ export async function confirmRequest(_state: RequestState, form: FormData): Prom
   } catch (error) {
     return { error: describeError(error) };
   }
+}
+
+export async function setRequirementAlerts(form: FormData): Promise<void> {
+  const orgId = String(form.get('orgId') ?? '');
+  const requirementId = String(form.get('requirementId') ?? '');
+  await api(`/v1/organizations/${orgId}/requirements/${requirementId}/alerts`, {
+    method: 'PUT',
+    body: { enabled: form.get('enabled') === 'true' },
+    schema: z.object({ enabled: z.boolean() }),
+  });
+  revalidatePath(`/buyer/requirements/${requirementId}`);
 }

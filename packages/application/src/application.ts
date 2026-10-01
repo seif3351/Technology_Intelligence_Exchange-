@@ -13,6 +13,7 @@ import { MatchingService } from './services/matching';
 import { MembershipService } from './services/members';
 import { OAuthService } from './services/oauth';
 import { PublicationService } from './services/publication';
+import { RequirementAlertService } from './services/requirement-alerts';
 import { RequirementService } from './services/requirements';
 import { SupplierService } from './services/supplier';
 
@@ -26,6 +27,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     supplier: new SupplierService(deps),
     publication: new PublicationService(deps),
     requirements: new RequirementService(deps),
+    requirementAlerts: new RequirementAlertService(deps, matching),
     engagements: new EngagementService(deps),
     admin: new AdminService(deps),
     ingestion: new IngestionService(deps),

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Badge } from '@/components/badges';
 import { MatchCard } from '@/components/results';
 import { ApiError, api, currentUser } from '@/lib/api';
+import { setRequirementAlerts } from '@/lib/actions/buyer';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,13 +35,30 @@ export default async function RequirementPage({
     body: { requirementId: id, organizationId: orgId, limit: 5 },
     schema: MatchResponse,
   });
+  const alerts = await api(`/v1/organizations/${orgId}/requirements/${encodeURIComponent(id)}/alerts`, {
+    schema: z.object({ enabled: z.boolean() }),
+  });
   const r = data.requirement;
   return (
     <div className="stack">
       <div className="row">
         <h1>{r.title}</h1>
         <Badge tone="good">{r.visibility}</Badge>
+        <form action={setRequirementAlerts}>
+          <input type="hidden" name="orgId" value={orgId} />
+          <input type="hidden" name="requirementId" value={id} />
+          <input type="hidden" name="enabled" value={alerts.enabled ? 'false' : 'true'} />
+          <button type="submit">
+            {alerts.enabled ? 'Stop new-match alerts' : 'Email me about new matches'}
+          </button>
+        </form>
       </div>
+      {alerts.enabled ? (
+        <p className="small muted">
+          You will get an email when a newly listed offering meets all hard constraints. Suppliers are not
+          told.
+        </p>
+      ) : null}
       <div className="grid2">
         <div className="stack">
           <p className="muted">{r.description}</p>

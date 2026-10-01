@@ -1,5 +1,5 @@
 import type { AuditLog, EngagementRepository, RequirementRepository, TenantScope } from '@atx/application';
-import { type ConceptId, conflict, invariant } from '@atx/domain';
+import { type ConceptId, asId, conflict, invariant } from '@atx/domain';
 import type { Queryable } from '../db';
 import { toAuditEvent, toEngagement, toRequirement } from '../mappers';
 
@@ -9,7 +9,47 @@ const assertScope = (scope: TenantScope, organizationId: string): void => {
 };
 
 /** Every query is constrained by the scope's organization id — there is no unscoped read path. */
+const toWatch = (row: Record<string, unknown>) => ({
+  requirementId: asId<'RequirementId'>(row['requirement_id'] as string),
+  organizationId: asId<'OrganizationId'>(row['organization_id'] as string),
+  userId: asId<'UserId'>(row['user_id'] as string),
+});
+
 export const createRequirementRepository = (db: Queryable): RequirementRepository => ({
+  async setWatch(scope, requirementId, userId, at) {
+    if (userId === null) {
+      await db.query('DELETE FROM requirement_watches WHERE requirement_id = $1 AND organization_id = $2', [
+        requirementId,
+        scope.organizationId,
+      ]);
+      return;
+    }
+    await db.query(
+      `INSERT INTO requirement_watches (requirement_id, organization_id, user_id, created_at)
+       SELECT r.id, r.organization_id, $3, $4 FROM requirements r WHERE r.id = $1 AND r.organization_id = $2
+       ON CONFLICT (requirement_id) DO UPDATE SET user_id = EXCLUDED.user_id, created_at = EXCLUDED.created_at`,
+      [requirementId, scope.organizationId, userId, at],
+    );
+  },
+  async findWatch(scope, requirementId) {
+    const { rows } = await db.query(
+      'SELECT * FROM requirement_watches WHERE requirement_id = $1 AND organization_id = $2',
+      [requirementId, scope.organizationId],
+    );
+    return rows[0] ? toWatch(rows[0]) : null;
+  },
+  async listAllWatchesForAlerting() {
+    const { rows } = await db.query('SELECT * FROM requirement_watches ORDER BY created_at, requirement_id');
+    return rows.map(toWatch);
+  },
+  async recordAlert(requirementId, offeringId, at) {
+    const result = await db.query(
+      `INSERT INTO requirement_alerts (requirement_id, offering_id, notified_at) VALUES ($1,$2,$3)
+       ON CONFLICT DO NOTHING`,
+      [requirementId, offeringId, at],
+    );
+    return result.rowCount === 1;
+  },
   async findById(scope, id) {
     const { rows } = await db.query('SELECT * FROM requirements WHERE id = $1 AND organization_id = $2', [
       id,

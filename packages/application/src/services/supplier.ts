@@ -41,7 +41,7 @@ import type { ApplicationDeps } from '../deps';
 import { authorizeTenant, requireUser, requireVerifiedEmail } from '../policies';
 import type { RequestContext, TenantScope } from '../principal';
 import { presentClaim, presentEvidence } from '../views';
-import { ownedClaim, ownedOffering, supplierWriteScope } from './supplier-access';
+import { assertMayEditPublicContent, ownedClaim, ownedOffering, supplierWriteScope } from './supplier-access';
 import { recordAudit } from './support';
 
 export interface ClaimInput {
@@ -297,6 +297,7 @@ export class SupplierService {
     const now = this.deps.clock.now();
     const offering = await this.deps.transaction(async (repos) => {
       const current = await ownedOffering(repos.offerings.findById(asId(offeringId)), scope);
+      assertMayEditPublicContent(ctx, current.status === 'published');
       const normalized = normalizeOfferingInput({
         slug: current.slug,
         type: current.type,
@@ -451,6 +452,7 @@ export class SupplierService {
     const evidenceIds = input.evidenceIds ? await this.ownedEvidenceIds(scope, input.evidenceIds) : undefined;
     const revised = await this.deps.transaction(async (repos) => {
       const current = await ownedClaim(this.deps.repos.claims, scope, claimId);
+      assertMayEditPublicContent(ctx, current.status === 'published');
       const next = reviseClaim(
         current,
         {

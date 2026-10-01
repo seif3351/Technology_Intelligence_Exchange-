@@ -1,4 +1,4 @@
-import { type Offering, type TechnicalClaim, asId, notFound } from '@atx/domain';
+import { type Offering, type TechnicalClaim, asId, invariant, notFound } from '@atx/domain';
 import { authorizeTenant, requireScope } from '../policies';
 import type { RequestContext, TenantScope } from '../principal';
 import type { ClaimRepository } from '../ports/repositories';
@@ -11,6 +11,18 @@ export const supplierWriteScope = (
 ): TenantScope => {
   requireScope(ctx.principal, 'supplier:write');
   return authorizeTenant(ctx, asId(organizationId), role);
+};
+
+/**
+ * Human-in-the-loop for public content: an agent (any principal acting
+ * through a client) may edit drafts only. Changing what buyers already see
+ * goes through a person on the website, or retract + re-publish with approval.
+ */
+export const assertMayEditPublicContent = (ctx: RequestContext, isPublic: boolean): void => {
+  if (isPublic && ctx.principal.kind === 'user' && ctx.principal.clientId !== null)
+    throw invariant(
+      'Agents can only edit drafts. Published content is changed by a person on the website, or retract it and publish a corrected draft with approval.',
+    );
 };
 
 /** Same error for "missing" and "belongs to another tenant" to avoid IDOR probing. */

@@ -118,6 +118,31 @@ export const buyerRoutes = (app: Application): AnyRouteSpec[] => [
       app.requirements.confirmPublication(ctx, params.orgId, params.requirementId, body.confirmationToken),
   }),
   defineRoute({
+    method: 'GET',
+    url: '/v1/organizations/:orgId/requirements/:requirementId/alerts',
+    operationId: 'getRequirementAlerts',
+    summary: 'Whether new-match email alerts are enabled for this requirement',
+    tags: ['requirements'],
+    auth: 'required',
+    params: org.extend({ requirementId: Uuid }),
+    response: z.object({ enabled: z.boolean() }),
+    handler: async ({ params, ctx }) =>
+      app.requirementAlerts.getAlerts(ctx, params.orgId, params.requirementId),
+  }),
+  defineRoute({
+    method: 'PUT',
+    url: '/v1/organizations/:orgId/requirements/:requirementId/alerts',
+    operationId: 'setRequirementAlerts',
+    summary: 'Email me when a newly listed offering meets all hard constraints (opt-in)',
+    tags: ['requirements'],
+    auth: 'required',
+    params: org.extend({ requirementId: Uuid }),
+    body: z.object({ enabled: z.boolean() }),
+    response: z.object({ enabled: z.boolean() }),
+    handler: async ({ params, body, ctx }) =>
+      app.requirementAlerts.setAlerts(ctx, params.orgId, params.requirementId, body.enabled),
+  }),
+  defineRoute({
     method: 'POST',
     url: '/v1/engagements/prepare',
     operationId: 'prepareEngagement',

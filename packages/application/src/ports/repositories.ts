@@ -157,8 +157,21 @@ export interface AssetRepository {
   save(asset: Asset): Promise<void>;
 }
 
+export interface RequirementWatch {
+  readonly requirementId: RequirementId;
+  readonly organizationId: OrganizationId;
+  readonly userId: UserId;
+}
+
 export interface RequirementRepository {
   findById(scope: TenantScope, id: RequirementId): Promise<Requirement | null>;
+  /** Enables (userId) or disables (null) new-match alerts for a requirement. */
+  setWatch(scope: TenantScope, requirementId: RequirementId, userId: UserId | null, at: Date): Promise<void>;
+  findWatch(scope: TenantScope, requirementId: RequirementId): Promise<RequirementWatch | null>;
+  /** All watches across tenants: only for the system alerting job (it re-authorizes per tenant). */
+  listAllWatchesForAlerting(): Promise<RequirementWatch[]>;
+  /** Records that a requirement was alerted about an offering; false if it already was. */
+  recordAlert(requirementId: RequirementId, offeringId: OfferingId, at: Date): Promise<boolean>;
   listForTenant(scope: TenantScope): Promise<Requirement[]>;
   insert(scope: TenantScope, requirement: Requirement): Promise<void>;
   update(scope: TenantScope, requirement: Requirement, expectedVersion: number): Promise<void>;

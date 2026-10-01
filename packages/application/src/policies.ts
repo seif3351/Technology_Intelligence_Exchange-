@@ -38,6 +38,11 @@ export const requireVerifiedEmail = (principal: Principal): UserPrincipal => {
   return user;
 };
 
+/** Use cases that only background jobs may run. */
+export const forbiddenUnlessSystem = (principal: Principal): void => {
+  if (principal.kind !== 'system') throw forbidden('This task runs as a system job');
+};
+
 export const requirePlatformAdmin = (principal: Principal): UserPrincipal => {
   const user = requireUser(principal);
   if (!isPlatformAdmin(user)) throw forbidden('Platform administrator role required');

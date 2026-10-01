@@ -222,6 +222,80 @@ export const supplierTools = [
     },
   } satisfies ToolDefinition<'add_evidence'>,
   {
+    name: 'update_offering',
+    title: 'Edit a draft offering',
+    description:
+      'Edit name, summary, description, maturity or regions of one of your DRAFT offerings (pass expected_version from get_supplier_workspace). ' +
+      'Published offerings are changed by a person on the ATX website. Requires supplier:write.',
+    annotations: { ...WRITE, idempotentHint: true },
+    requiredScopes: SUPPLIER_SCOPES,
+    run: async (args, env) => {
+      const organizationId = resolveOrganization(env, args.organization_id);
+      const offering = await env.runtime.app.supplier.updateOffering(
+        env.ctx,
+        organizationId,
+        args.offering_id,
+        {
+          expectedVersion: args.expected_version,
+          ...(args.name !== undefined ? { name: args.name } : {}),
+          ...(args.summary !== undefined ? { summary: args.summary } : {}),
+          ...(args.description !== undefined ? { description: args.description } : {}),
+          ...(args.maturity !== undefined ? { maturity: args.maturity } : {}),
+          ...(args.regions !== undefined ? { regions: args.regions } : {}),
+        },
+      );
+      return {
+        structured: { offering: workspaceOffering(offering, env.links) },
+        text: `Updated draft offering "${offering.name}" (version ${offering.version}).`,
+      };
+    },
+  } satisfies ToolDefinition<'update_offering'>,
+  {
+    name: 'revise_claim',
+    title: 'Correct a draft claim',
+    description:
+      'Correct the predicate, statement, qualifiers or evidence of a DRAFT claim (e.g. an AI-drafted claim that overstates the source). ' +
+      'Published claims cannot be edited by agents: retract them and publish a corrected draft with approval. Requires supplier:write.',
+    annotations: { ...WRITE, idempotentHint: true },
+    requiredScopes: SUPPLIER_SCOPES,
+    run: async (args, env) => {
+      const organizationId = resolveOrganization(env, args.organization_id);
+      const view = await env.runtime.app.supplier.reviseClaim(env.ctx, organizationId, args.claim_id, {
+        expectedVersion: args.expected_version,
+        ...(args.predicate !== undefined ? { predicate: args.predicate } : {}),
+        ...(args.statement !== undefined ? { statement: args.statement } : {}),
+        ...(args.qualifiers !== undefined ? { qualifiers: args.qualifiers } : {}),
+        ...(args.evidence_ids !== undefined ? { evidenceIds: args.evidence_ids } : {}),
+      });
+      return {
+        structured: { claim: workspaceClaim(view) },
+        text: `Revised draft claim ${view.id}: ${view.predicateLabel} ${view.concept.label}.`,
+      };
+    },
+  } satisfies ToolDefinition<'revise_claim'>,
+  {
+    name: 'retract_claim',
+    title: 'Retract a claim',
+    description:
+      'Withdraw a draft or published claim (e.g. a wrong AI draft, or a published statement that is no longer true). ' +
+      'Retracted claims are no longer shown to buyers or used in matching. Requires supplier:write.',
+    annotations: { ...WRITE, destructiveHint: true, idempotentHint: true },
+    requiredScopes: SUPPLIER_SCOPES,
+    run: async (args, env) => {
+      const organizationId = resolveOrganization(env, args.organization_id);
+      const view = await env.runtime.app.supplier.retractClaim(
+        env.ctx,
+        organizationId,
+        args.claim_id,
+        args.expected_version,
+      );
+      return {
+        structured: { claim: workspaceClaim(view) },
+        text: `Retracted claim ${view.id} (${view.predicateLabel} ${view.concept.label}).`,
+      };
+    },
+  } satisfies ToolDefinition<'retract_claim'>,
+  {
     name: 'register_demo_video',
     title: 'Register a demo video',
     description:

@@ -25,6 +25,9 @@ Schemas: `docs/api/json-schema/mcp-tools.json` (generated from `packages/contrac
 | `add_claim`                   | Add a draft claim (subject + predicate + concept + qualifiers)                   | `supplier:write`                     | —                    |
 | `add_evidence`                | Register certificate / case study / public URL / production reference            | `supplier:write`                     | —                    |
 | `register_demo_video`         | Link an externally hosted demo video (never fetched)                             | `supplier:write`                     | —                    |
+| `update_offering`             | Edit a DRAFT offering (optimistic version check)                                 | `supplier:write`                     | —                    |
+| `revise_claim`                | Correct a DRAFT claim (predicate, statement, qualifiers, evidence)               | `supplier:write`                     | —                    |
+| `retract_claim`               | Withdraw a draft or published claim (destructive)                                | `supplier:write`                     | —                    |
 | `upload_document`             | Upload a datasheet/transcript (≤ ~8 MB); async scan, extraction, AI drafts       | `supplier:write`                     | —                    |
 | `prepare_publication`         | Preview exactly what would become public; nothing is published                   | `supplier:write`                     | —                    |
 | `confirm_publication`         | Publish after explicit user approval (token bound to user + exact versions)      | `supplier:write`                     | —                    |
@@ -34,3 +37,5 @@ Schemas: `docs/api/json-schema/mcp-tools.json` (generated from `packages/contrac
 Supplier tools only ever create private drafts. Publication is a human review step: AI-drafted claims become supplier statements (`SUPPLIER_VERIFIED`), never platform-verified.
 
 All read tools are annotated `readOnlyHint: true, openWorldHint: false`. Action tools are `openWorldHint: true` (they disclose information to a third party).
+
+Agents (any client acting for a user) can only edit drafts; changing published content needs a person on the website or retract + approved re-publication (ADR-0018).

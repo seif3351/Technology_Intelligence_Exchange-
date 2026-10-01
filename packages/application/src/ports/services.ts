@@ -124,6 +124,7 @@ export const JOB_TYPES = [
   'offering.reindex',
   'engagement.notify',
   'engagement.response_notify',
+  'requirement.alerts',
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
@@ -132,6 +133,7 @@ export interface JobPayloads {
   'offering.reindex': { readonly offeringId: OfferingId };
   'engagement.notify': { readonly engagementId: string };
   'engagement.response_notify': { readonly engagementId: string };
+  'requirement.alerts': { readonly offeringId: OfferingId };
 }
 
 export interface EnqueueOptions {

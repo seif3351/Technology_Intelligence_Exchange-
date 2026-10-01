@@ -523,6 +523,46 @@ export const McpTools = {
     }),
     output: z.object({ engagementId: z.string(), status: z.string(), replayed: z.boolean() }),
   },
+  update_offering: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      offering_id: z.uuid(),
+      expected_version: z
+        .number()
+        .int()
+        .min(1)
+        .describe('`version` from get_supplier_workspace (optimistic locking).'),
+      name: z.string().min(2).max(160).optional(),
+      summary: z.string().min(10).max(400).optional(),
+      description: z.string().max(8000).optional(),
+      maturity: z.enum(MATURITY_LEVELS).optional(),
+      regions: z.array(z.string().max(40)).max(20).optional(),
+    }),
+    output: z.object({ offering: McpWorkspaceOffering }),
+  },
+  revise_claim: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      claim_id: z.uuid(),
+      expected_version: z.number().int().min(1).describe('`version` from get_supplier_workspace.'),
+      predicate: z
+        .enum(CLAIM_PREDICATES)
+        .optional()
+        .describe('Weakest predicate that is literally true; CERTIFIED needs a certificationBody qualifier.'),
+      statement: z.string().min(3).max(1000).optional(),
+      qualifiers: z.record(z.string().max(40), z.string().max(200)).optional(),
+      evidence_ids: z.array(z.uuid()).max(20).optional(),
+    }),
+    output: z.object({ claim: McpWorkspaceClaim }),
+  },
+  retract_claim: {
+    input: z.object({
+      organization_id: supplierOrganization,
+      claim_id: z.uuid(),
+      expected_version: z.number().int().min(1),
+    }),
+    output: z.object({ claim: McpWorkspaceClaim }),
+  },
   get_supplier_workspace: {
     input: z.object({ organization_id: supplierOrganization }),
     output: z.object({
