@@ -194,7 +194,7 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     body: EvidenceCreate,
     response: EvidenceView,
     status: 201,
-    handler: async ({ params, body, ctx }) => app.supplier.addEvidence(ctx, params.orgId, body),
+    handler: async ({ params, body, ctx }) => app.evidence.addEvidence(ctx, params.orgId, body),
   }),
   defineRoute({
     method: 'POST',
@@ -207,7 +207,7 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     body: ExternalVideoCreate,
     response: AssetRecord,
     status: 201,
-    handler: async ({ params, body, ctx }) => app.supplier.registerExternalVideo(ctx, params.orgId, body),
+    handler: async ({ params, body, ctx }) => app.evidence.registerExternalVideo(ctx, params.orgId, body),
   }),
   defineRoute({
     method: 'PUT',
@@ -228,7 +228,7 @@ export const workspaceRoutes = (app: Application): AnyRouteSpec[] => [
     status: 202,
     handler: async ({ params, query, ctx, request }) => {
       if (!(request.body instanceof Buffer)) throw validationError('Request body must be the raw file');
-      return app.supplier.uploadAsset(ctx, params.orgId, {
+      return app.evidence.uploadAsset(ctx, params.orgId, {
         ...query,
         contentType: request.headers['content-type'] ?? '',
         bytes: new Uint8Array(request.body),

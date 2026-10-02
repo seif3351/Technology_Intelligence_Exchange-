@@ -21,6 +21,7 @@ export * from './services/publication';
 export * from './services/requirement-alerts';
 export * from './services/requirements';
 export * from './services/supplier';
+export * from './services/evidence';
 export * from './services/support';
 export * from './views';
 export * from './application';

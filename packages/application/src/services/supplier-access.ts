@@ -1,4 +1,12 @@
-import { type Offering, type TechnicalClaim, asId, invariant, notFound } from '@atx/domain';
+import {
+  type Offering,
+  type TechnicalClaim,
+  asId,
+  checkExternalUrl,
+  invariant,
+  notFound,
+  validationError,
+} from '@atx/domain';
 import { authorizeTenant, requireScope } from '../policies';
 import type { RequestContext, TenantScope } from '../principal';
 import type { ClaimRepository } from '../ports/repositories';
@@ -43,4 +51,12 @@ export const ownedClaim = async (
   const claim = await claims.findById(asId(claimId));
   if (!claim || claim.organizationId !== scope.organizationId) throw notFound('Claim');
   return claim;
+};
+
+/** Validates a user-supplied external URL (https, no credentials, no private hosts). Nothing is fetched. */
+export const safeExternalUrl = (raw: string, field: string): string => {
+  const result = checkExternalUrl(raw);
+  if (!result.ok)
+    throw validationError(`Invalid ${field}: ${result.reason}`, [{ path: field, message: result.reason }]);
+  return result.url;
 };

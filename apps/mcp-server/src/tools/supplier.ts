@@ -207,7 +207,7 @@ export const supplierTools = [
     requiredScopes: SUPPLIER_SCOPES,
     run: async (args, env) => {
       const organizationId = resolveOrganization(env, args.organization_id);
-      const view = await env.runtime.app.supplier.addEvidence(env.ctx, organizationId, {
+      const view = await env.runtime.app.evidence.addEvidence(env.ctx, organizationId, {
         offeringId: args.offering_id ?? null,
         kind: args.kind,
         title: args.title,
@@ -305,7 +305,7 @@ export const supplierTools = [
     requiredScopes: SUPPLIER_SCOPES,
     run: async (args, env) => {
       const organizationId = resolveOrganization(env, args.organization_id);
-      const asset = await env.runtime.app.supplier.registerExternalVideo(env.ctx, organizationId, {
+      const asset = await env.runtime.app.evidence.registerExternalVideo(env.ctx, organizationId, {
         offeringId: args.offering_id,
         title: args.title,
         description: args.description,
@@ -346,7 +346,7 @@ export const supplierTools = [
         args.content_base64 !== undefined
           ? new Uint8Array(Buffer.from(args.content_base64, 'base64'))
           : new TextEncoder().encode(args.content_text);
-      const asset = await env.runtime.app.supplier.uploadAsset(env.ctx, organizationId, {
+      const asset = await env.runtime.app.evidence.uploadAsset(env.ctx, organizationId, {
         offeringId: args.offering_id ?? null,
         kind: args.kind,
         title: args.title,

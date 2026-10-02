@@ -15,6 +15,7 @@ import { OAuthService } from './services/oauth';
 import { PublicationService } from './services/publication';
 import { RequirementAlertService } from './services/requirement-alerts';
 import { RequirementService } from './services/requirements';
+import { EvidenceService } from './services/evidence';
 import { SupplierService } from './services/supplier';
 
 /** Explicit composition of all use cases. Interfaces (API, MCP, worker, web) depend on this. */
@@ -25,6 +26,7 @@ export const createApplication = (deps: ApplicationDeps, passwords: PasswordHash
     matching,
     catalog: new CatalogService(deps, matching),
     supplier: new SupplierService(deps),
+    evidence: new EvidenceService(deps),
     publication: new PublicationService(deps),
     requirements: new RequirementService(deps),
     requirementAlerts: new RequirementAlertService(deps, matching),
