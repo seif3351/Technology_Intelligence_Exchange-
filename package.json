@@ -43,6 +43,7 @@
     "@atx/mcp-server": "workspace:*",
     "@atx/runtime": "workspace:*",
     "@atx/test-utils": "workspace:*",
+    "@atx/ui": "workspace:*",
     "@atx/worker": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/client": "^2.2.0",

@@ -1,6 +1,6 @@
 import type { ClaimView, EvidenceView } from '@atx/application';
 import type { McpWorkspaceAsset, McpWorkspaceClaim, McpWorkspaceOffering } from '@atx/contracts';
-import { type Asset, type Offering, slugify, validationError } from '@atx/domain';
+import { type Asset, type Offering, validationError } from '@atx/domain';
 import type { z } from 'zod';
 import * as present from '../presenters';
 import type { Links } from '../presenters';
@@ -131,8 +131,6 @@ export const supplierTools = [
     requiredScopes: SUPPLIER_SCOPES,
     run: async (args, env) => {
       const organizationId = resolveOrganization(env, args.organization_id);
-      const slug = args.slug ?? slugify(args.name);
-      if (!slug) throw validationError('Provide a slug (lowercase letters, digits and dashes)');
       const details =
         args.type === 'service'
           ? { type: 'service' as const, deliveryModel: args.delivery_model ?? null, engagementModels: [] }
@@ -143,7 +141,7 @@ export const supplierTools = [
               deploymentModels: args.deployment_models ?? [],
             };
       const offering = await env.runtime.app.supplier.createOffering(env.ctx, organizationId, {
-        slug,
+        slug: args.slug ?? null,
         type: args.type,
         name: args.name,
         summary: args.summary,

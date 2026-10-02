@@ -64,10 +64,12 @@ test.describe('buyer and supplier workflows', () => {
   test('supplier reviews an AI-drafted claim before it is published', async ({ page }) => {
     await signIn(page, 'owner@northstar-ai.example');
     await page.goto('/workspace');
-    const draft = page.getByTestId('draft-claim').filter({ hasText: 'NVIDIA DRIVE Orin' });
+    // Drafts to review are listed on the workspace overview; AI drafts are flagged for a wording check.
+    const draft = page.getByTestId('workspace-claim').filter({ hasText: 'NVIDIA DRIVE Orin' });
     await expect(draft).toContainText('AI-inferred');
+    await expect(draft).toContainText('AI draft — check wording');
     await draft.getByRole('button', { name: 'Publish' }).click();
-    await expect(page.getByTestId('draft-claim').filter({ hasText: 'NVIDIA DRIVE Orin' })).toHaveCount(0);
+    await expect(page.getByTestId('workspace-claim').filter({ hasText: 'NVIDIA DRIVE Orin' })).toHaveCount(0);
   });
 
   test('a supplier cannot open a buyer requirement', async ({ page }) => {

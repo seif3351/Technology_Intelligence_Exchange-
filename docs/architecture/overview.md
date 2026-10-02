@@ -73,3 +73,8 @@ Supplier agents can be added as another adapter: an `engagement.notify` handler 
 - **Errors.** `app/error.tsx` and `app/global-error.tsx` never show error internals. `lib/errors.ts` turns
   request-schema problems into per-field plain language; domain messages are already plain. Every page sets
   a title (template `%s · Automotive Technology Exchange`).
+- **Supplier workspace.** `/workspace` is the overview (requests, drafts to review, offerings, uploads).
+  `/workspace/offerings/[id]` edits one offering with its claims and evidence; `/workspace/organization`
+  edits the profile and organization-level claims. Claim strength options come from `@atx/ui`
+  `CLAIM_PREDICATE_OPTIONS`, ordered weakest first. `test/presentation.test.ts` keeps them identical to the
+  domain wording.

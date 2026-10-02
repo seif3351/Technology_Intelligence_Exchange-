@@ -1,61 +1,71 @@
+import { Engagement } from '@atx/contracts';
+import { ASSET_STATE_LABEL, EXTRACTION_STATE_LABEL, OFFERING_STATUS_LABEL } from '@atx/ui';
 import type { Metadata } from 'next';
-import { TableScroll } from '@/components/table-scroll';
-import { ClaimPredicate, Engagement, Workspace } from '@atx/contracts';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { ActionForm } from '@/components/action-form';
-import { MaturityBadge, TrustBadge, VerificationBadge } from '@/components/badges';
+import { MaturityBadge, VerificationBadge } from '@/components/badges';
+import { TableScroll } from '@/components/table-scroll';
+import { ClaimList } from '@/components/workspace';
 import {
-  addClaim,
-  changeClaim,
   createOffering,
   registerVideo,
   requestVerification,
   respondToEngagement,
-  setOfferingStatus,
   uploadDocument,
 } from '@/lib/actions/workspace';
-import { api, currentUser } from '@/lib/api';
+import { api } from '@/lib/api';
+import { canEdit, loadWorkspace } from '@/lib/workspace';
 
 export const metadata: Metadata = { title: 'Supplier workspace' };
-
 export const dynamic = 'force-dynamic';
 
 export default async function WorkspacePage({ searchParams }: { searchParams: Promise<{ org?: string }> }) {
-  const me = await currentUser();
-  if (!me) redirect('/login?next=/workspace');
-  const supplierOrgs = me.memberships.filter((m) => m.organizationKind !== 'buyer');
-  if (supplierOrgs.length === 0)
+  const { org } = await searchParams;
+  const { me, supplierOrgs, membership, workspace } = await loadWorkspace(org, '/workspace');
+  if (!membership || !workspace)
     return (
       <p className="notice">
         You are not a member of a supplier organization yet. <Link href="/onboarding">Set one up</Link>, or
         ask a colleague to invite you to theirs.
       </p>
     );
-  const { org } = await searchParams;
-  const membership = supplierOrgs.find((m) => m.organizationId === org) ?? supplierOrgs[0]!;
   const orgId = membership.organizationId;
-  const workspace = await api(`/v1/organizations/${orgId}/workspace`, { schema: Workspace });
+  const editable = canEdit(membership.role);
   const { items: incoming } = await api(`/v1/organizations/${orgId}/engagements?direction=incoming`, {
     schema: z.object({ items: z.array(Engagement) }),
   });
   const drafts = workspace.claims.filter((c) => c.status === 'draft');
-  const published = workspace.claims.filter((c) => c.status === 'published');
   const offeringName = new Map(workspace.offerings.map((o) => [o.id, o.name]));
+  const count = (offeringId: string, status: string) =>
+    workspace.claims.filter((c) => c.subject.id === offeringId && c.status === status).length;
+  const q = `?org=${orgId}`;
 
   return (
     <div className="stack">
-      <div className="row">
-        <h1>{workspace.organization.name}</h1>
-        <VerificationBadge state={workspace.organization.verificationState} />
-        {workspace.organization.verificationState === 'unverified' && membership.role !== 'viewer' ? (
-          <form action={requestVerification}>
-            <input type="hidden" name="orgId" value={orgId} />
-            <button type="submit">Request verification</button>
-          </form>
-        ) : null}
+      <div className="row spread">
+        <div className="row">
+          <h1 className="flush">{workspace.organization.name}</h1>
+          <VerificationBadge state={workspace.organization.verificationState} />
+        </div>
+        <nav className="row" aria-label="Workspace">
+          <Link href={`/workspace/organization${q}`}>Organization profile &amp; claims</Link>
+          <Link href={`/members${q}`}>Members</Link>
+        </nav>
       </div>
+      {workspace.organization.verificationState !== 'verified' ? (
+        <div className="notice row spread">
+          <span>
+            Your published content becomes visible to buyers once the platform has verified your organization.
+          </span>
+          {workspace.organization.verificationState === 'unverified' && editable ? (
+            <form action={requestVerification}>
+              <input type="hidden" name="orgId" value={orgId} />
+              <button type="submit">Request verification</button>
+            </form>
+          ) : null}
+        </div>
+      ) : null}
       {supplierOrgs.length > 1 ? (
         <div className="row small">
           Switch organization:{' '}
@@ -85,7 +95,7 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
               {e.disclosure.requirement.reference})
             </div>
           ) : null}
-          {e.status === 'submitted' ? (
+          {e.status === 'submitted' && editable ? (
             <div className="grid2">
               <ActionForm action={respondToEngagement} submitLabel="Accept and share contact">
                 <input type="hidden" name="orgId" value={orgId} />
@@ -137,246 +147,222 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
         </div>
       ))}
 
-      <h2>Claims awaiting your review ({drafts.length})</h2>
+      <h2>Drafts to review ({drafts.length})</h2>
       <p className="small muted">
-        AI-drafted claims are extracted from your uploaded documents. They are never published automatically:
-        check the wording and the strength of each claim.
+        Claims drafted by you, your colleagues, AI from your uploaded documents, or your AI agent. Nothing is
+        published automatically: check the wording and the strength of each claim.
       </p>
-      <TableScroll label="Claims awaiting your review (">
-        <table>
-          <thead>
-            <tr>
-              <th>Offering</th>
-              <th>Claim</th>
-              <th>Quoted source</th>
-              <th>Origin</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {drafts.map((c) => (
-              <tr key={c.id} data-testid="draft-claim">
-                <td>{c.subject.type === 'offering' ? offeringName.get(c.subject.id) : 'Organization'}</td>
-                <td>
-                  {c.predicateLabel} <strong>{c.concept.label}</strong>
-                </td>
-                <td className="untrusted small">{c.statement}</td>
-                <td>
-                  <TrustBadge tier={c.trustTier} label={c.trustLabel} />
-                </td>
-                <td className="row">
-                  {(['publish', 'retract'] as const).map((action) => (
-                    <form key={action} action={changeClaim}>
-                      <input type="hidden" name="orgId" value={orgId} />
-                      <input type="hidden" name="claimId" value={c.id} />
-                      <input type="hidden" name="version" value={String(c.version)} />
-                      <input type="hidden" name="action" value={action} />
-                      <button type="submit">{action === 'publish' ? 'Publish' : 'Discard'}</button>
-                    </form>
-                  ))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableScroll>
-
-      <h2>Offerings</h2>
-      <TableScroll label="Offerings">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Maturity</th>
-              <th>Status</th>
-              <th>Published claims</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {workspace.offerings.map((o) => (
-              <tr key={o.id}>
-                <td>
-                  {o.status === 'published' ? <Link href={`/offerings/${o.id}`}>{o.name}</Link> : o.name}
-                </td>
-                <td>
-                  <MaturityBadge maturity={o.maturity} />
-                </td>
-                <td>{o.status}</td>
-                <td>{published.filter((c) => c.subject.id === o.id).length}</td>
-                <td>
-                  <ActionForm
-                    action={setOfferingStatus}
-                    submitLabel={o.status === 'published' ? 'Unpublish' : 'Publish'}
-                    className="row"
-                  >
-                    <input type="hidden" name="orgId" value={orgId} />
-                    <input type="hidden" name="offeringId" value={o.id} />
-                    <input type="hidden" name="version" value={String(o.version)} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={o.status === 'published' ? 'draft' : 'published'}
-                    />
-                  </ActionForm>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableScroll>
-
-      <div className="grid2">
-        <section className="card">
-          <h3>Upload technical documentation</h3>
-          <p className="small muted">
-            PDF, text, Markdown or HTML up to 50 MB. Files are scanned, text is extracted and claims are
-            drafted for your review.
-          </p>
-          <ActionForm action={uploadDocument} submitLabel="Upload">
-            <input type="hidden" name="orgId" value={orgId} />
-            <OfferingSelect offerings={workspace.offerings} optional />
-            <div>
-              <label htmlFor="doc-title">Title</label>
-              <input id="doc-title" name="title" />
-            </div>
-            <input
-              type="file"
-              name="file"
-              accept=".pdf,.txt,.md,.html,application/pdf,text/plain,text/markdown,text/html"
-              required
+      {drafts.length === 0 ? (
+        <p className="muted">Nothing to review.</p>
+      ) : (
+        [...new Set(drafts.map((c) => c.subject.id))].map((subjectId) => (
+          <section key={subjectId} className="stack">
+            <h3>{offeringName.get(subjectId) ?? 'Organization-level claims'}</h3>
+            <ClaimList
+              headings={false}
+              claims={drafts.filter((c) => c.subject.id === subjectId)}
+              orgId={orgId}
+              evidence={workspace.evidence.filter((e) => e.offeringId === subjectId || e.offeringId === null)}
             />
-          </ActionForm>
-        </section>
-        <section className="card">
-          <h3>New offering</h3>
-          <ActionForm action={createOffering} submitLabel="Create draft">
-            <input type="hidden" name="orgId" value={orgId} />
-            <input name="name" placeholder="Name" required aria-label="Name" />
-            <input
-              name="slug"
-              placeholder="url-slug"
-              required
-              aria-label="Slug"
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            />
-            <select name="type" aria-label="Type" defaultValue="product">
-              <option value="product">Product</option>
-              <option value="service">Service</option>
-              <option value="technology_platform">Technology platform</option>
-            </select>
-            <select name="maturity" aria-label="Maturity" defaultValue="pilot">
-              {['concept', 'prototype', 'pilot', 'production'].map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
+          </section>
+        ))
+      )}
+
+      <h2>Offerings ({workspace.offerings.length})</h2>
+      {workspace.offerings.length === 0 ? (
+        <p className="muted">No offerings yet. Create the first one below.</p>
+      ) : (
+        <TableScroll label="Offerings">
+          <table>
+            <thead>
+              <tr>
+                <th>Offering</th>
+                <th>Maturity</th>
+                <th>Status</th>
+                <th>Claims</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workspace.offerings.map((o) => (
+                <tr key={o.id}>
+                  <td>
+                    <Link href={`/workspace/offerings/${o.id}${q}`}>{o.name}</Link>
+                    <div className="small muted untrusted">{o.summary}</div>
+                  </td>
+                  <td>
+                    <MaturityBadge maturity={o.maturity} />
+                  </td>
+                  <td>{OFFERING_STATUS_LABEL[o.status] ?? o.status}</td>
+                  <td className="small">
+                    {count(o.id, 'published')} published · {count(o.id, 'draft')} draft
+                  </td>
+                </tr>
               ))}
-            </select>
-            <textarea
-              name="summary"
-              placeholder="One-sentence technical summary"
-              required
-              aria-label="Summary"
-            />
-            <input type="hidden" name="description" value="" />
-          </ActionForm>
-        </section>
-      </div>
+            </tbody>
+          </table>
+        </TableScroll>
+      )}
 
-      <div className="grid2">
-        <section className="card">
-          <h3>Add a technical claim</h3>
-          <ActionForm action={addClaim} submitLabel="Add draft claim">
-            <input type="hidden" name="orgId" value={orgId} />
-            <OfferingSelect offerings={workspace.offerings} />
-            <select name="predicate" aria-label="Claim type" defaultValue="SUPPORTS">
-              {ClaimPredicate.options.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-            <input
-              name="conceptId"
-              placeholder="Concept id, e.g. qnx (see Technologies)"
-              required
-              aria-label="Concept id"
-            />
-            <input name="asil" placeholder="ASIL (optional: QM, A–D)" aria-label="ASIL" />
-            <textarea
-              name="statement"
-              placeholder="Statement exactly as you can support it"
-              required
-              aria-label="Statement"
-            />
-            <input name="sourceUrl" placeholder="https:// source (optional)" aria-label="Source URL" />
-          </ActionForm>
-        </section>
-        <section className="card">
-          <h3>Register a demo video</h3>
-          <ActionForm action={registerVideo} submitLabel="Register video">
-            <input type="hidden" name="orgId" value={orgId} />
-            <OfferingSelect offerings={workspace.offerings} />
-            <input name="title" placeholder="Title" required aria-label="Video title" />
-            <input name="url" placeholder="https://… (hosted video)" required aria-label="Video URL" />
-            <input
-              name="durationSeconds"
-              type="number"
-              min={0}
-              placeholder="Duration (s)"
-              aria-label="Duration"
-            />
-            <textarea
-              name="description"
-              placeholder="What does the demo show?"
-              aria-label="Video description"
-            />
-          </ActionForm>
-        </section>
-      </div>
+      {editable ? (
+        <div className="grid2">
+          <section className="card">
+            <h3>New offering</h3>
+            <ActionForm action={createOffering} submitLabel="Create draft offering">
+              <input type="hidden" name="orgId" value={orgId} />
+              <div>
+                <label htmlFor="new-name">Name</label>
+                <input id="new-name" name="name" required minLength={2} maxLength={160} />
+              </div>
+              <div className="grid2even">
+                <div>
+                  <label htmlFor="new-type">Type</label>
+                  <select id="new-type" name="type" defaultValue="product">
+                    <option value="product">Product</option>
+                    <option value="service">Service</option>
+                    <option value="technology_platform">Technology platform</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="new-maturity">Maturity</label>
+                  <select id="new-maturity" name="maturity" defaultValue="pilot">
+                    <option value="concept">Concept</option>
+                    <option value="prototype">Prototype</option>
+                    <option value="pilot">Pilot</option>
+                    <option value="production">Production</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="new-summary">One-sentence technical summary</label>
+                <textarea id="new-summary" name="summary" required minLength={10} maxLength={400} />
+              </div>
+              <div>
+                <label htmlFor="new-description">Description (optional)</label>
+                <textarea id="new-description" name="description" maxLength={8000} />
+              </div>
+              <p className="small muted">
+                It stays private until you publish it; you add claims on the next page.
+              </p>
+            </ActionForm>
+          </section>
+          <section className="card stack">
+            <h3>Upload technical documentation</h3>
+            <p className="small muted">
+              PDF, text, Markdown or HTML up to 50 MB. Files are scanned for malware, text is extracted and
+              claims are drafted for your review.
+            </p>
+            <ActionForm action={uploadDocument} submitLabel="Upload">
+              <input type="hidden" name="orgId" value={orgId} />
+              <OfferingSelect id="upload-offering" offerings={workspace.offerings} optional />
+              <div>
+                <label htmlFor="doc-title">Title (optional)</label>
+                <input id="doc-title" name="title" />
+              </div>
+              <div>
+                <label htmlFor="doc-file">File</label>
+                <input
+                  id="doc-file"
+                  type="file"
+                  name="file"
+                  accept=".pdf,.txt,.md,.html,application/pdf,text/plain,text/markdown,text/html"
+                  required
+                />
+              </div>
+            </ActionForm>
+            <details>
+              <summary>Register a hosted demo video</summary>
+              <ActionForm action={registerVideo} submitLabel="Register video">
+                <input type="hidden" name="orgId" value={orgId} />
+                <OfferingSelect id="video-offering" offerings={workspace.offerings} />
+                <div>
+                  <label htmlFor="video-title">Title</label>
+                  <input id="video-title" name="title" required />
+                </div>
+                <div>
+                  <label htmlFor="video-url">Video address (https://)</label>
+                  <input id="video-url" name="url" type="url" required />
+                </div>
+                <div>
+                  <label htmlFor="video-duration">Duration in seconds (optional)</label>
+                  <input id="video-duration" name="durationSeconds" type="number" min={0} />
+                </div>
+                <div>
+                  <label htmlFor="video-description">What does the demo show?</label>
+                  <textarea id="video-description" name="description" />
+                </div>
+              </ActionForm>
+            </details>
+          </section>
+        </div>
+      ) : (
+        <p className="small muted">You have read-only access to this workspace.</p>
+      )}
 
-      <h2>Uploaded assets</h2>
-      <TableScroll label="Uploaded assets">
-        <table>
-          <tbody>
-            {workspace.assets.map((a) => (
-              <tr key={a.id}>
-                <td>{a.title}</td>
-                <td className="small">{a.contentType}</td>
-                <td>
-                  <span
-                    className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}
-                  >
-                    {a.processingState}
-                  </span>
-                </td>
-                <td className="small muted">{a.failureReason ?? a.extractionState}</td>
+      <h2>Uploaded files ({workspace.assets.length})</h2>
+      {workspace.assets.length === 0 ? (
+        <p className="muted">No files yet.</p>
+      ) : (
+        <TableScroll label="Uploaded files">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Processing</th>
+                <th>Claims</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableScroll>
+            </thead>
+            <tbody>
+              {workspace.assets.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    {a.title}
+                    <div className="small muted">
+                      {a.offeringId ? offeringName.get(a.offeringId) : 'Organization-wide'}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}
+                    >
+                      {ASSET_STATE_LABEL[a.processingState] ?? a.processingState}
+                    </span>
+                    {a.failureReason ? <div className="small muted">{a.failureReason}</div> : null}
+                  </td>
+                  <td className="small muted">
+                    {EXTRACTION_STATE_LABEL[a.extractionState] ?? a.extractionState}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
+      )}
     </div>
   );
 }
 
 function OfferingSelect({
+  id,
   offerings,
   optional = false,
 }: {
+  id: string;
   offerings: readonly { id: string; name: string }[];
   optional?: boolean;
 }) {
   return (
-    <select name="offeringId" aria-label="Offering" required={!optional} defaultValue="">
-      <option value="" disabled={!optional}>
-        {optional ? 'Organization-wide (no offering)' : 'Select offering'}
-      </option>
-      {offerings.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.name}
+    <div>
+      <label htmlFor={id}>Offering</label>
+      <select id={id} name="offeringId" required={!optional} defaultValue="">
+        <option value="" disabled={!optional}>
+          {optional ? 'Organization-wide (no offering)' : 'Choose an offering'}
         </option>
-      ))}
-    </select>
+        {offerings.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

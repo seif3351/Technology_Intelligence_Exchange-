@@ -13,3 +13,17 @@ Supplier agents need to correct drafts (e.g. AI drafts that overstate a document
 ## Consequences
 
 Agent workflows stay safe by construction; people keep full editing rights on the website. Alert evaluation is O(watched requirements) per newly listed offering, acceptable for the pilot.
+
+## Amendment (S13, expert review 2026-10)
+
+The decision assumed that people edit published content "on the website". At the time, the website could
+not do that: offering, claim, evidence and profile editing existed only in the API and MCP. The supplier
+workspace now covers it:
+
+- an offering editor (details, publish or withdraw, claims grouped by status with publish, edit, discard
+  and withdraw, and evidence);
+- an organization page (profile, organization-level claims, organization-wide evidence).
+
+Withdrawing published content needs an explicit confirmation. A substantive edit of a published claim
+still drops platform verification (domain `reviseClaim`). Two revision bugs found on the way were fixed:
+linking evidence kept the claim's source, and validity dates are now saved.

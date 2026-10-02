@@ -63,6 +63,10 @@ export interface ClaimInput {
   readonly expiresAt?: string | null;
 }
 
+/** undefined = leave unchanged, null/'' = clear, ISO string = set. */
+const optionalDate = (value: string | null | undefined): Date | null | undefined =>
+  value === undefined ? undefined : value ? new Date(value) : null;
+
 /** Supplier workspace use cases. Every method authorizes the tenant first. */
 export class SupplierService {
   constructor(private readonly deps: ApplicationDeps) {}
@@ -223,10 +227,24 @@ export class SupplierService {
     };
   }
 
-  async createOffering(ctx: RequestContext, organizationId: string, input: OfferingInput): Promise<Offering> {
+  /**
+   * Creates a private draft. Without an explicit slug one is derived from the
+   * name and made unique within the organization ("name", "name-2", …); an
+   * explicit slug that is taken is a conflict.
+   */
+  async createOffering(
+    ctx: RequestContext,
+    organizationId: string,
+    input: Omit<OfferingInput, 'slug'> & { readonly slug?: string | null },
+  ): Promise<Offering> {
     const scope = supplierWriteScope(ctx, organizationId);
     const now = this.deps.clock.now();
-    const normalized = normalizeOfferingInput(input);
+    const explicitSlug = input.slug?.trim() || null;
+    const taken = new Set((await this.deps.repos.offerings.listForTenant(scope)).map((other) => other.slug));
+    const base = slugify(input.name) || 'offering';
+    let slug = explicitSlug ?? base;
+    for (let suffix = 2; !explicitSlug && taken.has(slug); suffix += 1) slug = `${base}-${suffix}`;
+    const normalized = normalizeOfferingInput({ ...input, slug });
     const offering: Offering = {
       id: newId(),
       organizationId: scope.organizationId,
@@ -431,18 +449,31 @@ export class SupplierService {
           conceptId: input.conceptId ? asId(input.conceptId) : undefined,
           qualifiers: input.qualifiers,
           statement: input.statement,
+          // A partial revision keeps every provenance field it does not mention (e.g. linking evidence
+          // must not erase the source URL).
           provenance:
             input.provenanceCategory || input.sourceUrl !== undefined || evidenceIds
               ? this.provenance(
                   {
-                    ...input,
                     provenanceCategory:
                       input.provenanceCategory ??
                       (current.provenance.category as ClaimInput['provenanceCategory']),
+                    sourceType: input.sourceType ?? current.provenance.sourceType,
+                    sourceUrl: input.sourceUrl !== undefined ? input.sourceUrl : current.provenance.sourceUrl,
+                    sourceReference:
+                      input.sourceReference !== undefined
+                        ? input.sourceReference
+                        : current.provenance.sourceReference,
+                    sourceVersion:
+                      input.sourceVersion !== undefined
+                        ? input.sourceVersion
+                        : current.provenance.sourceVersion,
                   },
                   evidenceIds ?? current.provenance.evidenceIds,
                 )
               : undefined,
+          reviewAt: optionalDate(input.reviewAt),
+          expiresAt: optionalDate(input.expiresAt),
         },
         now,
       );

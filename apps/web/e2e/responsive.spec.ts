@@ -33,7 +33,13 @@ test.describe('phone layout', () => {
 
   test('supplier and admin pages', async ({ page }) => {
     await signIn(page, 'owner@vectorforge.example');
-    for (const path of ['/workspace', '/members', '/docs/mcp']) await expectNoHorizontalScroll(page, path);
+    for (const path of ['/workspace', '/workspace/organization', '/members', '/docs/mcp'])
+      await expectNoHorizontalScroll(page, path);
+    await page.goto('/workspace');
+    const editor = await page
+      .getByRole('link', { name: 'VectorForge Adaptive Middleware' })
+      .getAttribute('href');
+    await expectNoHorizontalScroll(page, editor ?? '/workspace');
     await page.getByRole('button', { name: 'Sign out' }).click();
     await signIn(page, 'admin@atx.example');
     await expectNoHorizontalScroll(page, '/admin');

@@ -130,7 +130,7 @@ export const EngagementConfirmInput = EngagementDraftInput.extend({
 
 export const OfferingCreate = z
   .object({
-    slug: Slug,
+    slug: Slug.optional().describe('URL slug; derived from the name (and made unique) when omitted.'),
     type: z.enum(OFFERING_TYPES),
     name: z.string().min(2).max(160),
     summary: z.string().min(10).max(400),

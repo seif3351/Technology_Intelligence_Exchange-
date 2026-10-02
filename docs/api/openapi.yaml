@@ -460,6 +460,7 @@ components:
       type: object
       properties:
         slug:
+          description: URL slug; derived from the name (and made unique) when omitted.
           type: string
           maxLength: 120
           pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
@@ -589,7 +590,6 @@ components:
             type: string
             maxLength: 40
       required:
-        - slug
         - type
         - name
         - summary
@@ -6838,6 +6838,7 @@ paths:
                   type: object
                   properties:
                     slug:
+                      description: URL slug; derived from the name (and made unique) when omitted.
                       type: string
                       maxLength: 120
                       pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
@@ -6955,7 +6956,6 @@ paths:
                         type: string
                         maxLength: 40
                   required:
-                    - slug
                     - type
                     - name
                     - summary
