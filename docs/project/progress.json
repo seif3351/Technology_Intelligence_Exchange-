@@ -48,7 +48,9 @@
     "S9: MCP update_offering/revise_claim/retract_claim with agents-edit-drafts-only rule; CSV shortlist export (formula-injection safe) with web download; opt-in saved-requirement alerts on newly listed offerings (deduplicated, private, audited via the matcher); ADR-0018",
     "S10: CI publishes atx-node/atx-web images to GHCR (SHA tags, only from green main); infra/deploy production compose (Caddy TLS edge, ClamAV, release service for migrations/seed/admin CLIs, local-db rehearsal profile), smoke-tested end to end locally; docs/operations deployment guide, environment reference and runbook; ADR-0019. Fixes found while deploying: non-root image could not run pnpm (shared COREPACK_HOME; web starts Next directly), empty env vars now count as unset, and credential revocation (password reset, sign out everywhere) now also revokes OAuth grants/refresh tokens (ADR-0013 amendment) plus operator CLI `pnpm admin:revoke-access`",
     "R5 final architecture review: revocation paths re-checked across all credential types (OAuth refresh gap fixed in S10), configuration drift guard test (test/operations.test.ts), shared operator CLI helper, SupplierService size accepted with an extraction trigger; review checklist extended",
-    "CI fix: e2e job let Playwright reuse an API started without the e2e mail inbox, so email journeys failed on GitHub since S3/S4 (green locally). Playwright now owns the servers on CI (reuseExistingServer off). First fully green main run, images published to GHCR (atx-node, atx-web)"
+    "CI fix: e2e job let Playwright reuse an API started without the e2e mail inbox, so email journeys failed on GitHub since S3/S4 (green locally). Playwright now owns the servers on CI (reuseExistingServer off). First fully green main run, images published to GHCR (atx-node, atx-web)",
+    "Expert review (docs/project/expert-review-2026-10.md): every page rendered per role at desktop and phone width; 27 findings with fixes and a step plan S11–S16 / R6–R8",
+    "S11: one constraint wording (domain describeConstraint) across web, MCP, CSV and supplier questions; ordinal qualifiers ASIL / ASPICE capability level / ISO 21434 CAL as minimums, declared per concept in ontology data (migration 0009) and grounded in AI drafting; relevance floor with omittedWithoutEvidence; 13 new ontology concepts (MISRA, MBD, tool qualification, static analysis, XCP, ECU calibration, vECU, zonal E/E, COVESA VSS, V2X, BMS, ECU flashing, RTOS); alias-collision guard; ADR-0020"
   ],
   "verification": {
     "unit": "pnpm test — 104 passed (incl. architecture and operations-config guards)",
@@ -79,7 +81,7 @@
     "Platform-admin demotion is SQL-only (not audited); add an audited CLI",
     "SupplierService is ~800 lines; extract EvidenceService when evidence/assets change next (R5 K6)"
   ],
-  "nextRecommendedStep": "Operator: follow docs/operations/deployment.md (go/no-go checklist first). Engineering follow-ups: audited admin demotion CLI, EvidenceService extraction, pruned production image, overlapping signing keys",
+  "nextRecommendedStep": "S12: discovery UI (compact results, refine constraints in search, offering/compare/technologies pages, responsive tables, titles, error pages)",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

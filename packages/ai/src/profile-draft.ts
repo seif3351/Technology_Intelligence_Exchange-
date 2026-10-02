@@ -1,6 +1,6 @@
 import type { ProfileDraft, ProposedClaim, SupplierProfileDraftGenerator } from '@atx/application';
 import { CLAIM_PREDICATES, type Ontology, asId, normalizeForMatching } from '@atx/domain';
-import { inferClaimPredicate, splitSentences } from '@atx/search';
+import { extractOrdinalQualifiers, inferClaimPredicate, qualifierWindow, splitSentences } from '@atx/search';
 import { z } from 'zod';
 import type { StructuredLlm } from './llm';
 
@@ -22,20 +22,26 @@ export const deterministicProfileDraftGenerator: SupplierProfileDraftGenerator =
 const deterministicClaims = (sourceText: string, ontology: Ontology): ProposedClaim[] => {
   const proposals = new Map<string, ProposedClaim>();
   for (const sentence of splitSentences(sourceText)) {
-    for (const mention of ontology.findMentions(sentence)) {
+    const mentions = ontology.findMentions(sentence);
+    // findMentions reports offsets into this exact normalized form.
+    const normalized = ` ${normalizeForMatching(ontology.maskCaseMismatches(sentence))} `;
+    for (const [index, mention] of mentions.entries()) {
       const concept = ontology.getConcept(mention.conceptId);
       if (!concept) continue;
       const inference = inferClaimPredicate(sentence, concept.facetId);
       if (!inference) continue;
       const key = `${concept.id}:${inference.predicate}`;
       if (proposals.has(key)) continue;
-      const asil = /\basil[ -]?([abcd])\b/i.exec(sentence)?.[1];
       const body = /\b(TÜV|TUV|SGS|DEKRA|exida|UL)\b/i.exec(sentence)?.[1];
       proposals.set(key, {
         conceptId: concept.id,
         predicate: inference.predicate,
         qualifiers: {
-          ...(asil && concept.id === 'asil' ? { asil: asil.toUpperCase() } : {}),
+          // Levels (ASIL, ASPICE CL, CAL) only where the ontology declares them, read next to the mention.
+          ...extractOrdinalQualifiers(
+            qualifierWindow(normalized, mention, mentions[index + 1]),
+            ontology.qualifierKeysFor(concept.id),
+          ),
           ...(inference.predicate === 'CERTIFIED' && body ? { certificationBody: body } : {}),
         },
         quote: sentence.slice(0, MAX_QUOTE),
@@ -45,6 +51,34 @@ const deterministicClaims = (sourceText: string, ontology: Ontology): ProposedCl
   return [...proposals.values()];
 };
 
+/**
+ * Keeps an AI-proposed level (ASIL, ASPICE CL, CAL) only when the concept
+ * declares it and the quote itself states exactly that level, so the model can
+ * never strengthen a claim beyond its source.
+ */
+const groundedLevels = (
+  claim: {
+    readonly asil: string | null;
+    readonly aspiceLevel?: string | null | undefined;
+    readonly cal?: string | null | undefined;
+  },
+  quote: string,
+  keys: readonly string[],
+): Record<string, string> => {
+  const proposed: Record<string, string | null> = {
+    asil: claim.asil,
+    aspiceLevel: claim.aspiceLevel ?? null,
+    cal: claim.cal ?? null,
+  };
+  const stated = extractOrdinalQualifiers(` ${normalizeForMatching(quote)} `, keys);
+  return Object.fromEntries(
+    keys.flatMap((key) => {
+      const value = proposed[key];
+      return value && stated[key] === value ? [[key, value]] : [];
+    }),
+  );
+};
+
 const AiDraft = z.object({
   claims: z.array(
     z.object({
@@ -52,6 +86,9 @@ const AiDraft = z.object({
       predicate: z.enum(CLAIM_PREDICATES),
       quote: z.string(),
       asil: z.enum(['QM', 'A', 'B', 'C', 'D']).nullable(),
+      // Optional: models often omit null fields, and an omitted level must never fail the whole draft.
+      aspiceLevel: z.enum(['1', '2', '3', '4', '5']).nullish(),
+      cal: z.enum(['1', '2', '3', '4']).nullish(),
       certificationBody: z.string().nullable(),
     }),
   ),
@@ -103,7 +140,7 @@ export const createAiProfileDraftGenerator = (
           conceptId: asId(claim.conceptId),
           predicate,
           qualifiers: {
-            ...(claim.asil ? { asil: claim.asil } : {}),
+            ...groundedLevels(claim, quote, ontology.qualifierKeysFor(asId(claim.conceptId))),
             ...(predicate === 'CERTIFIED' && claim.certificationBody
               ? { certificationBody: claim.certificationBody.slice(0, 120) }
               : {}),

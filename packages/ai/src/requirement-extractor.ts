@@ -24,6 +24,9 @@ const AiConstraints = z.object({
       level: z.enum(CONSTRAINT_LEVELS),
       priority: z.enum(['hard', 'preference']),
       asil: z.enum(['A', 'B', 'C', 'D']).nullable(),
+      // Optional: models often omit null fields, and an omitted level must never fail the whole extraction.
+      aspiceLevel: z.enum(['1', '2', '3', '4', '5']).nullish(),
+      cal: z.enum(['1', '2', '3', '4']).nullish(),
     }),
   ),
   minimumMaturity: z.enum(['prototype', 'pilot', 'production']).nullable(),
@@ -35,7 +38,9 @@ const SYSTEM = `You convert automotive engineering requirements into structured 
 Use ONLY concept ids from the provided catalog. If a technical term has no matching concept, list it in unrecognizedTerms.
 Levels: mentioned (relevant), supports (works with / provides), experience (project experience or process compliance),
 certified (third-party certification explicitly required), production (series-production deployment explicitly required).
-Mark a constraint "preference" only when the text signals it is optional (ideally, preferably, nice to have).`;
+Mark a constraint "preference" only when the text signals it is optional (ideally, preferably, nice to have).
+Qualifiers, only when the text states them: asil (ISO 26262 ASIL A-D), aspiceLevel (Automotive SPICE capability
+level 1-5), cal (ISO/SAE 21434 cybersecurity assurance level 1-4). Otherwise null.`;
 
 /**
  * LLM-assisted extraction layered on the deterministic baseline. The model can
@@ -64,6 +69,28 @@ export const createAiRequirementExtractor = (
   },
 });
 
+/** Keeps only the levels the ontology declares for the concept (same rule as the deterministic path). */
+const declaredQualifiers = (
+  item: {
+    readonly asil: string | null;
+    readonly aspiceLevel?: string | null | undefined;
+    readonly cal?: string | null | undefined;
+  },
+  keys: readonly string[],
+): Record<string, string> => {
+  const values: Record<string, string | null> = {
+    asil: item.asil,
+    aspiceLevel: item.aspiceLevel ?? null,
+    cal: item.cal ?? null,
+  };
+  return Object.fromEntries(
+    keys.flatMap((key) => {
+      const value = values[key];
+      return value ? [[key, value]] : [];
+    }),
+  );
+};
+
 const catalog = (ontology: Ontology): string =>
   ontology.concepts
     .filter((concept) => concept.status === 'active')
@@ -91,7 +118,7 @@ const merge = (
       conceptId: item.conceptId,
       level: item.level,
       priority: item.priority,
-      qualifiers: item.asil ? { asil: item.asil } : {},
+      qualifiers: declaredQualifiers(item, ontology.qualifierKeysFor(asId(item.conceptId))),
       origin: 'extracted_ai',
     };
     constraints.push(constraint);

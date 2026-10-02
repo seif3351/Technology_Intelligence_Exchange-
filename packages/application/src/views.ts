@@ -9,6 +9,7 @@ import {
   type Organization,
   type RequirementConstraint,
   type TechnicalClaim,
+  describeConstraint,
   describePredicate,
   describeTrustTier,
   detectInjectionSignals,
@@ -311,7 +312,6 @@ export const presentConstraint = (constraint: RequirementConstraint, ontology: O
   switch (constraint.kind) {
     case 'concept': {
       const concept = conceptRef(ontology, constraint.conceptId);
-      const asil = constraint.qualifiers['asil'] ? ` (ASIL ${constraint.qualifiers['asil']})` : '';
       return {
         id: constraint.id,
         kind: constraint.kind,
@@ -321,7 +321,7 @@ export const presentConstraint = (constraint: RequirementConstraint, ontology: O
         qualifiers: constraint.qualifiers,
         minimumMaturity: null,
         origin: constraint.origin,
-        description: `${concept.label}${asil} — ${constraint.level}`,
+        description: describeConstraint(constraint, concept.label),
       };
     }
     case 'maturity':
@@ -334,7 +334,7 @@ export const presentConstraint = (constraint: RequirementConstraint, ontology: O
         qualifiers: {},
         minimumMaturity: constraint.minimum,
         origin: constraint.origin,
-        description: `Maturity at least ${constraint.minimum}`,
+        description: describeConstraint(constraint),
       };
     case 'production_reference':
       return {
@@ -346,7 +346,7 @@ export const presentConstraint = (constraint: RequirementConstraint, ontology: O
         qualifiers: {},
         minimumMaturity: null,
         origin: constraint.origin,
-        description: 'Production references',
+        description: describeConstraint(constraint),
       };
   }
 };

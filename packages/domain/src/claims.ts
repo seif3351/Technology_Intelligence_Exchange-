@@ -8,6 +8,7 @@ import {
   UNREVIEWED,
   validateProvenance,
 } from './provenance';
+import { ordinalValueProblem } from './qualifiers';
 import { sanitizeUntrustedText } from './text';
 
 /**
@@ -45,8 +46,6 @@ export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
  * are validated below.
  */
 export type ClaimQualifiers = Readonly<Record<string, string>>;
-
-export const ASIL_LEVELS = ['QM', 'A', 'B', 'C', 'D'] as const;
 
 export interface TechnicalClaim {
   readonly id: ClaimId;
@@ -89,9 +88,9 @@ export interface NewClaimInput {
 
 const validateQualifiers = (predicate: ClaimPredicate, qualifiers: ClaimQualifiers): string[] => {
   const problems: string[] = [];
-  const asil = qualifiers['asil'];
-  if (asil !== undefined && !(ASIL_LEVELS as readonly string[]).includes(asil)) {
-    problems.push(`asil must be one of ${ASIL_LEVELS.join(', ')}`);
+  for (const [key, value] of Object.entries(qualifiers)) {
+    const problem = ordinalValueProblem(key, value);
+    if (problem) problems.push(problem);
   }
   if (predicate === 'CERTIFIED' && !qualifiers['certificationBody']) {
     problems.push('CERTIFIED claims require a certificationBody qualifier');

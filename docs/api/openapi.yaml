@@ -2217,6 +2217,11 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        omittedWithoutEvidence:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Retrieved offerings with no information on any requested constraint whose description names none of the requested technologies; not listed.
         degraded:
           type: array
           items:
@@ -2226,6 +2231,7 @@ components:
         - matches
         - nextCursor
         - totalCandidatesEvaluated
+        - omittedWithoutEvidence
         - degraded
       additionalProperties: false
     CompareResponse:
@@ -2245,6 +2251,11 @@ components:
           type: integer
           minimum: -9007199254740991
           maximum: 9007199254740991
+        omittedWithoutEvidence:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Retrieved offerings with no information on any requested constraint whose description names none of the requested technologies; not listed.
         degraded:
           type: array
           items:
@@ -2294,6 +2305,7 @@ components:
         - matches
         - nextCursor
         - totalCandidatesEvaluated
+        - omittedWithoutEvidence
         - degraded
         - matrix
       additionalProperties: false

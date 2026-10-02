@@ -54,6 +54,8 @@ export interface MatchResponse {
   readonly matches: readonly MatchView[];
   readonly nextCursor: string | null;
   readonly totalCandidatesEvaluated: number;
+  /** Candidates with no information on any constraint whose prose names none of them (not shown). */
+  readonly omittedWithoutEvidence: number;
   readonly degraded: readonly string[];
 }
 
@@ -112,6 +114,7 @@ export class MatchingService {
       );
       const now = this.deps.clock.now();
       const evaluated: RankableMatch[] = [];
+      let omittedWithoutEvidence = 0;
       for (const candidate of fused) {
         const input = toCandidate(bundle, asId(candidate.id), candidate.relevance);
         if (!input) continue;
@@ -123,6 +126,17 @@ export class MatchingService {
         )
           continue;
         if (query.requireAllHardConstraintsMet && match.hardConstraintStatus !== 'all_met') continue;
+        // Relevance floor: a candidate with no information on any requested constraint is noise unless its
+        // own prose names one of the requested technologies (then "unknown" is a real question to ask).
+        if (
+          constraints.length > 0 &&
+          !query.offeringIds &&
+          match.assessments.every((assessment) => assessment.status === 'unknown') &&
+          !proseMentionsConstraint(input.offering, constraints, ontology)
+        ) {
+          omittedWithoutEvidence += 1;
+          continue;
+        }
         evaluated.push({ match, tieBreakName: input.offering.name });
       }
       evaluated.sort(compareMatches);
@@ -143,6 +157,7 @@ export class MatchingService {
         matches,
         nextCursor: page.nextCursor,
         totalCandidatesEvaluated: evaluated.length,
+        omittedWithoutEvidence,
         degraded,
       };
     });
@@ -291,6 +306,21 @@ export class MatchingService {
     return reciprocalRankFusion(lists).slice(0, CANDIDATE_POOL);
   }
 }
+
+/** Whether the offering's own name, summary or description mentions a requested concept (or a narrower one). */
+const proseMentionsConstraint = (
+  offering: { readonly name: string; readonly summary: string; readonly description: string },
+  constraints: readonly RequirementConstraint[],
+  ontology: Ontology,
+): boolean => {
+  const mentioned = ontology
+    .findMentions(`${offering.name}. ${offering.summary}. ${offering.description}`)
+    .map((mention) => mention.conceptId);
+  return constraints.some(
+    (constraint) =>
+      constraint.kind === 'concept' && mentioned.some((id) => ontology.satisfies(id, constraint.conceptId)),
+  );
+};
 
 const emptyInterpretation: InterpretationView = {
   constraints: [],

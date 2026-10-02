@@ -2658,6 +2658,12 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "omittedWithoutEvidence": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Retrieved offerings with no information on any requested technology (not listed)."
+          },
           "degraded": {
             "type": "array",
             "items": {
@@ -2674,6 +2680,7 @@
           "matches",
           "nextCursor",
           "totalCandidatesEvaluated",
+          "omittedWithoutEvidence",
           "degraded",
           "notice"
         ],

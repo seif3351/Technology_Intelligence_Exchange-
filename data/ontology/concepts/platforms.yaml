@@ -3,6 +3,7 @@
   label: QNX
   aliases: [QNX Neutrino, QNX OS, QNX RTOS]
   description: QNX real-time operating system.
+  is_a: [rtos]
 - id: linux
   facet: operating-system
   label: Linux
@@ -24,6 +25,7 @@
   label: Zephyr RTOS
   aliases: [Zephyr]
   description: Zephyr real-time operating system.
+  is_a: [rtos]
 - id: compute-platform
   facet: hardware-platform
   label: Compute platform
@@ -71,3 +73,8 @@
   aliases: [AURIX, TC3xx, TC4xx]
   description: Infineon AURIX microcontroller family.
   is_a: [compute-platform]
+- id: rtos
+  facet: operating-system
+  label: Real-time operating system
+  aliases: [RTOS, real-time OS, real time operating system, real-time operating systems]
+  description: Real-time operating systems for embedded control (umbrella concept).

@@ -1,7 +1,7 @@
 ---
 name: automotive-technology-exchange
 description: Work with the Automotive Technology Exchange (ATX) MCP server, an evidence-backed technical discovery network for automotive technologies (software-defined vehicle, ADAS, AUTOSAR, middleware, validation/testing, functional safety, cybersecurity). For SUPPLIERS — publish offerings, technical claims, evidence, documents and demo videos so OEMs can find them. For OEMs / BUYERS — find, evaluate and compare suppliers against technical requirements, keep program details confidential, and prepare demo/workshop/PoC/RFI requests. Use whenever the user mentions ATX, wants to list or update their automotive technology on the exchange, or asks which supplier/product/service can meet an automotive engineering requirement.
-version: 2.1.0
+version: 2.2.0
 ---
 
 # Automotive Technology Exchange
@@ -109,7 +109,12 @@ shown with their evidence basis, and get flagged in matching.
    fits, use the closest broader concept and say so in the statement; never
    invent concept ids.
 4. **Add claims** with `add_claim` — one claim per fact: subject (the
-   offering or the organization) + predicate + concept (+ `asil`/qualifiers).
+   offering or the organization) + predicate + concept (+ qualifiers).
+   Standardized levels go into qualifiers exactly as the source states them:
+   `asil` (`QM`, `A`–`D`), `aspiceLevel` (`1`–`5`, for Automotive SPICE
+   capability levels, e.g. "CL2" → `"2"`) and `cal` (`1`–`4`, ISO/SAE 21434
+   CAL). Buyers' levels are minimums: a CL3 claim meets "CL2 or higher", a
+   claim without a level never does.
    Pick the **weakest predicate that is literally true**:
 
    | Predicate               | Use when the source says…                                                                                                        |

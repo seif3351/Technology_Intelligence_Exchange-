@@ -1,5 +1,6 @@
 import type { ConceptId, FacetId } from './ids';
 import type { ConstraintLevel } from './requirement';
+import { isOrdinalQualifierKey } from './qualifiers';
 import { normalizeForMatching } from './text';
 
 /**
@@ -34,6 +35,13 @@ export interface Concept {
    * the cybersecurity facet, whose standards default to "experience").
    */
   readonly defaultConstraintLevel?: ConstraintLevel;
+  /**
+   * Ordinal qualifiers a buyer can attach to this concept (keys of
+   * ORDINAL_QUALIFIERS), e.g. ["aspiceLevel"] for Automotive SPICE. Requirement
+   * interpretation only reads levels next to concepts that declare them, so
+   * "SAE level 3" never becomes an ASPICE capability level.
+   */
+  readonly qualifierKeys?: readonly string[];
   readonly status: ConceptStatus;
 }
 
@@ -82,9 +90,14 @@ export class Ontology {
 
   constructor(snapshot: OntologySnapshot) {
     for (const facet of snapshot.facets) this.facetsById.set(facet.id, facet);
+    const aliasOwners = new Map<string, ConceptId>();
     for (const concept of snapshot.concepts) {
       if (!this.facetsById.has(concept.facetId)) {
         throw new Error(`Concept ${concept.id} references unknown facet ${concept.facetId}`);
+      }
+      for (const key of concept.qualifierKeys ?? []) {
+        if (!isOrdinalQualifierKey(key))
+          throw new Error(`Concept ${concept.id} declares unknown qualifier "${key}"`);
       }
       this.conceptsById.set(concept.id, concept);
       for (const exact of concept.caseSensitiveAliases ?? []) {
@@ -99,7 +112,13 @@ export class Ontology {
         ),
       );
       for (const normalized of names) {
-        if (normalized.length > 0) this.aliasIndex.push({ normalized, conceptId: concept.id });
+        if (normalized.length === 0) continue;
+        // One name must mean one concept, otherwise matching would depend on data order.
+        const owner = aliasOwners.get(normalized);
+        if (owner !== undefined && owner !== concept.id)
+          throw new Error(`Alias "${normalized}" is used by both ${owner} and ${concept.id}`);
+        aliasOwners.set(normalized, concept.id);
+        this.aliasIndex.push({ normalized, conceptId: concept.id });
       }
     }
     for (const relation of snapshot.relations) {
@@ -186,6 +205,11 @@ export class Ontology {
       if (relation.type !== 'is_a') result.add(relation.fromConceptId);
     }
     return result;
+  }
+
+  /** Ordinal qualifiers a requirement may attach to this concept (ontology data). */
+  qualifierKeysFor(id: ConceptId): readonly string[] {
+    return this.conceptsById.get(id)?.qualifierKeys ?? [];
   }
 
   /** Does a claim about `claimed` satisfy a requirement for `required`? */

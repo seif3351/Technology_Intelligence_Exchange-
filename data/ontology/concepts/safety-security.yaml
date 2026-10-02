@@ -14,6 +14,7 @@
   label: ASIL
   aliases: [automotive safety integrity level, ASIL-A, ASIL-B, ASIL-C, ASIL-D, ASIL A, ASIL B, ASIL C, ASIL D]
   description: Automotive Safety Integrity Level (use the `asil` qualifier for the level).
+  qualifiers: [asil]
   part_of: [iso-26262]
 - id: sotif
   facet: functional-safety
@@ -32,11 +33,13 @@
   label: Automotive cybersecurity
   aliases: [cybersecurity, cyber security, vehicle cybersecurity]
   description: Umbrella concept for automotive cybersecurity.
+  qualifiers: [cal]
 - id: iso-21434
   facet: cybersecurity
   label: ISO/SAE 21434
   aliases: [ISO 21434, ISO21434, ISO/SAE 21434]
   description: Road vehicles — Cybersecurity engineering.
+  qualifiers: [cal]
   is_a: [automotive-cybersecurity]
 - id: unece-r155
   facet: cybersecurity
@@ -91,3 +94,19 @@
   label: Automotive SPICE
   aliases: [ASPICE, A-SPICE]
   description: Automotive SPICE process assessment model.
+  qualifiers: [aspiceLevel]
+- id: misra
+  facet: process-standard
+  # Mostly a property of code and of the tools that check it, so a buyer naming it means "supports".
+  default_level: supports
+  label: MISRA
+  aliases: [MISRA C, MISRA C++, MISRA C:2012, MISRA C:2023, MISRA C++:2023, MISRA compliance]
+  description: MISRA C and C++ coding guidelines for safety-related embedded software.
+  related_to: [functional-safety, static-analysis]
+- id: tool-qualification
+  facet: functional-safety
+  default_level: supports
+  label: Tool qualification
+  aliases: [tool confidence level, tool qualification kit, qualified tool, ISO 26262-8 tool qualification]
+  description: Qualification of software tools according to ISO 26262-8 (tool confidence level, qualification kits).
+  related_to: [iso-26262, test-automation]

@@ -16,6 +16,7 @@ export * from './offering';
 export * from './ontology';
 export * from './organization';
 export * from './provenance';
+export * from './qualifiers';
 export * from './requirement';
 export * from './text';
 export * from './url-policy';

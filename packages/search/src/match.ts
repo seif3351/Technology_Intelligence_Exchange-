@@ -1,5 +1,4 @@
 import {
-  ASIL_LEVELS,
   type ConceptConstraint,
   type ConstraintAssessment,
   type Gap,
@@ -14,8 +13,13 @@ import {
   type TechnicalClaim,
   TRUST_TIERS,
   type TrustTier,
+  describeConstraint,
+  describePredicate,
   describeTrustTier,
+  formatQualifiers,
   isClaimActive,
+  meetsOrdinal,
+  ordinalRequirements,
   maturityAtLeast,
   trustTier,
 } from '@atx/domain';
@@ -70,7 +74,7 @@ const assessConstraint = (
       const met = maturityAtLeast(candidate.offering.maturity, constraint.minimum);
       return {
         constraintId: constraint.id,
-        description: `Maturity at least "${constraint.minimum}"`,
+        description: describeConstraint(constraint),
         priority: constraint.priority,
         level: null,
         conceptId: null,
@@ -86,7 +90,7 @@ const assessConstraint = (
       const met = productionClaims.length > 0 || candidate.hasProductionReferenceEvidence;
       return {
         constraintId: constraint.id,
-        description: 'Production references',
+        description: describeConstraint(constraint),
         priority: constraint.priority,
         level: 'production',
         conceptId: null,
@@ -101,17 +105,37 @@ const assessConstraint = (
   }
 };
 
-const ASIL_RANK = new Map<string, number>(ASIL_LEVELS.map((level, index) => [level, index]));
-
+/**
+ * Ordinal qualifiers (ASIL, ASPICE capability level, CAL) are minimums: a claim
+ * meets "ASIL B or higher" with ASIL B, C or D. A claim that does not state
+ * the level never counts as meeting it.
+ */
 const qualifiersSatisfied = (
   constraint: ConceptConstraint,
   claim: TechnicalClaim,
 ): 'yes' | 'no' | 'unknown' => {
-  const requiredAsil = constraint.qualifiers['asil'];
-  if (requiredAsil === undefined) return 'yes';
-  const claimed = claim.qualifiers['asil'];
-  if (claimed === undefined) return 'unknown';
-  return (ASIL_RANK.get(claimed) ?? -1) >= (ASIL_RANK.get(requiredAsil) ?? 99) ? 'yes' : 'no';
+  let verdict: 'yes' | 'no' | 'unknown' = 'yes';
+  for (const { qualifier, value } of ordinalRequirements(constraint.qualifiers)) {
+    const result = meetsOrdinal(qualifier.key, claim.qualifiers[qualifier.key], value);
+    if (result === 'no') return 'no';
+    if (result === 'unknown') verdict = 'unknown';
+  }
+  return verdict;
+};
+
+/** Why a claim's qualifiers fall short, e.g. "the claim states CL1, not CL2 or higher". */
+const qualifierShortfall = (constraint: ConceptConstraint, claim: TechnicalClaim): string => {
+  const required = ordinalRequirements(constraint.qualifiers);
+  const missing = required.filter(({ qualifier }) => claim.qualifiers[qualifier.key] === undefined);
+  const wanted = required.map(({ qualifier, value }) => `${qualifier.format(value)} or higher`).join(', ');
+  if (missing.length > 0)
+    return `the claim does not state ${missing.map(({ qualifier }) => `the ${qualifier.label}`).join(' or ')} (required: ${wanted})`;
+  const stated = formatQualifiers(
+    Object.fromEntries(
+      required.map(({ qualifier }) => [qualifier.key, claim.qualifiers[qualifier.key] ?? '']),
+    ),
+  ).join(', ');
+  return `the claim states ${stated}, not ${wanted}`;
 };
 
 const assessConceptConstraint = (
@@ -121,8 +145,7 @@ const assessConceptConstraint = (
 ): ConstraintAssessment => {
   const concept = ontology.getConcept(constraint.conceptId);
   const label = concept?.label ?? constraint.conceptId;
-  const qualifierText = constraint.qualifiers['asil'] ? ` (ASIL ${constraint.qualifiers['asil']})` : '';
-  const description = `${label}${qualifierText} — level "${constraint.level}"`;
+  const description = describeConstraint(constraint, label);
   const acceptable = SATISFYING_PREDICATES[constraint.level];
 
   const relevant = claims.filter((claim) => ontology.satisfies(claim.conceptId, constraint.conceptId));
@@ -160,10 +183,8 @@ const assessConceptConstraint = (
       ) {
         return `claims "${claimLabel}" in general, not specifically "${label}"`;
       }
-      if (qualifiersSatisfied(constraint, claim) !== 'yes') {
-        return `claim qualifiers do not establish ASIL ${constraint.qualifiers['asil']}`;
-      }
-      return `claim is "${claim.predicate}", weaker than required level "${constraint.level}"`;
+      if (qualifiersSatisfied(constraint, claim) !== 'yes') return qualifierShortfall(constraint, claim);
+      return `the claim "${describePredicate(claim.predicate)}" is weaker than required`;
     });
     return {
       constraintId: constraint.id,
@@ -187,7 +208,7 @@ const assessConceptConstraint = (
     status: 'unknown',
     strongestTrustTier: null,
     supportingClaims: [],
-    explanation: `No information about ${label}. Unknown is not the same as unsupported.`,
+    explanation: `No published information about ${label} (unknown, not unsupported).`,
   };
 };
 
@@ -245,7 +266,7 @@ const deriveGaps = (assessments: readonly ConstraintAssessment[], offeringName: 
             constraintId: assessment.constraintId,
             description: `No information: ${assessment.description}`,
             kind: 'missing_information',
-            suggestedQuestion: `Can you confirm whether ${offeringName} meets "${assessment.description}", with supporting documentation?`,
+            suggestedQuestion: `Does ${offeringName} meet "${assessment.description}"? Please share supporting documentation.`,
           },
         ];
       case 'partial':
@@ -254,7 +275,7 @@ const deriveGaps = (assessments: readonly ConstraintAssessment[], offeringName: 
             constraintId: assessment.constraintId,
             description: assessment.explanation,
             kind: 'weaker_than_required',
-            suggestedQuestion: `Available information is weaker than required for "${assessment.description}". Can you provide evidence at the required level?`,
+            suggestedQuestion: `The published information is weaker than "${assessment.description}". Can you provide evidence at that level?`,
           },
         ];
       case 'unmet':

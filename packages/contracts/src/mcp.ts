@@ -357,6 +357,10 @@ export const McpTools = {
       matches: z.array(McpMatch),
       nextCursor: z.string().nullable(),
       totalCandidatesEvaluated: z.number().int(),
+      omittedWithoutEvidence: z
+        .number()
+        .int()
+        .describe('Retrieved offerings with no information on any requested technology (not listed).'),
       degraded: z.array(z.string()),
       notice,
     }),

@@ -122,3 +122,33 @@
   label: Engineering services
   aliases: [engineering service, development services, staffing]
   description: Contract engineering and development services.
+- id: static-analysis
+  facet: capability
+  label: Static analysis
+  aliases: [static code analysis, static analyzer, static analyser, SAST]
+  description: Static code analysis, e.g. coding-guideline and runtime-error checking.
+  is_a: [verification]
+- id: model-based-development
+  facet: capability
+  label: Model-based development
+  aliases: [model-based design, model based design, MBD, Simulink, MATLAB/Simulink, automatic code generation]
+  description: Model-based design with automatic code generation (e.g. Simulink models).
+  related_to: [simulation]
+- id: ecu-calibration
+  facet: capability
+  label: ECU calibration
+  aliases: [measurement and calibration, A2L, ASAM MCD-2 MC]
+  description: Measurement and calibration of ECU parameters (e.g. described in A2L files).
+  related_to: [xcp]
+- id: virtual-ecu
+  facet: capability
+  label: Virtual ECU
+  aliases: [vECU, virtual ECUs, virtual electronic control unit, ECU virtualization, ECU virtualisation]
+  description: Virtual ECUs for software-in-the-loop development and testing.
+  related_to: [sil-testing, simulation]
+- id: ecu-flashing
+  facet: capability
+  label: ECU flashing and bootloaders
+  aliases: [flash bootloader, bootloader, ECU reprogramming, ECU flashing]
+  description: ECU reprogramming and flash bootloaders.
+  related_to: [uds, ota-updates]

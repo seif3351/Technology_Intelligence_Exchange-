@@ -229,6 +229,7 @@ export const discoveryTools = [
           matches,
           nextCursor: result.nextCursor,
           totalCandidatesEvaluated: result.totalCandidatesEvaluated,
+          omittedWithoutEvidence: result.omittedWithoutEvidence,
           degraded: [...result.degraded],
           notice: present.UNTRUSTED_NOTICE,
         },

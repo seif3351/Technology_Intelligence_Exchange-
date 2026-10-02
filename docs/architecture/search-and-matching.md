@@ -10,12 +10,17 @@
 - Clauses split on sentence boundaries and "but". A preference cue (_ideally, preferably, nice to have, …_) turns later mentions in the clause into **preferences**; everything else is **hard**.
 - Level cues next to a term: _certified_ → `certified`, _experience / track record_ → `experience`, _in series production_ → `production`; otherwise the facet's `default_level`.
 - _production-ready_ → maturity ≥ production; _production references_ → production-reference constraint.
+- **Ordinal qualifiers** (ADR-0020): next to a concept that declares them in the ontology (`qualifiers:`), levels are read as minimums: _ASIL-B_ → `asil: B`, _ASPICE CL2_ / _level 2_ → `aspiceLevel: 2`, _CAL 3_ → `cal: 3`. Levels next to other concepts ("SAE level 3") are ignored.
 - Broader concepts implied by narrower ones are dropped; unrecognized technical tokens are reported as **unknown terms**.
 - Optional AI assistance may only add constraints for valid ontology concepts.
 
 ### Evaluation (`packages/search/src/match.ts`)
 
-Per constraint: `met` (an active published claim on the concept or a narrower one, with a predicate allowed for the level, qualifiers satisfied), `partial` (related but weaker, or broader concept), `unknown` (no information), `unmet` (contradicted by the supplier's own data, e.g. maturity). Candidates with an unmet hard constraint are excluded from searches.
+Per constraint: `met` (an active published claim on the concept or a narrower one, with a predicate allowed for the level, ordinal qualifiers at or above the required minimum), `partial` (related but weaker, a broader concept, or a level that is lower or not stated), `unknown` (no information), `unmet` (contradicted by the supplier's own data, e.g. maturity). Candidates with an unmet hard constraint are excluded from searches.
+
+**Relevance floor:** a retrieved candidate whose assessments are all `unknown` is not listed unless its own name, summary or description mentions one of the requested technologies. Such candidates are counted in `omittedWithoutEvidence`. Keyword retrieval uses OR semantics, so a keyword hit alone is not evidence of relevance.
+
+**Wording:** every constraint is described by the domain's `describeConstraint` ("Supports QNX", "Certified: ASIL B or higher", "Experience with Automotive SPICE (CL2 or higher)"). The web app, MCP, CSV exports and the questions suggested to suppliers use the same text; the structured fields (`level`, `concept`, `qualifiers`) remain for programmatic clients.
 
 ### Score (`packages/search/src/score.ts`) — always shown with its components
 

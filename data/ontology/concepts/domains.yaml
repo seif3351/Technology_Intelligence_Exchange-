@@ -47,3 +47,9 @@
   aliases: [motion planning, path planning, trajectory planning]
   description: Behaviour and trajectory planning.
   part_of: [adas]
+- id: battery-management
+  facet: application-domain
+  label: Battery management system
+  aliases: [BMS, battery management, battery management systems]
+  description: Battery management systems for electrified vehicles.
+  related_to: [powertrain]

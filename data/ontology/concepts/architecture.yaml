@@ -51,3 +51,9 @@
   label: Hypervisor
   aliases: [virtualization, virtualisation]
   description: Embedded virtualization layer.
+- id: zonal-architecture
+  facet: software-architecture
+  label: Zonal E/E architecture
+  aliases: [zonal architecture, zonal controller, zone controller, zonal ECU]
+  description: Zonal electrical/electronic vehicle architecture with zone controllers.
+  related_to: [software-defined-vehicle]

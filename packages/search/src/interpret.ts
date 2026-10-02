@@ -115,7 +115,10 @@ export const interpretRequirementText = (text: string, ontology: Ontology): Inte
         conceptId: concept.id,
         level,
         priority: priorityAt(mention.start),
-        qualifiers: extractQualifiers(mention.matchedText, working, mention),
+        qualifiers: extractOrdinalQualifiers(
+          qualifierWindow(working, mention, mentions[index + 1]),
+          ontology.qualifierKeysFor(concept.id),
+        ),
         origin: 'extracted_deterministic',
       };
       upsert(constraints, `concept:${concept.id}`, constraint);
@@ -151,10 +154,40 @@ const detectLevelCue = (
   return LEVEL_CUES.find((cue) => cue.pattern.test(window))?.level;
 };
 
-const extractQualifiers = (matched: string, text: string, mention: AliasMatch): Record<string, string> => {
-  const around = `${matched} ${text.slice(mention.end, mention.end + 4)}`;
-  const asil = /\basil[ -]?([abcd])\b/.exec(around);
-  return asil?.[1] ? { asil: asil[1].toUpperCase() } : {};
+/**
+ * How each ordinal qualifier is written in normalized text (lowercase,
+ * hyphens as spaces): "ASIL-B" -> "asil b", "ASPICE CL2" / "level 2",
+ * "CAL 3". Values are returned in the registry's notation.
+ */
+const ORDINAL_CUES: Readonly<
+  Record<string, { readonly pattern: RegExp; readonly value: (raw: string) => string }>
+> = {
+  asil: { pattern: /\basil ?(qm|[abcd])\b/, value: (raw) => raw.toUpperCase() },
+  aspiceLevel: { pattern: /\b(?:cl|capability level|level) ?([1-5])\b/, value: (raw) => raw },
+  cal: { pattern: /\bcal ?([1-4])\b/, value: (raw) => raw },
+};
+const QUALIFIER_WINDOW = 24;
+
+/** The mention itself plus a short stretch after it, never reaching into the next mention. */
+export const qualifierWindow = (text: string, mention: AliasMatch, next: AliasMatch | undefined): string =>
+  text.slice(mention.start, Math.min(next ? next.start : text.length, mention.end + QUALIFIER_WINDOW));
+
+/**
+ * Reads the ordinal qualifiers `keys` (declared for a concept in the ontology)
+ * from normalized text, e.g. "aspice cl2" with ["aspiceLevel"] -> { aspiceLevel: "2" }.
+ * Shared with AI-assisted drafting so both read levels the same way.
+ */
+export const extractOrdinalQualifiers = (
+  normalizedText: string,
+  keys: readonly string[],
+): Record<string, string> => {
+  const qualifiers: Record<string, string> = {};
+  for (const key of keys) {
+    const cue = ORDINAL_CUES[key];
+    const raw = cue?.pattern.exec(normalizedText)?.[1];
+    if (cue && raw) qualifiers[key] = cue.value(raw);
+  }
+  return qualifiers;
 };
 
 const PRIORITY_RANK: Readonly<Record<ConstraintPriority, number>> = { preference: 0, hard: 1 };

@@ -2,6 +2,7 @@ import { AppError, validationError } from './errors';
 import type { ClaimPredicate } from './claims';
 import type { ConceptId, OrganizationId, RequirementId, UserId } from './ids';
 import type { MaturityLevel } from './offering';
+import { ordinalRequirements } from './qualifiers';
 import { normalizeForMatching, sanitizeUntrustedText } from './text';
 
 /**
@@ -98,6 +99,40 @@ export interface Requirement {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
+
+const LEVEL_PHRASE: Readonly<Record<ConstraintLevel, (label: string) => string>> = {
+  mentioned: (label) => `Covers ${label}`,
+  supports: (label) => `Supports ${label}`,
+  experience: (label) => `Experience with ${label}`,
+  certified: (label) => `Certified: ${label}`,
+  production: (label) => `In series production: ${label}`,
+};
+
+/**
+ * The one human-readable phrasing of a constraint, shared by the web app, the
+ * MCP server, CSV exports and the questions suggested to suppliers. It keeps
+ * the exact strength ("Certified" is never softened, "Supports" never
+ * strengthened); ordinal qualifiers read as minimums ("ASIL B or higher").
+ */
+export const describeConstraint = (constraint: RequirementConstraint, conceptLabel?: string): string => {
+  switch (constraint.kind) {
+    case 'maturity':
+      return `Maturity: ${constraint.minimum} or later`;
+    case 'production_reference':
+      return 'Production references';
+    case 'concept': {
+      const label = conceptLabel ?? constraint.conceptId;
+      const minimums = ordinalRequirements(constraint.qualifiers);
+      // "ASIL" qualified by ASIL B reads "ASIL B or higher", not "ASIL (ASIL B or higher)".
+      const own = minimums.find(({ qualifier }) => qualifier.label === label);
+      const subject = own ? `${own.qualifier.format(own.value)} or higher` : label;
+      const rest = minimums
+        .filter((entry) => entry !== own)
+        .map(({ qualifier, value }) => `${qualifier.format(value)} or higher`);
+      return `${LEVEL_PHRASE[constraint.level](subject)}${rest.length > 0 ? ` (${rest.join(', ')})` : ''}`;
+    }
+  }
+};
 
 export const MAX_CONSTRAINTS = 40;
 

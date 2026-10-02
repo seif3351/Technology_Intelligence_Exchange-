@@ -218,6 +218,12 @@ export const MatchResponse = z
     matches: z.array(Match),
     nextCursor: z.string().nullable(),
     totalCandidatesEvaluated: z.number().int(),
+    omittedWithoutEvidence: z
+      .number()
+      .int()
+      .describe(
+        'Retrieved offerings with no information on any requested constraint whose description names none of the requested technologies; not listed.',
+      ),
     degraded: z.array(z.string()),
   })
   .meta({ id: 'MatchResponse' });

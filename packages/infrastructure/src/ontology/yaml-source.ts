@@ -6,9 +6,11 @@ import {
   type ConceptRelation,
   type ConstraintLevel,
   type Facet,
+  ORDINAL_QUALIFIERS,
   type OntologySnapshot,
   RELATION_TYPES,
   asId,
+  isOrdinalQualifierKey,
   isSlug,
 } from '@atx/domain';
 import { parse } from 'yaml';
@@ -43,6 +45,17 @@ const parseLevel = (value: unknown, where: string): ConstraintLevel => {
   if (!(CONSTRAINT_LEVELS as readonly string[]).includes(level))
     throw new Error(`${where}: default_level must be one of ${CONSTRAINT_LEVELS.join(', ')}`);
   return level as ConstraintLevel;
+};
+
+const parseQualifierKeys = (value: unknown, where: string): string[] => {
+  const keys = asStringList(value, `${where}.qualifiers`);
+  for (const key of keys) {
+    if (!isOrdinalQualifierKey(key))
+      throw new Error(
+        `${where}: unknown qualifier "${key}" (known: ${ORDINAL_QUALIFIERS.map((q) => q.key).join(', ')})`,
+      );
+  }
+  return keys;
 };
 
 export const parseOntologyDocuments = (
@@ -86,6 +99,9 @@ export const parseOntologyDocuments = (
         ...(raw['default_level'] === undefined
           ? {}
           : { defaultConstraintLevel: parseLevel(raw['default_level'], where) }),
+        ...(raw['qualifiers'] === undefined
+          ? {}
+          : { qualifierKeys: parseQualifierKeys(raw['qualifiers'], where) }),
         status,
       });
       for (const type of RELATION_TYPES) {

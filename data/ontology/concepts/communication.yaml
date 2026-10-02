@@ -67,3 +67,14 @@
   aliases: [precision time protocol, IEEE 1588, gPTP, IEEE 802.1AS]
   description: Precision Time Protocol (including gPTP profile).
   is_a: [time-synchronization]
+- id: xcp
+  facet: communication-protocol
+  label: ASAM XCP
+  aliases: [XCP, universal measurement and calibration protocol, ASAM MCD-1 XCP]
+  description: ASAM MCD-1 XCP universal measurement and calibration protocol.
+  related_to: [ecu-calibration]
+- id: v2x
+  facet: communication-protocol
+  label: V2X
+  aliases: [C-V2X, vehicle-to-everything, vehicle to everything, V2V, V2I, ITS-G5, DSRC]
+  description: Vehicle-to-everything communication (e.g. C-V2X, ITS-G5).

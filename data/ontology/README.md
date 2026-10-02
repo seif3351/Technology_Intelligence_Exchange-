@@ -21,3 +21,20 @@ Rules:
 ## Per-concept default level
 
 A concept may set `default_level` to override its facet's `default_level` (the level assumed when a requirement names the concept without a cue such as "certified" or "experience"). Example: security mechanisms (`secoc`, `hsm`, `secure-boot`) default to `supports`, while cybersecurity standards keep the facet default `experience`.
+
+## Ordinal qualifiers (`qualifiers:`)
+
+A concept may declare which standardized levels a requirement can attach to it (ADR-0020):
+
+```yaml
+- id: aspice
+  qualifiers: [aspiceLevel] # "ASPICE CL2" -> Experience with Automotive SPICE (CL2 or higher)
+```
+
+The known keys and their scales are defined by the standards and kept in
+`packages/domain/src/qualifiers.ts`: `asil` (QM, A–D), `aspiceLevel` (1–5) and `cal` (1–4). An unknown key
+fails the load. Requirement interpretation reads a level only next to a concept that declares it, so
+"SAE level 3" never becomes an ASPICE capability level.
+
+Loading also fails when one alias would name two concepts, because matching must never depend on the
+order of the data files.

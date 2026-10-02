@@ -48,3 +48,9 @@
   label: Containerization
   aliases: [containers, docker, kubernetes]
   description: Container-based packaging and orchestration of software.
+- id: covesa-vss
+  facet: data-format
+  label: COVESA VSS
+  aliases: [Vehicle Signal Specification, COVESA Vehicle Signal Specification, VSS]
+  description: COVESA Vehicle Signal Specification for describing vehicle data.
+  related_to: [vehicle-data-platform]

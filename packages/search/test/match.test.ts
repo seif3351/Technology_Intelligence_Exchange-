@@ -193,3 +193,57 @@ describe('evaluateCandidate', () => {
     expect(result.confidence).not.toBe('high');
   });
 });
+
+describe('ordinal qualifiers in matching', () => {
+  const aspiceCl2 = () => constraint('aspice', 'experience', 'hard', { aspiceLevel: '2' });
+
+  it('meets "ASPICE CL2 or higher" only with a claim that states CL2 or higher', async () => {
+    const ontology = await loadTestOntology();
+    const cl3 = evaluateCandidate(
+      candidate([claim('aspice', 'PROCESS_COMPLIANT', { qualifiers: { aspiceLevel: '3' } })]),
+      [aspiceCl2()],
+      ontology,
+      now,
+    );
+    expect(cl3.assessments[0]).toMatchObject({
+      status: 'met',
+      description: 'Experience with Automotive SPICE (CL2 or higher)',
+    });
+  });
+
+  it('is partial (never met) when the claim states a lower level or none', async () => {
+    const ontology = await loadTestOntology();
+    const cl1 = evaluateCandidate(
+      candidate([claim('aspice', 'PROCESS_COMPLIANT', { qualifiers: { aspiceLevel: '1' } })]),
+      [aspiceCl2()],
+      ontology,
+      now,
+    );
+    expect(cl1.assessments[0]?.status).toBe('partial');
+    expect(cl1.assessments[0]?.explanation).toContain('the claim states CL1, not CL2 or higher');
+    const unstated = evaluateCandidate(
+      candidate([claim('aspice', 'PROCESS_COMPLIANT')]),
+      [aspiceCl2()],
+      ontology,
+      now,
+    );
+    expect(unstated.assessments[0]?.status).toBe('partial');
+    expect(unstated.assessments[0]?.explanation).toContain(
+      'does not state the Automotive SPICE capability level',
+    );
+    expect(unstated.gaps[0]?.suggestedQuestion).toContain(
+      '"Experience with Automotive SPICE (CL2 or higher)"',
+    );
+  });
+
+  it('phrases unknowns briefly and asks suppliers plain questions', async () => {
+    const ontology = await loadTestOntology();
+    const result = evaluateCandidate(candidate([]), [constraint('qnx')], ontology, now);
+    expect(result.assessments[0]?.explanation).toBe(
+      'No published information about QNX (unknown, not unsupported).',
+    );
+    expect(result.gaps[0]?.suggestedQuestion).toBe(
+      'Does Middleware X meet "Supports QNX"? Please share supporting documentation.',
+    );
+  });
+});
