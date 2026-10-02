@@ -13,7 +13,8 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['packages/*/test/**/*.test.ts', 'apps/*/test/**/*.test.ts', 'test/**/*.test.ts'],
-          exclude: ['**/*.int.test.ts', '**/node_modules/**', 'apps/web/**'],
+          // Browser journeys (apps/web/e2e) run in Playwright; the web app's pure logic is unit-tested here.
+          exclude: ['**/*.int.test.ts', '**/node_modules/**', 'apps/web/e2e/**'],
           environment: 'node',
         },
       },

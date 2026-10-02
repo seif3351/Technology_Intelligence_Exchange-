@@ -1,27 +1,76 @@
 import { MatchResponse } from '@atx/contracts';
+import type { Metadata } from 'next';
+import { ActionForm } from '@/components/action-form';
 import { InterpretationPanel, MatchCard } from '@/components/results';
-import { api, describeError } from '@/lib/api';
+import { saveSearchAsRequirement } from '@/lib/actions/buyer';
+import { api, currentUser, describeError } from '@/lib/api';
+import { decodeConstraintParams, encodeConstraint, fromInterpretation, searchHref } from '@/lib/constraints';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Technical matching' };
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; strict?: string }>;
+  searchParams: Promise<{ q?: string; strict?: string; c?: string | string[] }>;
 }) {
-  const { q, strict } = await searchParams;
-  const query = q?.trim() ?? '';
+  const { q, strict, c } = await searchParams;
+  const query = q?.trim().slice(0, 4000) ?? '';
+  const isStrict = strict === '1';
+  const refined = decodeConstraintParams(c);
   let content: React.ReactNode = <p className="muted">Describe your requirement above.</p>;
-  if (query) {
+  if (query || refined.length > 0) {
     try {
       const result = await api('/v1/matches', {
         method: 'POST',
-        body: { text: query.slice(0, 4000), limit: 10, requireAllHardConstraintsMet: strict === '1' },
+        body: {
+          ...(query ? { text: query } : {}),
+          ...(refined.length > 0 ? { constraints: refined } : {}),
+          limit: 10,
+          requireAllHardConstraintsMet: isStrict,
+        },
         schema: MatchResponse,
       });
+      // Exactly what the user sees drives refinement, comparison, export and saving.
+      const current = fromInterpretation(result.interpretation.constraints);
+      const me = await currentUser();
+      const buyerOrg = me?.memberships.find(
+        (m) => (m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') && m.role !== 'viewer',
+      );
       content = (
         <div className="stack">
-          <InterpretationPanel interpretation={result.interpretation} />
+          <InterpretationPanel
+            interpretation={result.interpretation}
+            refine={{ q: query, strict: isStrict, current }}
+          />
+          {buyerOrg && current.length > 0 ? (
+            <details className="panel">
+              <summary>Save as a private requirement</summary>
+              <ActionForm action={saveSearchAsRequirement} submitLabel="Save private requirement">
+                <input type="hidden" name="orgId" value={buyerOrg.organizationId} />
+                <input type="hidden" name="description" value={query} />
+                {current.map((constraint) => {
+                  const encoded = encodeConstraint(constraint);
+                  return <input key={encoded} type="hidden" name="c" value={encoded} />;
+                })}
+                <p className="small muted">
+                  Saved for {buyerOrg.organizationName} only, with the constraints above. You can add
+                  confidential terms and refine it on the requirement page.
+                </p>
+                <div>
+                  <label htmlFor="save-title">Title</label>
+                  <input
+                    id="save-title"
+                    name="title"
+                    required
+                    minLength={3}
+                    maxLength={200}
+                    defaultValue={query.slice(0, 80)}
+                  />
+                </div>
+              </ActionForm>
+            </details>
+          ) : null}
           {result.degraded.length > 0 ? (
             <p className="notice">
               Some search signals are unavailable ({result.degraded.join(', ')}); results use keyword and
@@ -30,18 +79,29 @@ export default async function SearchPage({
           ) : null}
           <form action="/compare">
             <input type="hidden" name="q" value={query} />
+            {current.map((constraint) => {
+              const encoded = encodeConstraint(constraint);
+              return <input key={encoded} type="hidden" name="c" value={encoded} />;
+            })}
             <div className="row spread">
-              <h2 className="flush">{result.matches.length} candidates</h2>
+              <h2 className="flush">
+                {result.matches.length} candidate{result.matches.length === 1 ? '' : 's'}
+              </h2>
               <div className="row">
-                <a
-                  href={`/search/export?q=${encodeURIComponent(query)}${strict === '1' ? '&strict=1' : ''}`}
-                  download
-                >
+                <a href={searchHref(query, current, isStrict, '/search/export')} download>
                   Download shortlist (CSV)
                 </a>
                 <button type="submit">Compare selected</button>
               </div>
             </div>
+            {result.omittedWithoutEvidence > 0 ? (
+              <p className="small muted" data-testid="omitted-note">
+                {result.omittedWithoutEvidence} more offering{result.omittedWithoutEvidence === 1 ? '' : 's'}{' '}
+                {result.omittedWithoutEvidence === 1 ? 'was' : 'were'} retrieved but{' '}
+                {result.omittedWithoutEvidence === 1 ? 'says' : 'say'} nothing about your requirements, so{' '}
+                {result.omittedWithoutEvidence === 1 ? 'it is' : 'they are'} not listed.
+              </p>
+            ) : null}
             {result.matches.length === 0 ? (
               <p className="muted">No published offering matches these constraints.</p>
             ) : null}
@@ -49,6 +109,10 @@ export default async function SearchPage({
               <MatchCard key={match.offering.id} match={match} selectable />
             ))}
           </form>
+          <p className="small muted">
+            Status symbols: ✓ met · ◐ partially supported · ? unknown (no published information — not the same
+            as unsupported). The evidence basis names the strongest source for each line.
+          </p>
         </div>
       );
     } catch (error) {
@@ -66,13 +130,7 @@ export default async function SearchPage({
           </button>
         </div>
         <label className="row plain">
-          <input
-            type="checkbox"
-            name="strict"
-            value="1"
-            defaultChecked={strict === '1'}
-            className="inline-check"
-          />{' '}
+          <input type="checkbox" name="strict" value="1" defaultChecked={isStrict} className="inline-check" />{' '}
           Only show candidates that meet every hard constraint
         </label>
       </form>

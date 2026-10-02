@@ -50,7 +50,8 @@
     "R5 final architecture review: revocation paths re-checked across all credential types (OAuth refresh gap fixed in S10), configuration drift guard test (test/operations.test.ts), shared operator CLI helper, SupplierService size accepted with an extraction trigger; review checklist extended",
     "CI fix: e2e job let Playwright reuse an API started without the e2e mail inbox, so email journeys failed on GitHub since S3/S4 (green locally). Playwright now owns the servers on CI (reuseExistingServer off). First fully green main run, images published to GHCR (atx-node, atx-web)",
     "Expert review (docs/project/expert-review-2026-10.md): every page rendered per role at desktop and phone width; 27 findings with fixes and a step plan S11–S16 / R6–R8",
-    "S11: one constraint wording (domain describeConstraint) across web, MCP, CSV and supplier questions; ordinal qualifiers ASIL / ASPICE capability level / ISO 21434 CAL as minimums, declared per concept in ontology data (migration 0009) and grounded in AI drafting; relevance floor with omittedWithoutEvidence; 13 new ontology concepts (MISRA, MBD, tool qualification, static analysis, XCP, ECU calibration, vECU, zonal E/E, COVESA VSS, V2X, BMS, ECU flashing, RTOS); alias-collision guard; ADR-0020"
+    "S11: one constraint wording (domain describeConstraint) across web, MCP, CSV and supplier questions; ordinal qualifiers ASIL / ASPICE capability level / ISO 21434 CAL as minimums, declared per concept in ontology data (migration 0009) and grounded in AI drafting; relevance floor with omittedWithoutEvidence; 13 new ontology concepts (MISRA, MBD, tool qualification, static analysis, XCP, ECU calibration, vECU, zonal E/E, COVESA VSS, V2X, BMS, ECU flashing, RTOS); alias-collision guard; ADR-0020",
+    "S12: discovery UI — compact results (one line per requirement with evidence basis, details on demand, supplier linked, omitted-candidates note); refine the interpretation with plain links (demote/promote/remove/reset, URL-encoded constraints) used consistently by compare, CSV and save-as-private-requirement; offering pages group claims by facet with formatted qualifiers, validity and freshness; comparison grouped by facet with 'only differences'; technologies page lists the whole ontology by facet (was cut off at 50); every table in a scroll region (no horizontal scrolling on phones, e2e-checked); per-page titles; error boundary and not-found page; plain-language validation errors"
   ],
   "verification": {
     "unit": "pnpm test — 104 passed (incl. architecture and operations-config guards)",
@@ -81,7 +82,7 @@
     "Platform-admin demotion is SQL-only (not audited); add an audited CLI",
     "SupplierService is ~800 lines; extract EvidenceService when evidence/assets change next (R5 K6)"
   ],
-  "nextRecommendedStep": "S12: discovery UI (compact results, refine constraints in search, offering/compare/technologies pages, responsive tables, titles, error pages)",
+  "nextRecommendedStep": "R6: holistic architecture review after S11/S12, then S13 (supplier workspace overhaul)",
   "decisions": [
     "ADR-0001 modular monolith, ports & adapters, pnpm + TS 6 strict",
     "ADR-0002 PostgreSQL + pgvector hybrid search; derived index rebuildable",

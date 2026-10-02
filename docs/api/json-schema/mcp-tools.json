@@ -719,6 +719,12 @@
                 "priority": {
                   "type": "string"
                 },
+                "group": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "cells": {
                   "type": "array",
                   "items": {
@@ -750,6 +756,7 @@
                 "constraintId",
                 "description",
                 "priority",
+                "group",
                 "cells"
               ],
               "additionalProperties": false

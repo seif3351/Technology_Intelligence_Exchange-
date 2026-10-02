@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import { Engagement } from '@atx/contracts';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { api, currentUser } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Requests sent' };
 
 export const dynamic = 'force-dynamic';
 

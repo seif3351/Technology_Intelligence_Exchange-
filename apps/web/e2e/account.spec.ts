@@ -40,7 +40,7 @@ test.describe('agent tokens', () => {
     await page.getByLabel('Valid for').selectOption('7');
     await page.getByRole('checkbox', { name: /Upload content and draft claims/ }).check();
     await page.getByRole('button', { name: 'Generate token' }).click();
-    const value = await page.getByLabel('Agent token').inputValue();
+    const value = await page.getByLabel('Agent token', { exact: true }).inputValue();
     expect(value.split('.')).toHaveLength(3);
 
     const row = page.getByRole('row').filter({ hasText: 'E2E laptop agent' });

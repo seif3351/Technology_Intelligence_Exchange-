@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { ActionForm } from '@/components/action-form';
 import { resetPassword } from '@/lib/actions/account';
+
+export const metadata: Metadata = { title: 'Reset password' };
 
 export default async function ResetPasswordPage({
   searchParams,

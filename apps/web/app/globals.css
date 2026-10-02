@@ -311,3 +311,72 @@ input.inline-check {
 .inline-links a {
   margin-right: 12px;
 }
+
+/* Tables scroll inside their own box on narrow screens instead of widening the page. */
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+main {
+  overflow-wrap: break-word;
+}
+.group-row th {
+  background: var(--panel);
+  color: var(--fg);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}
+
+/* Search results: one line per requirement. */
+.assessments {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+}
+.assessment .symbol {
+  display: inline-block;
+  width: 1.3em;
+  font-weight: 700;
+}
+.assessment .basis {
+  color: var(--muted);
+  font-size: 12px;
+}
+.assessment[data-status='unknown'] {
+  color: var(--muted);
+}
+.constraint-chip {
+  white-space: normal;
+}
+.refine a {
+  margin-left: 6px;
+  font-weight: 700;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 700px) {
+  main {
+    padding: 16px;
+  }
+  .search-box {
+    flex-direction: column;
+  }
+}

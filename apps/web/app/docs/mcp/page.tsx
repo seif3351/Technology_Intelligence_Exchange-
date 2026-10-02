@@ -1,9 +1,13 @@
+import type { Metadata } from 'next';
+import { TableScroll } from '@/components/table-scroll';
 import { AgentTokenRecord } from '@atx/contracts';
 import { z } from 'zod';
 import { revokeAgentToken } from '@/lib/actions/agents';
 import { api, currentUser } from '@/lib/api';
 import { webConfig } from '@/lib/config';
 import { AgentTokenForm } from './agent-token-form';
+
+export const metadata: Metadata = { title: 'AI agents (MCP)' };
 
 export const dynamic = 'force-dynamic';
 
@@ -47,41 +51,43 @@ export default async function McpDocsPage() {
       {tokens.length > 0 ? (
         <>
           <h3>Your agent tokens</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Scopes</th>
-                <th>Status</th>
-                <th>Last used</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {tokens.map((token) => (
-                <tr key={token.id}>
-                  <td>{token.label}</td>
-                  <td className="small">{token.scopes.join(' ')}</td>
-                  <td className="small">
-                    {token.status === 'active'
-                      ? `active until ${token.expiresAt.slice(0, 10)}`
-                      : token.status}
-                  </td>
-                  <td className="small">
-                    {token.lastUsedAt ? token.lastUsedAt.slice(0, 16).replace('T', ' ') : 'never'}
-                  </td>
-                  <td>
-                    {token.status === 'active' ? (
-                      <form action={revokeAgentToken}>
-                        <input type="hidden" name="grantId" value={token.id} />
-                        <button type="submit">Revoke</button>
-                      </form>
-                    ) : null}
-                  </td>
+          <TableScroll label="Your agent tokens">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Scopes</th>
+                  <th>Status</th>
+                  <th>Last used</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tokens.map((token) => (
+                  <tr key={token.id}>
+                    <td>{token.label}</td>
+                    <td className="small">{token.scopes.join(' ')}</td>
+                    <td className="small">
+                      {token.status === 'active'
+                        ? `active until ${token.expiresAt.slice(0, 10)}`
+                        : token.status}
+                    </td>
+                    <td className="small">
+                      {token.lastUsedAt ? token.lastUsedAt.slice(0, 16).replace('T', ' ') : 'never'}
+                    </td>
+                    <td>
+                      {token.status === 'active' ? (
+                        <form action={revokeAgentToken}>
+                          <input type="hidden" name="grantId" value={token.id} />
+                          <button type="submit">Revoke</button>
+                        </form>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         </>
       ) : null}
       <h2>Safety model</h2>

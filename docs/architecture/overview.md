@@ -58,3 +58,18 @@ See [search-and-matching.md](search-and-matching.md), [c4-context.md](c4-context
 ## Future: agent-to-agent
 
 Supplier agents can be added as another adapter: an `engagement.notify` handler (or a new job type) can forward the **disclosure snapshot** of a confirmed engagement to a supplier agent endpoint, and a new use case can ingest structured technical responses as claims with `providedBy.via = 'import'` and provenance. Because disclosures are allow-listed snapshots, human confirmation precedes any exchange, and matching is evidence-based, no core change is required.
+
+## Web app conventions (apps/web)
+
+- **Refinement is links, not client state.** Search refinements (make a constraint a preference, remove it,
+  reset) are plain links. The constraints travel as repeated `c` URL parameters
+  (`apps/web/lib/constraints.ts`; e.g. `aspice~experience~hard~aspiceLevel=2`), so every view can be shared
+  and reloaded. Comparison, CSV export and "save as private requirement" receive exactly the constraints the
+  user sees.
+- **Ontology data, never hard-coded labels.** Facet labels and concept lists come from `/v1/ontology`
+  (`apps/web/lib/ontology.ts`, cached per request).
+- **Layout.** Every table is wrapped in `TableScroll` (a labelled, focusable scroll region), so phones never
+  scroll horizontally. `e2e/responsive.spec.ts` checks the main pages at 390 px for every role.
+- **Errors.** `app/error.tsx` and `app/global-error.tsx` never show error internals. `lib/errors.ts` turns
+  request-schema problems into per-field plain language; domain messages are already plain. Every page sets
+  a title (template `%s · Automotive Technology Exchange`).

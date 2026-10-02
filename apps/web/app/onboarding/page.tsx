@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ActionForm } from '@/components/action-form';
 import { createOrganization } from '@/lib/actions/onboarding';
 import { currentUser } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Set up your organization' };
 
 export const dynamic = 'force-dynamic';
 

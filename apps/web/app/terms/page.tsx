@@ -1,3 +1,6 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Terms of use' };
 export default function TermsPage() {
   return (
     <article className="stack narrow">

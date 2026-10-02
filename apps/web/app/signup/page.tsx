@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import { InvitationPreview, RegistrationPolicy, SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { api, currentUser } from '@/lib/api';
 import { AcceptInvitation } from './accept-invitation';
 import { SignupForm } from './signup-form';
+
+export const metadata: Metadata = { title: 'Join' };
 
 export const dynamic = 'force-dynamic';
 

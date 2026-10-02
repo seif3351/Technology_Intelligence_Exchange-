@@ -163,6 +163,7 @@ export const detailTools = [
           constraintId: row.constraintId,
           description: row.description,
           priority: row.priority,
+          group: row.group,
           cells: row.cells.map((cell) => ({
             offeringId: cell.offeringId,
             status: cell.status,

@@ -3,18 +3,10 @@ import { Me } from '@atx/contracts';
 import { headers as requestHeaders } from 'next/headers';
 import type { z } from 'zod';
 import { webConfig } from './config';
-import { getSessionToken } from './session';
+import { ApiError } from './errors';
 
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-    readonly details: readonly { path?: string; message: string }[] = [],
-  ) {
-    super(message);
-  }
-}
+export { ApiError, describeError } from './errors';
+import { getSessionToken } from './session';
 
 interface CallOptions<T extends z.ZodType> {
   readonly method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -82,11 +74,6 @@ export const currentUser = async (): Promise<MeT | null> => {
     throw error;
   }
 };
-
-export const describeError = (error: unknown): string =>
-  error instanceof ApiError
-    ? `${error.message}${error.details.length ? ` (${error.details.map((d) => d.message).join('; ')})` : ''}`
-    : 'Something went wrong. Please try again.';
 
 /** Server-side call returning the raw response (downloads such as CSV). The session token never reaches the browser. */
 export const apiDownload = async (path: string, body: unknown): Promise<Response> => {

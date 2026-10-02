@@ -455,6 +455,7 @@ export const McpTools = {
           constraintId: z.string(),
           description: z.string(),
           priority: z.string(),
+          group: z.string().nullable(),
           cells: z.array(
             z.object({ offeringId: z.string(), status: z.string(), basis: z.string().nullable() }),
           ),

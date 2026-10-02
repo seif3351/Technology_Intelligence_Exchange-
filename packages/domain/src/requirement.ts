@@ -2,7 +2,7 @@ import { AppError, validationError } from './errors';
 import type { ClaimPredicate } from './claims';
 import type { ConceptId, OrganizationId, RequirementId, UserId } from './ids';
 import type { MaturityLevel } from './offering';
-import { ordinalRequirements } from './qualifiers';
+import { ordinalRequirements, ordinalValueProblem } from './qualifiers';
 import { normalizeForMatching, sanitizeUntrustedText } from './text';
 
 /**
@@ -145,6 +145,12 @@ export const validateConstraints = (constraints: readonly RequirementConstraint[
     const key = constraint.kind === 'concept' ? `concept:${constraint.conceptId}` : constraint.kind;
     if (seen.has(key)) problems.push(`duplicate constraint ${key}`);
     seen.add(key);
+    if (constraint.kind === 'concept') {
+      for (const [qualifier, value] of Object.entries(constraint.qualifiers)) {
+        const problem = ordinalValueProblem(qualifier, value);
+        if (problem) problems.push(problem);
+      }
+    }
   }
   if (problems.length > 0) {
     throw validationError(

@@ -13,6 +13,7 @@ import {
   describePredicate,
   describeTrustTier,
   detectInjectionSignals,
+  formatQualifiers,
   trustTier,
 } from '@atx/domain';
 
@@ -44,6 +45,8 @@ export interface ClaimView {
   readonly predicateLabel: string;
   readonly concept: ConceptRef;
   readonly qualifiers: Readonly<Record<string, string>>;
+  /** Qualifiers as people write them ("ASIL B", "certified by …"). */
+  readonly qualifierText: readonly string[];
   readonly statement: string;
   readonly untrusted: true;
   readonly provenance: {
@@ -120,6 +123,8 @@ export interface OfferingDetailView extends OfferingSummaryView {
   readonly commercial: Offering['commercial'];
   readonly regions: readonly string[];
   readonly publishedAt: string | null;
+  /** Last change to the offering record (claims carry their own dates). */
+  readonly updatedAt: string;
   readonly version: number;
   readonly claims: readonly ClaimView[];
   readonly organizationClaims: readonly ClaimView[];
@@ -212,6 +217,7 @@ export const presentClaim = (claim: TechnicalClaim, ontology: Ontology): ClaimVi
     predicateLabel: describePredicate(claim.predicate),
     concept: conceptRef(ontology, claim.conceptId),
     qualifiers: claim.qualifiers,
+    qualifierText: formatQualifiers(claim.qualifiers),
     statement: claim.statement,
     untrusted: true,
     provenance: {

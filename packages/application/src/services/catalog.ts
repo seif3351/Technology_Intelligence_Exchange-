@@ -54,6 +54,9 @@ export interface TechnologyView extends ConceptRef {
 const SIGNED_URL_TTL_SECONDS = 15 * 60;
 const DEMO_RELEVANCE_RATIO = 0.8;
 
+/** Upper bound for listing the ontology without a query (it holds a few hundred concepts). */
+const MAX_BROWSE = 500;
+
 export class CatalogService {
   constructor(
     private readonly deps: ApplicationDeps,
@@ -133,6 +136,7 @@ export class CatalogService {
       commercial: offering.commercial,
       regions: offering.regions,
       publishedAt: offering.publishedAt?.toISOString() ?? null,
+      updatedAt: offering.updatedAt.toISOString(),
       version: offering.version,
       claims: sortClaims(offeringClaims.map((claim) => presentClaim(claim, ontology))),
       organizationClaims: sortClaims(organizationClaims.map((claim) => presentClaim(claim, ontology))),
@@ -283,8 +287,11 @@ export class CatalogService {
     input: { readonly query?: string | null; readonly facet?: string | null; readonly limit?: number },
   ): Promise<TechnologyView[]> {
     const ontology = await this.deps.ontology.current();
-    const limit = clampLimit(input.limit, 10);
     const needle = normalizeForMatching(input.query ?? '');
+    // Browsing (no query) may list the whole ontology; searches stay paged.
+    const limit = needle
+      ? clampLimit(input.limit, 10)
+      : Math.min(MAX_BROWSE, Math.max(1, Math.floor(input.limit ?? 10)));
     const scored = ontology.concepts
       .filter((concept) => concept.status === 'active' && (!input.facet || concept.facetId === input.facet))
       .map((concept) => ({

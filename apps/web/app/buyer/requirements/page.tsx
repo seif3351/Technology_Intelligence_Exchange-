@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { TableScroll } from '@/components/table-scroll';
 import { RequirementView } from '@atx/contracts';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -5,6 +7,8 @@ import { z } from 'zod';
 import { ActionForm } from '@/components/action-form';
 import { createRequirement } from '@/lib/actions/buyer';
 import { api, currentUser } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Private requirements' };
 
 export const dynamic = 'force-dynamic';
 
@@ -31,30 +35,32 @@ export default async function RequirementsPage() {
         Requirements are private to your organization. Suppliers never see them unless you explicitly share
         selected technical constraints in a request.
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Constraints</th>
-            <th>Confidential terms</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((r) => (
-            <tr key={r.id}>
-              <td>
-                <Link href={`/buyer/requirements/${r.id}?org=${buyerOrg.organizationId}`}>{r.title}</Link>
-              </td>
-              <td>{r.constraints.length}</td>
-              <td>{r.confidentialTermCount} protected</td>
-              <td>
-                {r.status} · {r.visibility}
-              </td>
+      <TableScroll label="Private requirements">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Constraints</th>
+              <th>Confidential terms</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((r) => (
+              <tr key={r.id}>
+                <td>
+                  <Link href={`/buyer/requirements/${r.id}?org=${buyerOrg.organizationId}`}>{r.title}</Link>
+                </td>
+                <td>{r.constraints.length}</td>
+                <td>{r.confidentialTermCount} protected</td>
+                <td>
+                  {r.status} · {r.visibility}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
       <section className="card narrow">
         <h3>New requirement</h3>
         <ActionForm action={createRequirement} submitLabel="Save private draft">

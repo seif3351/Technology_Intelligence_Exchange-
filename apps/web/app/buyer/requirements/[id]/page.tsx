@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { MatchResponse, RequirementView } from '@atx/contracts';
 import { notFound, redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -5,6 +6,8 @@ import { Badge } from '@/components/badges';
 import { MatchCard } from '@/components/results';
 import { ApiError, api, currentUser } from '@/lib/api';
 import { setRequirementAlerts } from '@/lib/actions/buyer';
+
+export const metadata: Metadata = { title: 'Private requirement' };
 
 export const dynamic = 'force-dynamic';
 

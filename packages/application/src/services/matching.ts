@@ -181,9 +181,16 @@ export class MatchingService {
     const matches = [...response.matches].sort(
       (a, b) => (order.get(a.offering.id) ?? 0) - (order.get(b.offering.id) ?? 0),
     );
+    // Rows carry the facet of their concept ("Operating system", "Functional safety") so clients can group them.
+    const facetLabel = new Map(
+      response.interpretation.constraints.map((constraint) => [
+        constraint.id,
+        constraint.concept ? (ontology.getFacet(asId(constraint.concept.facet))?.label ?? null) : null,
+      ]),
+    );
     const matrix = buildComparisonMatrix(
       matches.map((match) => ({ offeringId: match.offering.id, assessments: match.assessments })),
-    );
+    ).map((row) => ({ ...row, group: facetLabel.get(row.constraintId) ?? null }));
     return { ...response, matches, matrix };
   }
 

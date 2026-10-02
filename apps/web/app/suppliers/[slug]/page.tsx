@@ -1,24 +1,32 @@
 import { SupplierView } from '@atx/contracts';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { DemoBadge, MaturityBadge, VerificationBadge } from '@/components/badges';
 import { ClaimsTable } from '@/components/results';
+import { TableScroll } from '@/components/table-scroll';
 import { ApiError, api } from '@/lib/api';
+import { getFacetLabels } from '@/lib/ontology';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SupplierPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  let supplier;
+const loadSupplier = cache(async (slug: string) => {
   try {
-    supplier = await api(`/v1/suppliers/${encodeURIComponent(slug)}`, {
-      schema: SupplierView,
-      anonymous: true,
-    });
+    return await api(`/v1/suppliers/${encodeURIComponent(slug)}`, { schema: SupplierView, anonymous: true });
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) notFound();
+    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) notFound();
     throw error;
   }
+});
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  return { title: (await loadSupplier((await params).slug)).organization.name };
+}
+
+export default async function SupplierPage({ params }: { params: Promise<{ slug: string }> }) {
+  const supplier = await loadSupplier((await params).slug);
+  const facetLabels = await getFacetLabels();
   const org = supplier.organization;
   return (
     <div className="stack">
@@ -38,21 +46,23 @@ export default async function SupplierPage({ params }: { params: Promise<{ slug:
         ) : null}
       </p>
       <h2>Offerings</h2>
-      <table>
-        <tbody>
-          {supplier.offerings.map((offering) => (
-            <tr key={offering.id}>
-              <td>
-                <Link href={`/offerings/${offering.id}`}>{offering.name}</Link>
-              </td>
-              <td className="untrusted muted">{offering.summary}</td>
-              <td>
-                <MaturityBadge maturity={offering.maturity} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <TableScroll label="Offerings">
+        <table>
+          <tbody>
+            {supplier.offerings.map((offering) => (
+              <tr key={offering.id}>
+                <td>
+                  <Link href={`/offerings/${offering.id}`}>{offering.name}</Link>
+                </td>
+                <td className="untrusted muted">{offering.summary}</td>
+                <td>
+                  <MaturityBadge maturity={offering.maturity} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
       {supplier.capabilities.length > 0 ? (
         <>
           <h2>Capabilities</h2>
@@ -66,7 +76,7 @@ export default async function SupplierPage({ params }: { params: Promise<{ slug:
         </>
       ) : null}
       <h2>Organization-level claims</h2>
-      <ClaimsTable claims={supplier.organizationClaims} />
+      <ClaimsTable claims={supplier.organizationClaims} facetLabels={facetLabels} />
     </div>
   );
 }

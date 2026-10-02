@@ -1,3 +1,6 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Privacy notice' };
 export default function PrivacyPage() {
   return (
     <article className="stack narrow">

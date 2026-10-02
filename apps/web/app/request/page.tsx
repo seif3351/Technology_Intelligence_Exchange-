@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import { OfferingDetail, RequirementView } from '@atx/contracts';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { api, currentUser } from '@/lib/api';
 import { RequestForm } from './request-form';
+
+export const metadata: Metadata = { title: 'Request a demo, workshop, PoC or RFI' };
 
 export const dynamic = 'force-dynamic';
 

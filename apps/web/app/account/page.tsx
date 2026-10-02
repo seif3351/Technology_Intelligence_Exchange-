@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { TableScroll } from '@/components/table-scroll';
 import { OAuthConnection } from '@atx/contracts';
 import { z } from 'zod';
 import Link from 'next/link';
@@ -6,6 +8,8 @@ import { ActionForm } from '@/components/action-form';
 import { resendVerification, signOutEverywhere } from '@/lib/actions/account';
 import { revokeConnection } from '@/lib/actions/oauth';
 import { api, currentUser } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Your account' };
 
 export const dynamic = 'force-dynamic';
 
@@ -56,28 +60,30 @@ export default async function AccountPage() {
             URL; see <Link href="/docs/mcp">AI agents (MCP)</Link>.
           </p>
         ) : (
-          <table>
-            <tbody>
-              {connections.map((connection) => (
-                <tr key={connection.id}>
-                  <td className="untrusted">{connection.clientName}</td>
-                  <td className="small">{connection.scopes.join(' ')}</td>
-                  <td className="small">
-                    {connection.status}
-                    {connection.lastUsedAt ? `, last used ${connection.lastUsedAt.slice(0, 10)}` : ''}
-                  </td>
-                  <td>
-                    {connection.status === 'active' ? (
-                      <form action={revokeConnection}>
-                        <input type="hidden" name="grantId" value={connection.id} />
-                        <button type="submit">Disconnect</button>
-                      </form>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TableScroll label="Connected AI applications">
+            <table>
+              <tbody>
+                {connections.map((connection) => (
+                  <tr key={connection.id}>
+                    <td className="untrusted">{connection.clientName}</td>
+                    <td className="small">{connection.scopes.join(' ')}</td>
+                    <td className="small">
+                      {connection.status}
+                      {connection.lastUsedAt ? `, last used ${connection.lastUsedAt.slice(0, 10)}` : ''}
+                    </td>
+                    <td>
+                      {connection.status === 'active' ? (
+                        <form action={revokeConnection}>
+                          <input type="hidden" name="grantId" value={connection.id} />
+                          <button type="submit">Disconnect</button>
+                        </form>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         )}
       </div>
       <div className="card stack">

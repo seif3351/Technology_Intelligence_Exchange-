@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { TableScroll } from '@/components/table-scroll';
 import { ClaimPredicate, Engagement, Workspace } from '@atx/contracts';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -15,6 +17,8 @@ import {
   uploadDocument,
 } from '@/lib/actions/workspace';
 import { api, currentUser } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Supplier workspace' };
 
 export const dynamic = 'force-dynamic';
 
@@ -138,83 +142,89 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
         AI-drafted claims are extracted from your uploaded documents. They are never published automatically:
         check the wording and the strength of each claim.
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Offering</th>
-            <th>Claim</th>
-            <th>Quoted source</th>
-            <th>Origin</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {drafts.map((c) => (
-            <tr key={c.id} data-testid="draft-claim">
-              <td>{c.subject.type === 'offering' ? offeringName.get(c.subject.id) : 'Organization'}</td>
-              <td>
-                {c.predicateLabel} <strong>{c.concept.label}</strong>
-              </td>
-              <td className="untrusted small">{c.statement}</td>
-              <td>
-                <TrustBadge tier={c.trustTier} label={c.trustLabel} />
-              </td>
-              <td className="row">
-                {(['publish', 'retract'] as const).map((action) => (
-                  <form key={action} action={changeClaim}>
-                    <input type="hidden" name="orgId" value={orgId} />
-                    <input type="hidden" name="claimId" value={c.id} />
-                    <input type="hidden" name="version" value={String(c.version)} />
-                    <input type="hidden" name="action" value={action} />
-                    <button type="submit">{action === 'publish' ? 'Publish' : 'Discard'}</button>
-                  </form>
-                ))}
-              </td>
+      <TableScroll label="Claims awaiting your review (">
+        <table>
+          <thead>
+            <tr>
+              <th>Offering</th>
+              <th>Claim</th>
+              <th>Quoted source</th>
+              <th>Origin</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {drafts.map((c) => (
+              <tr key={c.id} data-testid="draft-claim">
+                <td>{c.subject.type === 'offering' ? offeringName.get(c.subject.id) : 'Organization'}</td>
+                <td>
+                  {c.predicateLabel} <strong>{c.concept.label}</strong>
+                </td>
+                <td className="untrusted small">{c.statement}</td>
+                <td>
+                  <TrustBadge tier={c.trustTier} label={c.trustLabel} />
+                </td>
+                <td className="row">
+                  {(['publish', 'retract'] as const).map((action) => (
+                    <form key={action} action={changeClaim}>
+                      <input type="hidden" name="orgId" value={orgId} />
+                      <input type="hidden" name="claimId" value={c.id} />
+                      <input type="hidden" name="version" value={String(c.version)} />
+                      <input type="hidden" name="action" value={action} />
+                      <button type="submit">{action === 'publish' ? 'Publish' : 'Discard'}</button>
+                    </form>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
 
       <h2>Offerings</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Maturity</th>
-            <th>Status</th>
-            <th>Published claims</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {workspace.offerings.map((o) => (
-            <tr key={o.id}>
-              <td>{o.status === 'published' ? <Link href={`/offerings/${o.id}`}>{o.name}</Link> : o.name}</td>
-              <td>
-                <MaturityBadge maturity={o.maturity} />
-              </td>
-              <td>{o.status}</td>
-              <td>{published.filter((c) => c.subject.id === o.id).length}</td>
-              <td>
-                <ActionForm
-                  action={setOfferingStatus}
-                  submitLabel={o.status === 'published' ? 'Unpublish' : 'Publish'}
-                  className="row"
-                >
-                  <input type="hidden" name="orgId" value={orgId} />
-                  <input type="hidden" name="offeringId" value={o.id} />
-                  <input type="hidden" name="version" value={String(o.version)} />
-                  <input
-                    type="hidden"
-                    name="status"
-                    value={o.status === 'published' ? 'draft' : 'published'}
-                  />
-                </ActionForm>
-              </td>
+      <TableScroll label="Offerings">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Maturity</th>
+              <th>Status</th>
+              <th>Published claims</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {workspace.offerings.map((o) => (
+              <tr key={o.id}>
+                <td>
+                  {o.status === 'published' ? <Link href={`/offerings/${o.id}`}>{o.name}</Link> : o.name}
+                </td>
+                <td>
+                  <MaturityBadge maturity={o.maturity} />
+                </td>
+                <td>{o.status}</td>
+                <td>{published.filter((c) => c.subject.id === o.id).length}</td>
+                <td>
+                  <ActionForm
+                    action={setOfferingStatus}
+                    submitLabel={o.status === 'published' ? 'Unpublish' : 'Publish'}
+                    className="row"
+                  >
+                    <input type="hidden" name="orgId" value={orgId} />
+                    <input type="hidden" name="offeringId" value={o.id} />
+                    <input type="hidden" name="version" value={String(o.version)} />
+                    <input
+                      type="hidden"
+                      name="status"
+                      value={o.status === 'published' ? 'draft' : 'published'}
+                    />
+                  </ActionForm>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
 
       <div className="grid2">
         <section className="card">
@@ -326,24 +336,26 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
       </div>
 
       <h2>Uploaded assets</h2>
-      <table>
-        <tbody>
-          {workspace.assets.map((a) => (
-            <tr key={a.id}>
-              <td>{a.title}</td>
-              <td className="small">{a.contentType}</td>
-              <td>
-                <span
-                  className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}
-                >
-                  {a.processingState}
-                </span>
-              </td>
-              <td className="small muted">{a.failureReason ?? a.extractionState}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <TableScroll label="Uploaded assets">
+        <table>
+          <tbody>
+            {workspace.assets.map((a) => (
+              <tr key={a.id}>
+                <td>{a.title}</td>
+                <td className="small">{a.contentType}</td>
+                <td>
+                  <span
+                    className={`badge ${a.processingState === 'quarantined' || a.processingState === 'failed' ? 'tone-bad' : ''}`}
+                  >
+                    {a.processingState}
+                  </span>
+                </td>
+                <td className="small muted">{a.failureReason ?? a.extractionState}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { api, describeError } from '../api';
+import { decodeConstraintParams } from '../constraints';
 import type { FormState } from './auth';
 
 const text = (form: FormData, key: string): string => String(form.get(key) ?? '').trim();
@@ -22,6 +23,32 @@ export async function createRequirement(_state: FormState, form: FormData): Prom
           .split(/[,\n]/)
           .map((t) => t.trim())
           .filter(Boolean),
+      },
+      schema: z.object({ requirement: RequirementView, issues: z.array(ValidationIssue) }),
+    });
+    id = result.requirement.id;
+  } catch (error) {
+    return { error: describeError(error) };
+  }
+  redirect(`/buyer/requirements/${id}?org=${orgId}`);
+}
+
+/** Saves the constraints a buyer sees on the search page as a private requirement. */
+export async function saveSearchAsRequirement(_state: FormState, form: FormData): Promise<FormState> {
+  const orgId = text(form, 'orgId');
+  const constraints = decodeConstraintParams(form.getAll('c').map(String));
+  if (constraints.length === 0) return { error: 'There are no constraints to save.' };
+  const searchText = text(form, 'description');
+  let id: string;
+  try {
+    const result = await api(`/v1/organizations/${orgId}/requirements`, {
+      method: 'POST',
+      body: {
+        title: text(form, 'title'),
+        // The requirement keeps the search text as its private description (at least 10 characters).
+        description:
+          searchText.length >= 10 ? searchText : `Saved from search: ${searchText || 'constraints'}`,
+        constraints,
       },
       schema: z.object({ requirement: RequirementView, issues: z.array(ValidationIssue) }),
     });

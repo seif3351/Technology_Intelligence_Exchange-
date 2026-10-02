@@ -5,7 +5,7 @@ import { currentUser } from '@/lib/api';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Automotive Technology Exchange',
+  title: { default: 'Automotive Technology Exchange', template: '%s · Automotive Technology Exchange' },
   description: 'Evidence-backed technical discovery for the automotive ecosystem.',
 };
 

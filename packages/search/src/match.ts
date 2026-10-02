@@ -307,8 +307,13 @@ const summarize = (
 ): string => {
   const hard = assessments.filter((assessment) => assessment.priority === 'hard');
   const count = (status: string) => hard.filter((assessment) => assessment.status === status).length;
-  if (hardStatus === 'none_specified')
-    return 'No hard constraints were specified; ranked by relevance and evidence.';
+  if (hardStatus === 'none_specified') {
+    const preferences = assessments.filter((assessment) => assessment.priority === 'preference');
+    const met = preferences.filter((assessment) => assessment.status === 'met').length;
+    return preferences.length > 0
+      ? `No hard constraints; ${met} of ${preferences.length} preferences met.`
+      : 'No hard constraints were specified; ranked by relevance and evidence.';
+  }
   const parts = [`meets ${count('met')} of ${hard.length} hard constraints`];
   if (count('partial') > 0) parts.push(`${count('partial')} only partially supported`);
   if (count('unknown') > 0) parts.push(`${count('unknown')} unknown`);

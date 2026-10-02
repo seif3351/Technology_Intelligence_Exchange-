@@ -36,6 +36,7 @@ export const ClaimView = z
     predicateLabel: z.string(),
     concept: ConceptRef,
     qualifiers: z.record(z.string(), z.string()),
+    qualifierText: z.array(z.string()).describe('Qualifiers as people write them, e.g. "ASIL B".'),
     statement: z.string(),
     untrusted: Untrusted,
     provenance: Provenance,
@@ -109,6 +110,7 @@ export const OfferingDetail = OfferingSummary.extend({
   }),
   regions: z.array(z.string()),
   publishedAt: z.string().nullable(),
+  updatedAt: z.string(),
   version: z.number().int(),
   claims: z.array(ClaimView),
   organizationClaims: z.array(ClaimView),
@@ -232,6 +234,7 @@ export const ComparisonRow = z.object({
   constraintId: z.string(),
   description: z.string(),
   priority: z.string(),
+  group: z.string().nullable().describe('Facet of the constraint concept, e.g. "Operating system".'),
   cells: z.array(
     z.object({
       offeringId: z.string(),

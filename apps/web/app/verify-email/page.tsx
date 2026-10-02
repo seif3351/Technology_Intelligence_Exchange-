@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { SecretToken } from '@atx/contracts';
 import Link from 'next/link';
 import { z } from 'zod';
 import { api } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Confirm your email' };
 
 export const dynamic = 'force-dynamic';
 

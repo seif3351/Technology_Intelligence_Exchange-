@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import { OAuthAuthorizationPreview } from '@atx/contracts';
 import { redirect } from 'next/navigation';
 import { ApiError, api, currentUser } from '@/lib/api';
 import { describeScope } from '@/lib/scopes';
 import { ConsentForm } from './consent-form';
+
+export const metadata: Metadata = { title: 'Connect an AI application' };
 
 export const dynamic = 'force-dynamic';
 

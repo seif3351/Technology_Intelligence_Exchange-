@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { ActionForm } from '@/components/action-form';
 import { requestPasswordReset } from '@/lib/actions/account';
+
+export const metadata: Metadata = { title: 'Forgot password' };
 
 export default function ForgotPasswordPage() {
   return (

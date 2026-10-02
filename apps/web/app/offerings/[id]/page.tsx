@@ -1,22 +1,33 @@
 import { OfferingDetail } from '@atx/contracts';
 import { formatDuration } from '@atx/ui';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { DemoBadge, MaturityBadge, TrustBadge, VerificationBadge } from '@/components/badges';
 import { ClaimsTable, offeringTypeLabel } from '@/components/results';
 import { ApiError, api, currentUser } from '@/lib/api';
+import { getFacetLabels } from '@/lib/ontology';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OfferingPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  let offering;
+const loadOffering = cache(async (id: string) => {
   try {
-    offering = await api(`/v1/offerings/${encodeURIComponent(id)}`, { schema: OfferingDetail });
+    return await api(`/v1/offerings/${encodeURIComponent(id)}`, { schema: OfferingDetail });
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) notFound();
     throw error;
   }
+});
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const offering = await loadOffering((await params).id);
+  return { title: `${offering.name} — ${offering.organization.name}` };
+}
+
+export default async function OfferingPage({ params }: { params: Promise<{ id: string }> }) {
+  const offering = await loadOffering((await params).id);
+  const facetLabels = await getFacetLabels();
   const me = await currentUser();
   const isBuyer =
     me?.memberships.some((m) => m.organizationKind === 'buyer' || m.organizationKind === 'hybrid') ?? false;
@@ -31,17 +42,21 @@ export default async function OfferingPage({ params }: { params: Promise<{ id: s
         {offeringTypeLabel(offering.type)} by{' '}
         <Link href={`/suppliers/${offering.organization.slug}`}>{offering.organization.name}</Link>
         <VerificationBadge state={offering.organization.verificationState} />
+        <span className="small">
+          · Updated {offering.updatedAt.slice(0, 10)}
+          {offering.publishedAt ? ` · listed since ${offering.publishedAt.slice(0, 10)}` : ''}
+        </span>
       </div>
       <div className="grid2">
         <div className="stack">
           <p className="untrusted">{offering.summary}</p>
           <p className="untrusted muted">{offering.description}</p>
           <h2>Technical claims</h2>
-          <ClaimsTable claims={offering.claims} />
+          <ClaimsTable claims={offering.claims} facetLabels={facetLabels} />
           {offering.organizationClaims.length > 0 ? (
             <>
               <h2>Organization-level claims</h2>
-              <ClaimsTable claims={offering.organizationClaims} />
+              <ClaimsTable claims={offering.organizationClaims} facetLabels={facetLabels} />
             </>
           ) : null}
         </div>

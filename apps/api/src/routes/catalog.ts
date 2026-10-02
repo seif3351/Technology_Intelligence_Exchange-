@@ -45,7 +45,15 @@ export const catalogRoutes = (app: Application, webUrl: string): AnyRouteSpec[] 
     query: z.object({
       query: z.string().max(200).optional(),
       facet: z.string().max(60).optional(),
-      limit: Limit,
+      limit: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(500)
+        .optional()
+        .describe(
+          'Without a query the whole ontology can be listed (up to 500); searches return at most 50.',
+        ),
     }),
     response: z.object({ items: z.array(Technology) }),
     handler: async ({ query, ctx }) => ({ items: await app.catalog.searchTechnologies(ctx, query) }),
