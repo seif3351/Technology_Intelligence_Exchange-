@@ -15,7 +15,16 @@ export const UI = {
   requestForm: 'ui://atx/request-form.html',
 } as const;
 
-const asilQualifier = (asil: string | undefined): Record<string, string> => (asil ? { asil } : {});
+/** Ordinal minimums (ADR-0020) as qualifiers; values are validated against their scales in the domain. */
+const levelQualifiers = (input: {
+  readonly asil?: string | undefined;
+  readonly aspiceLevel?: string | undefined;
+  readonly cal?: string | undefined;
+}): Record<string, string> => ({
+  ...(input.asil ? { asil: input.asil } : {}),
+  ...(input.aspiceLevel ? { aspiceLevel: input.aspiceLevel } : {}),
+  ...(input.cal ? { cal: input.cal } : {}),
+});
 
 export const toConstraints = (inputs: readonly z.infer<typeof McpConstraintInput>[] | undefined) =>
   toDomainConstraints(
@@ -26,7 +35,7 @@ export const toConstraints = (inputs: readonly z.infer<typeof McpConstraintInput
             conceptId: input.conceptId,
             level: input.level,
             priority: input.priority,
-            qualifiers: asilQualifier(input.asil),
+            qualifiers: levelQualifiers(input),
           }
         : input,
     ),

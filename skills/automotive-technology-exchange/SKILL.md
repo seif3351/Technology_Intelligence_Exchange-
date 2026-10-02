@@ -115,6 +115,9 @@ shown with their evidence basis, and get flagged in matching.
    capability levels, e.g. "CL2" → `"2"`) and `cal` (`1`–`4`, ISO/SAE 21434
    CAL). Buyers' levels are minimums: a CL3 claim meets "CL2 or higher", a
    claim without a level never does.
+   As a buyer, pass levels on structured constraints the same way:
+   `{ "kind": "concept", "conceptId": "aspice", "level": "experience",
+"aspiceLevel": "2" }` (also `asil` and `cal`). Claims return `qualifierText` ("ASIL B", "CL2") for showing to people.
    Pick the **weakest predicate that is literally true**:
 
    | Predicate               | Use when the source says…                                                                                                        |

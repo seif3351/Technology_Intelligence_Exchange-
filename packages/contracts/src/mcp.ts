@@ -43,6 +43,16 @@ export const McpConstraintInput = z.discriminatedUnion('kind', [
       ),
     priority: z.enum(['hard', 'preference']).default('hard'),
     asil: z.enum(['A', 'B', 'C', 'D']).optional().describe('Minimum ASIL for safety constraints.'),
+    aspiceLevel: z
+      .enum(['1', '2', '3', '4', '5'])
+      .optional()
+      .describe('Minimum Automotive SPICE capability level, e.g. "2" for CL2 (concept "aspice").'),
+    cal: z
+      .enum(['1', '2', '3', '4'])
+      .optional()
+      .describe(
+        'Minimum ISO/SAE 21434 cybersecurity assurance level (concepts "iso-21434", "automotive-cybersecurity").',
+      ),
   }),
   z.object({
     kind: z.literal('maturity'),
@@ -159,6 +169,7 @@ export const McpClaim = z.object({
   sourceUrl: z.string().nullable(),
   evidenceIds: z.array(z.string()),
   qualifiers: z.record(z.string(), z.string()),
+  qualifierText: z.array(z.string()).describe('Qualifiers as people write them, e.g. "ASIL B", "CL2".'),
 });
 
 export const McpEvidence = z.object({
@@ -204,6 +215,7 @@ export const McpWorkspaceClaim = z.object({
   statement: z.string(),
   untrusted: Untrusted,
   qualifiers: z.record(z.string(), z.string()),
+  qualifierText: z.array(z.string()).describe('Qualifiers as buyers will see them, e.g. "ASIL B", "CL2".'),
   status: z.string().describe('draft (private) | published (public) | retracted'),
   provenance: z.string(),
   aiDrafted: z

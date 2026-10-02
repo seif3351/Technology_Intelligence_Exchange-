@@ -110,6 +110,7 @@ export const claim = (view: ClaimView): z.infer<typeof McpClaim> => ({
   sourceUrl: view.provenance.sourceUrl ?? null,
   evidenceIds: [...(view.provenance.evidenceIds ?? [])],
   qualifiers: { ...view.qualifiers },
+  qualifierText: [...view.qualifierText],
 });
 
 export const evidence = (view: EvidenceView): z.infer<typeof McpEvidence> => ({

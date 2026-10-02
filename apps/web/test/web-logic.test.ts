@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { decodeConstraint, decodeConstraintParams, encodeConstraint, searchHref } from '../lib/constraints';
+import {
+  decodeConstraint,
+  decodeConstraintParams,
+  encodeConstraint,
+  fromInterpretation,
+  searchHref,
+} from '../lib/constraints';
 import { ApiError, describeError } from '../lib/errors';
 
 describe('search URL constraint codec', () => {
@@ -31,6 +37,42 @@ describe('search URL constraint codec', () => {
       decodeConstraintParams(['qnx~supports~hard', 'nonsense', '@production_reference~hard']),
     ).toHaveLength(2);
     expect(decodeConstraintParams(Array.from({ length: 60 }, () => 'qnx~supports~hard'))).toHaveLength(40);
+  });
+
+  it('turns what the user sees (the interpretation) back into editable inputs', () => {
+    const view = (extra: Record<string, unknown>) => ({
+      id: 'c1',
+      priority: 'hard',
+      level: null,
+      concept: null,
+      qualifiers: {},
+      minimumMaturity: null,
+      origin: 'user',
+      description: 'x',
+      ...extra,
+    });
+    expect(
+      fromInterpretation([
+        view({
+          kind: 'concept',
+          level: 'experience',
+          concept: { id: 'aspice', label: 'Automotive SPICE', facet: 'process-standard' },
+          qualifiers: { aspiceLevel: '2' },
+        }),
+        view({ kind: 'maturity', priority: 'preference', minimumMaturity: 'production' }),
+        view({ kind: 'production_reference' }),
+      ] as never),
+    ).toEqual([
+      {
+        kind: 'concept',
+        conceptId: 'aspice',
+        level: 'experience',
+        priority: 'hard',
+        qualifiers: { aspiceLevel: '2' },
+      },
+      { kind: 'maturity', minimum: 'production', priority: 'preference' },
+      { kind: 'production_reference', priority: 'hard' },
+    ]);
   });
 
   it('builds shareable search links', () => {

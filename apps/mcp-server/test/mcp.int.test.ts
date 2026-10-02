@@ -404,3 +404,46 @@ describe('MCP consequential actions', () => {
     expect(structured<{ replayed: boolean }>(replay).replayed).toBe(true);
   });
 });
+
+describe('ordinal qualifiers over MCP (ADR-0020 parity)', () => {
+  it('accepts ASPICE and CAL minimums, reports omitted candidates and formats claim qualifiers', async () => {
+    const client = await connect();
+    const result = structured<{
+      interpretation: { hardConstraints: { description: string }[] };
+      omittedWithoutEvidence: number;
+    }>(
+      await client.callTool({
+        name: 'find_matching_offerings',
+        arguments: {
+          constraints: [
+            { kind: 'concept', conceptId: 'aspice', level: 'experience', aspiceLevel: '2' },
+            { kind: 'concept', conceptId: 'iso-21434', level: 'experience', cal: '3' },
+          ],
+        },
+      }),
+    );
+    expect(result.interpretation.hardConstraints.map((c) => c.description)).toEqual([
+      'Experience with Automotive SPICE (CL2 or higher)',
+      'Experience with ISO/SAE 21434 (CAL 3 or higher)',
+    ]);
+    expect(typeof result.omittedWithoutEvidence).toBe('number');
+
+    const offering = structured<{ claims: { concept: { id: string }; qualifierText: string[] }[] }>(
+      await client.callTool({
+        name: 'get_offering',
+        arguments: { offering_id: DEMO.offerings.vectorforgeMiddleware },
+      }),
+    );
+    const iso = offering.claims.find((claim) => claim.concept.id === 'iso-26262');
+    expect(iso?.qualifierText).toContain('ASIL B');
+  });
+
+  it('rejects values outside the standard scale', async () => {
+    const client = await connect();
+    const result = await client.callTool({
+      name: 'find_matching_offerings',
+      arguments: { constraints: [{ kind: 'concept', conceptId: 'aspice', aspiceLevel: '9' }] },
+    });
+    expect(result.isError).toBe(true);
+  });
+});

@@ -31,6 +31,7 @@ const workspaceClaim = (view: ClaimView): z.infer<typeof McpWorkspaceClaim> => (
   statement: view.statement,
   untrusted: true,
   qualifiers: { ...view.qualifiers },
+  qualifierText: [...view.qualifierText],
   status: view.status,
   provenance: view.provenance.category,
   aiDrafted: view.provenance.category === 'AI_INFERRED',
